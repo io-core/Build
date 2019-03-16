@@ -1,0 +1,14 @@
+k,v1,v2
+package,Build,v5.0.0
+from,github.com/io-core,
+license,PROJECTOBERON,NW PG
+r,[core]/Modules,v5.0.0
+r,[core]/Oberon,v5.0.0
+r,[core]/Edit,v5.0.0
+r,[core]/Files,v5.0.0
+p,ORB.Mod,-
+p,ORC.Mod,-
+p,ORG.Mod,-
+p,ORP.Mod,-
+p,ORS.Mod,-
+p,ORTool.Mod,-
