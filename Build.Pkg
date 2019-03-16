@@ -1,7 +1,7 @@
 k,v1,v2
 package,Build,v5.0.0
 from,github.com/io-core,
-license,PROJECTOBERON,NW PG
+license,PROJECTOBERON,NW
 r,[core]/Modules,v5.0.0
 r,[core]/Oberon,v5.0.0
 r,[core]/Edit,v5.0.0
