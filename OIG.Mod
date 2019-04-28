@@ -1,7 +1,7 @@
 MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon compiler; code generator for X86_64*)
   IMPORT SYSTEM, Files, ORS, ORB;
-  (*Code generator for Oberon compiler for RISC processor.
-     Procedural interface to Parser OSAP; result in array "code".
+  (*Code generator for Oberon compiler for x86_64 processor.
+     Procedural interface to Parser OIP; result in array "code".
      Procedure Close writes code-files*)
 
   CONST WordSize* = 4;
@@ -1060,7 +1060,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     END ;
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
     
-    ORB.MakeFileName(name, modid, ".rsc"); (*write code file*)
+    ORB.MakeFileName(name, modid, ".i64"); (*write code file*)
     F := Files.New(name); Files.Set(R, F, 0); Files.WriteString(R, modid); Files.WriteInt(R, key); Files.Write(R, CHR(version));
     Files.WriteInt(R, size);
     obj := ORB.topScope.next;
