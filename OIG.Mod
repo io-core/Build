@@ -35,7 +35,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     RegI   regno   off     -
     Cond  cond   Fchain  Tchain  *)
 
-  VAR pc*, varsize: LONGINT;   (*program counter, data index*)
+  VAR pc*, wof*, varsize: LONGINT;   (*program (word) counter, word offset at pc, data index*)
     tdx, strx: LONGINT;
     entry: LONGINT;   (*main entry point*)
     RH: LONGINT;  (*available registers R[0] ... R[H-1]*)
@@ -995,7 +995,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
   END Condition;
 
   PROCEDURE Open*(v: INTEGER);
-  BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; check := v # 0; version := v;
+  BEGIN pc := 0; wof := 0; tdx := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; check := v # 0; version := v;
     IF v = 0 THEN pc := 1;
       REPEAT code[pc] := 0; INC(pc) UNTIL pc = 8
     END
@@ -1006,7 +1006,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
   END SetDataSize;
 
   PROCEDURE Header*;
-  BEGIN entry := pc*4;
+  BEGIN entry := pc*4 + wof;
     IF version = 0 THEN code[0] := 0E7000000H-1 + pc;  Put1a(Mov, SP, 0, StkOrg0)  (*PRE-OBERON*)
     ELSE Put1(Sub, SP, SP, 4); Put2(Str, LNK, SP, 0)
     END
