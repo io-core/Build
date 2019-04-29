@@ -1,4 +1,4 @@
-MODULE ORB;   (*NW 25.6.2014 / 1.3.2019,  in Windows-Oberon*)
+MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
   IMPORT Files,  ORS;
   (*Definition of data types Object and Type, which together form the data structure
     called "symbol table". Contains procedures for creation of Objects, and for search:
@@ -15,7 +15,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019,  in Windows-Oberon*)
     (* form values*)
       Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Set* = 6;
       Pointer* = 7; NilTyp* = 8; NoTyp* = 9; Proc* = 10;
-      String* = 11; Array* = 12; Record* = 13;
+      String* = 11; Array* = 12; Record* = 13; Long* = 14; Double* = 15;
       
   TYPE Object* = POINTER TO ObjDesc;
     Module* = POINTER TO ModDesc;
@@ -63,7 +63,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019,  in Windows-Oberon*)
 
   VAR topScope*, universe, system*: Object;
     byteType*, boolType*, charType*: Type;
-    intType*, realType*, setType*, nilType*, noType*, strType*: Type;
+    intType*, realType*, setType*, nilType*, noType*, strType*, longType*: Type;
     nofmod, Ref: INTEGER;
     typtab: ARRAY maxTypTab OF Type;
 
@@ -379,9 +379,11 @@ BEGIN
   nilType := type(NilTyp, NilTyp, 4);
   noType := type(NoTyp, NoTyp, 4);
   strType := type(String, String, 8);
+  longIntType := type(Long, Long, 8); (*consider conditional 4 or 8 depending on machine type*)
+  longRealType := type(Double, Double, 8); (*consider conditional 4 or 8 depending on machine type*)
     
   (*initialize universe with data types and in-line procedures;
-    LONGINT is synonym to INTEGER, LONGREAL to REAL.
+    LONGINT is synonym to INTEGER on 32-bit systems, LONGREAL to REAL.
     LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
   system := NIL;  (*n = procno*10 + nofpar*)
   enter("UML", SFunc, intType, 132);  (*functions*)
@@ -410,9 +412,9 @@ BEGIN
   enter("BOOLEAN", Typ, boolType, 0);
   enter("BYTE", Typ, byteType, 0);
   enter("CHAR", Typ, charType, 0);
-  enter("LONGREAL", Typ, realType, 0);
+  enter("LONGREAL", Typ, realType, 0);       (* or longRealType... *)
   enter("REAL", Typ, realType, 0);
-  enter("LONGINT", Typ, intType, 0);
+  enter("LONGINT", Typ, intType, 0);         (* or longIntType... *)
   enter("INTEGER", Typ, intType, 0);
   topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
   
