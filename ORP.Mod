@@ -899,7 +899,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 17.9.2018  Oberon compiler for RISC in Oberon-07
     IF sym = ORS.module THEN
       ORS.Get(sym);
       IF sym = ORS.times THEN version := 0; Texts.Write(W, "*"); ORS.Get(sym) ELSE version := 1 END ;
-      ORB.Init; ORB.OpenScope;
+      ORB.Init(ORG.WordSize); ORB.OpenScope;
       IF sym = ORS.ident THEN
         ORS.CopyId(modid); ORS.Get(sym);
         Texts.WriteString(W, modid); Texts.Append(Oberon.Log, W.buf)
