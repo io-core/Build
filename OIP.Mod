@@ -899,7 +899,7 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     IF sym = ORS.module THEN
       ORS.Get(sym);
       IF sym = ORS.times THEN version := 0; Texts.Write(W, "*"); ORS.Get(sym) ELSE version := 1 END ;
-      ORB.Init; ORB.OpenScope;
+      ORB.Init(OIG.WordSize); ORB.OpenScope;
       IF sym = ORS.ident THEN
         ORS.CopyId(modid); ORS.Get(sym);
         Texts.WriteString(W, modid); Texts.Append(Oberon.Log, W.buf)
