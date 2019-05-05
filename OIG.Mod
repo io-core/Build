@@ -53,32 +53,47 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
 
   PROCEDURE Put0(op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
+(*
     code[pc] := ((a*10H + b) * 10H + op) * 10000H + c; INC(pc)
+*)
+    ORS.Mark("Put0 Not Implemented")
   END Put0;
 
   PROCEDURE Put1(op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
+(*
     IF im < 0 THEN INC(op, V) END ;
     code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H); INC(pc)
+*)
+    ORS.Mark("Put1 Not Implemented")
   END Put1;
 
   PROCEDURE Put1a(op, a, b, im: LONGINT);
   BEGIN (*same as Put1, but with range test  -10000H <= im < 10000H*)
+(*
     IF (im >= -10000H) & (im <= 0FFFFH) THEN Put1(op, a, b, im)
     ELSE Put1(Mov+U, RH, 0, im DIV 10000H);
       IF im MOD 10000H # 0 THEN Put1(Ior, RH, RH, im MOD 10000H) END ;
       Put0(op, a, b, RH)
     END
+*)
+    ORS.Mark("Put1a Not Implemented")
   END Put1a;
 
   PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
+(*
     code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc)
+*)
+    ORS.Mark("Put2 Not Implemented")
   END Put2;
 
   PROCEDURE Put3(op, cond, off: LONGINT);
   BEGIN (*emit branch instruction*)
+(*
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc)
+*)
+    ORS.Mark("Put3 Not Implemented")
   END Put3;
 
   PROCEDURE incR;
@@ -98,7 +113,11 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
   END SetCC;
 
   PROCEDURE Trap(cond, num: LONGINT);
-  BEGIN Put3(BLR, cond, ORS.Pos()*100H + num*10H + MT)
+  BEGIN 
+(*
+    Put3(BLR, cond, ORS.Pos()*100H + num*10H + MT)
+*)
+    ORS.Mark("Trap Not Implemented")
   END Trap;
 
   (*handling of forward reference, fixups of branch addresses and constant tables*)
