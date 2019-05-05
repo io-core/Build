@@ -51,6 +51,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
 
   (*instruction assemblers according to formats*)
 
+
+(* Add And Ann Cmp Div Fad Fdv Fml Fsb Ior Lsl Mov Mul Ror Sub Xor *)
   PROCEDURE Put0(op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
 (*
@@ -59,6 +61,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     ORS.Mark("Put0 Not Implemented")
   END Put0;
 
+
+(* Add And Asr Cmp Ior Lsl Mov Ror Sub Xor *)
   PROCEDURE Put1(op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
 (*
@@ -68,6 +72,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     ORS.Mark("Put1 Not Implemented")
   END Put1;
 
+
+(* Add And Ann Cmp Div Ior Mov Mul Sub Xor *)
   PROCEDURE Put1a(op, a, b, im: LONGINT);
   BEGIN (*same as Put1, but with range test  -10000H <= im < 10000H*)
 (*
@@ -80,6 +86,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     ORS.Mark("Put1a Not Implemented")
   END Put1a;
 
+
+(* Ldr Str *)
   PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
 (*
@@ -88,6 +96,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     ORS.Mark("Put2 Not Implemented")
   END Put2;
 
+
+(* 0 BC BL BLR BR *)
   PROCEDURE Put3(op, cond, off: LONGINT);
   BEGIN (*emit branch instruction*)
 (*
