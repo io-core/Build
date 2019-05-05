@@ -63,8 +63,8 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
 
   VAR topScope*, universe, system*: Object;
     byteType*, boolType*, charType*: Type;
-    intType*, realType*, setType*, nilType*, noType*, strType*, longType*: Type;
-    nofmod, Ref: INTEGER;
+    intType*, realType*, setType*, nilType*, noType*, strType*, longType*, longIntType*, longRealType*: Type;
+    nofmod, Ref, wordsize: INTEGER;
     typtab: ARRAY maxTypTab OF Type;
 
   PROCEDURE NewObj*(VAR obj: Object; id: ORS.Ident; class: INTEGER);  (*insert new Object with name id*)
@@ -166,7 +166,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
         InType(R, thismod, t.base);
         IF t.base.form = NoTyp THEN t.base := NIL; obj := NIL ELSE obj := t.base.dsc END ;
         Files.ReadNum(R, t.len); (*TD adr/exno*)
-        Files.ReadNum(R,  tmp); t.nofpar := SHORT(tmp);   (*ext level*)
+        Files.ReadNum(R,  tmp); t.nofpar := tmp;  (* SHORT(tmp); *)   (*ext level*)
         Files.ReadNum(R, t.size);
         Read(R, class); last := NIL;
         WHILE class # 0 DO  (*fields*)
@@ -189,7 +189,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       END ;
       Files.ReadString(R, modname);
       IF modname[0] #  0X THEN  (*re-import*)
-        Files.ReadLInt(R, key); Files.ReadString(R, name);
+        Files.ReadInt(R, key); Files.ReadString(R, name);
         mod := ThisModule(modname, modname, FALSE, key);
         obj := mod.dsc;  (*search type*)
         WHILE (obj # NIL) & (obj.name # name) DO obj := obj.next END ;
@@ -215,7 +215,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       thismod.lev := 0; thismod.dsc := system; thismod.rdo := TRUE
     ELSE MakeFileName(fname, modid1, ".smb"); F := Files.Old(fname);
       IF F # NIL THEN
-        Files.Set(R, F, 0); Files.ReadLInt(R, key); Files.ReadLInt(R, key); Files.ReadString(R, modname);
+        Files.Set(R, F, 0); Files.ReadInt(R, key); Files.ReadInt(R, key); Files.ReadString(R, modname);
         thismod := ThisModule(modid, modid1, TRUE, key); thismod.rdo := TRUE;
         Read(R, class); (*version key*)
         IF class # versionkey THEN ORS.Mark("wrong version") END ;
@@ -228,7 +228,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
             WHILE k # 0 DO typtab[k].base := t; Read(R, k) END
           ELSE
             IF class = Const THEN
-              IF obj.type.form = Real THEN Files.ReadLInt(R, obj.val) ELSE Files.ReadNum(R, obj.val) END
+              IF obj.type.form = Real THEN Files.ReadInt(R, obj.val) ELSE Files.ReadNum(R, obj.val) END
             ELSIF class = Var THEN Files.ReadNum(R, obj.val); obj.rdo := TRUE
             END
           END ;
@@ -295,7 +295,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       IF (t.mno > 0) & (obj # NIL) THEN  (*re-export, output name*)
         mod := topScope.next;
         WHILE (mod # NIL) & (mod.lev # t.mno) DO mod := mod.next END ;
-        IF mod # NIL THEN Files.WriteString(R, mod(Module).orgname); Files.WriteLInt(R, mod.val); Files.WriteString(R, obj.name)
+        IF mod # NIL THEN Files.WriteString(R, mod(Module).orgname); Files.WriteInt(R, mod.val); Files.WriteString(R, obj.name)
         ELSE ORS.Mark("re-export not found"); Write(R, 0)
         END
       ELSE Write(R, 0)
@@ -310,8 +310,8 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       F, F1: Files.File; R, R1: Files.Rider;
   BEGIN Ref := Record + 1; MakeFileName(filename, modid, ".smb");
     F := Files.New(filename); Files.Set(R, F, 0);
-    Files.WriteLInt(R, 0); (*placeholder*)
-    Files.WriteLInt(R, 0); (*placeholder for key to be inserted at the end*)
+    Files.WriteInt(R, 0); (*placeholder*)
+    Files.WriteInt(R, 0); (*placeholder for key to be inserted at the end*)
     Files.WriteString(R, modid); Write(R, versionkey);
     obj := topScope.next;
     WHILE obj # NIL DO
@@ -329,7 +329,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
           Write(R, 0)
         ELSIF obj.class = Const THEN
           IF obj.type.form = Proc THEN Files.WriteNum(R, obj.exno)
-          ELSIF obj.type.form = Real THEN Files.WriteLInt(R, obj.val)
+          ELSIF obj.type.form = Real THEN Files.WriteInt(R, obj.val)
           ELSE Files.WriteNum(R, obj.val)
           END
         ELSIF obj.class = Var THEN Files.WriteNum(R, obj.exno)
@@ -339,23 +339,19 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
     END ;
     REPEAT Write(R, 0) UNTIL Files.Length(F) MOD 4 = 0;
     FOR Ref := Record+1 TO maxTypTab-1 DO typtab[Ref] := NIL END ;
-    Files.Set(R, F, 0); sum := 0; Files.ReadLInt(R, x);  (* compute key (checksum) *)
-    WHILE ~R.eof DO sum := sum + x; Files.ReadLInt(R, x) END ;
+    Files.Set(R, F, 0); sum := 0; Files.ReadInt(R, x);  (* compute key (checksum) *)
+    WHILE ~R.eof DO sum := sum + x; Files.ReadInt(R, x) END ;
     F1 := Files.Old(filename); (*sum is new key*)
-    IF F1 # NIL THEN Files.Set(R1, F1, 4); Files.ReadLInt(R1, oldkey) ELSE oldkey := sum+1 END ;
+    IF F1 # NIL THEN Files.Set(R1, F1, 4); Files.ReadInt(R1, oldkey) ELSE oldkey := sum+1 END ;
     IF sum # oldkey THEN
       IF newSF OR (F1 = NIL) THEN
-        key := sum; newSF := TRUE; Files.Set(R, F, 4); Files.WriteLInt(R, sum); Files.Register(F)  (*insert checksum*)
+        key := sum; newSF := TRUE; Files.Set(R, F, 4); Files.WriteInt(R, sum); Files.Register(F)  (*insert checksum*)
       ELSE ORS.Mark("new symbol file inhibited")
       END
     ELSE newSF := FALSE; key := sum
     END
   END Export;
 
-  PROCEDURE Init*;
-  BEGIN topScope := universe; nofmod := 1
-  END Init;
-  
   PROCEDURE type(ref, form: INTEGER; size: LONGINT): Type;
     VAR tp: Type;
   BEGIN NEW(tp); tp.form := form; tp.size := size; tp.ref := ref; tp.base := NIL;
@@ -364,10 +360,27 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
 
   PROCEDURE enter(name: ARRAY OF CHAR; cl: INTEGER; type: Type; n: LONGINT);
     VAR obj: Object;
-  BEGIN NEW(obj); COPY(name, obj.name); obj.class := cl; obj.type := type; obj.val := n; obj.dsc := NIL;
+  BEGIN NEW(obj); obj.name:=name; obj.class := cl; obj.type := type; obj.val := n; obj.dsc := NIL;
     IF cl = Typ THEN type.typobj := obj END ;
     obj.next := system; system := obj
   END enter;
+
+  PROCEDURE update(name: ARRAY OF CHAR; cl: INTEGER; type: Type; n: LONGINT);
+    VAR obj: Object;
+  BEGIN   (* NEW(obj); COPY(name, obj.name); obj.class := cl; obj.type := type; obj.val := n; obj.dsc := NIL;
+    IF cl = Typ THEN type.typobj := obj END ;
+    obj.next := system; system := obj *)
+  END update; 
+
+  PROCEDURE Init*(ws: INTEGER);
+  BEGIN topScope := universe; nofmod := 1; wordsize := ws;
+    IF wordsize = 8 THEN
+      enter("LONGREAL", Typ, longRealType, 0);
+      enter("LONGINT", Typ, longIntType, 0);
+    END
+  END Init;
+
+
   
 BEGIN
   byteType := type(Byte, Int, 1);
@@ -379,8 +392,8 @@ BEGIN
   nilType := type(NilTyp, NilTyp, 4);
   noType := type(NoTyp, NoTyp, 4);
   strType := type(String, String, 8);
-  longIntType := type(Long, Long, 8); (*consider conditional 4 or 8 depending on machine type*)
-  longRealType := type(Double, Double, 8); (*consider conditional 4 or 8 depending on machine type*)
+  longIntType := type(Long, Long, 8); (*used if wordsize is 8, otherwise aliased to intType*)
+  longRealType := type(Double, Double, 8); (*used if wordsize is 8, otherwise aliased to realType*)
     
   (*initialize universe with data types and in-line procedures;
     LONGINT is synonym to INTEGER on 32-bit systems, LONGREAL to REAL.
@@ -412,9 +425,9 @@ BEGIN
   enter("BOOLEAN", Typ, boolType, 0);
   enter("BYTE", Typ, byteType, 0);
   enter("CHAR", Typ, charType, 0);
-  enter("LONGREAL", Typ, realType, 0);       (* or longRealType... *)
+  enter("LONGREAL", Typ, realType, 0);
   enter("REAL", Typ, realType, 0);
-  enter("LONGINT", Typ, intType, 0);         (* or longIntType... *)
+  enter("LONGINT", Typ, intType, 0);        
   enter("INTEGER", Typ, intType, 0);
   topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
   
