@@ -10,6 +10,49 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  C.Perkins 2019  Oberon
     maxCode = 8000; maxStrx = 2400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
 
+(* register usage for x86_64 in Oberon
+r0	RAX	0.000
+r1	RDX	0.001
+r2	RCX	0.010
+r3	RBX	0.011
+
+r4	R8	1.000
+r5	R9	1.001
+r6	R10	1.010
+r7	R11	1.011
+r8	R12	1.100
+r9	R13	1.101
+r10	R14	1.110
+r11	R15	1.111
+
+sp	RSP	0.100 Stack Pointer
+sb	RBP	0.101 Static Base
+mt	RSI	0.110 Module Table (of static bases)
+lnk	RDI	0.111 
+
+
+Instruction: REX byte?, Opcode byte(s), ModR/M?, SIB?, Displacement?, Immediate?
+
+89 /r	mov r/m64 to r64 (with rex.w)
+D3 /4	sal r/m64 (Ra = Rb << CL) 
+D3 /7	sar r/m64 (Ra = Rb >> CL)
+D3 /1	ror r/m64 (Ra = Rb rot> CL)
+23 /r	and r/m64 to r64 (with rex.w)
+	and not
+	or
+	xor
+
+
+03	add r/m64 to r64 (with rex.w)	13	adc r/m64 to r64 (with rex.w)
+2B	sub r/m64 to r64 (with rex.w)
+3B	cmp r/m64 to r64 (with rex.w)
+F7 /4	mul r/m64 (RDX:RAX * Rx = RDX * RAX)
+F7 /6	div r/m64 (RDX:RAX = RDX:RAX / Rx)
+
+ use xchg ra rb to overcome special purpose register limitations
+*)
+
+
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
     Mov = 0; Lsl = 1; Asr = 2; Ror= 3; And = 4; Ann = 5; Ior = 6; Xor = 7;
     Add = 8; Sub = 9; Cmp = 9; Mul = 10; Div = 11;
