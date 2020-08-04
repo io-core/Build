@@ -13,15 +13,9 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
       SProc* = 6; SFunc* = 7; Mod* = 8;
 
     (* form values*)
-
       Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Long* = 6; Double* = 7; Set* = 8;
       Pointer* = 9; NilTyp* = 10; NoTyp* = 11; Proc* = 12;
       String* = 13; Array* = 14; Record* = 15; TProc* = 16;
-(*
-      Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Set* = 6;
-      Pointer* = 7; NilTyp* = 8; NoTyp* = 9; Proc* = 10;
-      String* = 11; Array* = 12; Record* = 13; TProc* = 14; Long* = 15; Double* = 16;
-*)
       Ptrs* = {Pointer, NilTyp}; Procs* = {Proc, NoTyp};
   
   TYPE Object* = POINTER TO ObjDesc;
@@ -240,9 +234,17 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
           NEW(fld); fld.class := class; Files.ReadString(R, fld.name);
           IF last = NIL THEN t.dsc := fld ELSE last.next := fld END ;
           last := fld;
-          IF fld.name[0] # 0X THEN fld.expo := TRUE; InType(R, thismod, fld.type) ELSE fld.expo := FALSE; fld.type := nilType END ;
-          Files.ReadNum(R, fld.val); (* fld.next := obj;
-          obj := fld;*)  Read(R, class)
+          IF fld.name[0] # 0X THEN fld.expo := TRUE; InType(R, thismod, fld.type); Files.ReadNum(R, fld.val)
+          ELSE (*hidden*) fld.expo := FALSE;
+            IF class = Const THEN (*type-bound procedure*) fld.type := byteType  (*method*)
+            ELSE Files.ReadNum(R, fld.val);
+              IF fld.val < 0 THEN fld.val := -fld.val-1; fld.type := noType  (*procedure*)
+              ELSE fld.type := nilType  (*pointer*)
+              END
+            END
+          END ;
+          IF class = Const THEN Files.ReadNum(R, fld.lev) END ;  (*mthno*)
+          Read(R, class)
         END ;
         IF last = NIL THEN t.dsc := obj ELSE last.next := obj END
       ELSIF form IN {Proc, TProc} THEN
@@ -329,7 +331,8 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
     PROCEDURE FindHiddenFields(VAR R: Files.Rider; typ: Type; offset: LONGINT);  (*pointers or procedures*)
       VAR fld: Object; i, s: LONGINT;
     BEGIN
-      IF (typ.form = Pointer) OR (typ.form = NilTyp) THEN Write(R, Fld); Write(R, 0); Files.WriteNum(R, offset);
+      IF typ.form IN Ptrs THEN Write(R, Fld); Write(R, 0); Files.WriteNum(R, offset)  (*pointer*)
+      ELSIF typ.form IN Procs THEN Write(R, Fld); Write(R, 0); Files.WriteNum(R, -offset-1)  (*procedure*)
       ELSIF typ.form = Record THEN fld := typ.dsc;
         WHILE fld # NIL DO FindHiddenFields(R, fld.type, fld.val + offset); fld := fld.next END
       ELSIF typ.form = Array THEN i := 0; s := typ.len;
@@ -346,13 +349,22 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
       ELSIF t.form = Array THEN OutType(R, tb); Files.WriteNum(R, t.len); Files.WriteNum(R, t.size)
       ELSIF t.form = Record THEN
         IF tb # NIL THEN OutType(R, tb); bot := tb.dsc ELSE OutType(R, noType); bot := NIL END ;
-        IF obj # NIL THEN Files.WriteNum(R, obj.exno) ELSE Write(R, 0) END ;
+        IF obj # NIL THEN
+          IF t.mno > 0 THEN Files.WriteNum(R, t.len) ELSE Files.WriteNum(R, obj.exno) END
+        ELSE Write(R, 0)
+        END ;
         Files.WriteNum(R, t.nofpar); Files.WriteNum(R, t.size);
         fld := t.dsc;
         WHILE fld # bot DO  (*fields*)
-          IF fld.expo THEN
-            Write(R, Fld); Files.WriteString(R, fld.name); OutType(R, fld.type); Files.WriteNum(R, fld.val); (*offset*)
-          ELSE FindHiddenFields(R, fld.type, fld.val)
+          IF fld.class = Const THEN (*type-bound procedure*) Write(R, Const);
+            IF fld.expo THEN Files.WriteString(R, fld.name); OutType(R, fld.type);
+              IF t.mno > 0 THEN Files.WriteNum(R, fld.val) ELSE Files.WriteNum(R, fld.exno) END  (*exno*)
+            ELSE (*hidden*) Write(R, 0)
+            END ;
+            Files.WriteNum(R, fld.lev)  (*mthno*)
+          ELSIF fld.expo THEN
+            Write(R, Fld); Files.WriteString(R, fld.name); OutType(R, fld.type); Files.WriteNum(R, fld.val)  (*offset*)
+          ELSE (*hidden*) FindHiddenFields(R, fld.type, fld.val)
           END ;
           fld := fld.next
         END ;
@@ -375,7 +387,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
       obj, obj0: Object;
       filename: ORS.Ident;
       F, F1: Files.File; R, R1: Files.Rider;
-  BEGIN Ref := Record + 1; MakeFileName(filename, modid, ".smb");
+  BEGIN Ref := TProc + 1; MakeFileName(filename, modid, ".smb");
     F := Files.New(filename); Files.Set(R, F, 0);
     Files.WriteInt(R, 0); (*placeholder*)
     Files.WriteInt(R, 0); (*placeholder for key to be inserted at the end*)
@@ -405,7 +417,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Ob
       obj := obj.next
     END ;
     REPEAT Write(R, 0) UNTIL Files.Length(F) MOD 4 = 0;
-    FOR Ref := Record+1 TO maxTypTab-1 DO typtab[Ref] := NIL END ;
+    FOR Ref := TProc+1 TO maxTypTab-1 DO typtab[Ref] := NIL END ;
     Files.Set(R, F, 0); sum := 0; Files.ReadInt(R, x);  (* compute key (checksum) *)
     WHILE ~R.eof DO sum := sum + x; Files.ReadInt(R, x) END ;
     F1 := Files.Old(filename); (*sum is new key*)
