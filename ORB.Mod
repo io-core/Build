@@ -1,5 +1,5 @@
-MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
-  IMPORT Files,  ORS;
+MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019 / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.20 Extended Oberon*)
+  IMPORT Files, ORS;
   (*Definition of data types Object and Type, which together form the data structure
     called "symbol table". Contains procedures for creation of Objects, and for search:
     NewObj, this, thisimport, thisfield (and OpenScope, CloseScope).
@@ -7,16 +7,23 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
     Import and Export. This module contains the list of standard identifiers, with which
     the symbol table (universe), and that of the pseudo-module SYSTEM are initialized. *)
 
-  CONST versionkey* = 1; maxTypTab = 64;
+  CONST versionkey* = 1; maxTypTab = 64; C20 = 100000H;
     (* class values*) Head* = 0;
       Const* = 1; Var* = 2; Par* = 3; Fld* = 4; Typ* = 5;
       SProc* = 6; SFunc* = 7; Mod* = 8;
 
     (* form values*)
+
+      Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Long* = 6; Double* = 7; Set* = 8;
+      Pointer* = 9; NilTyp* = 10; NoTyp* = 11; Proc* = 12;
+      String* = 13; Array* = 14; Record* = 15; TProc* = 16;
+(*
       Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Set* = 6;
       Pointer* = 7; NilTyp* = 8; NoTyp* = 9; Proc* = 10;
-      String* = 11; Array* = 12; Record* = 13; Long* = 14; Double* = 15;
-      
+      String* = 11; Array* = 12; Record* = 13; TProc* = 14; Long* = 15; Double* = 16;
+*)
+      Ptrs* = {Pointer, NilTyp}; Procs* = {Proc, NoTyp};
+  
   TYPE Object* = POINTER TO ObjDesc;
     Module* = POINTER TO ModDesc;
     Type* = POINTER TO TypeDesc;
@@ -109,6 +116,59 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
     RETURN fld
   END thisfield;
 
+  PROCEDURE FindFld*(id: ORS.Ident; rec: Type): Object;  (*search id in fields of rec proper, but not its base types*)
+    VAR fld, bot: Object;
+  BEGIN fld := rec.dsc;
+    IF rec.base # NIL THEN bot := rec.base.dsc ELSE bot := NIL END ;
+    WHILE (fld # bot) & (fld.name # id) DO fld := fld.next END ;
+    IF fld = bot THEN fld := NIL END ;
+    RETURN fld
+  END FindFld;
+
+  PROCEDURE NofMethods*(rec: Type): INTEGER;  (*number of methods bound to rec and its base types*)
+    VAR fld: Object; max: INTEGER;
+  BEGIN fld := rec.dsc; max := -1;
+    WHILE fld # NIL DO
+      IF (fld.class = Const) & (fld.lev > max) THEN max := fld.lev END ;
+      fld := fld.next
+    END ;
+    RETURN max + 1
+  END NofMethods;
+
+  PROCEDURE NewMethod*(rec: Type; VAR mth, redef: Object; id: ORS.Ident);  (*insert new method with name id*)
+    VAR fld, fld0, new, bot: Object;
+
+    PROCEDURE UpdateLinks(rec: Type; new, bot: Object);  (*between field lists of extensions*)
+      VAR obj, fld: Object;
+    BEGIN obj := rec.typobj.next;
+      WHILE obj # NIL DO
+        IF (obj.class = Typ) & (obj.type.form = Record) & (obj.type.base = rec) THEN
+          IF obj.type.dsc = bot THEN obj.type.dsc := new; UpdateLinks(obj.type, new, bot)
+          ELSE fld := obj.type.dsc;
+            WHILE fld.next # bot DO fld := fld.next END ;
+            fld.next := new
+          END
+        END ;
+        obj := obj.next
+      END
+    END UpdateLinks;
+
+  BEGIN (*rec.typobj # NIL*) redef := NIL;
+    IF rec.base # NIL THEN bot := rec.base.dsc ELSE bot := NIL END ;
+    fld := rec.dsc;
+    WHILE (fld # bot) & (fld.name # id) DO fld0 := fld; fld := fld.next END ;  (*search id in fields of rec proper*)
+    IF fld = bot THEN
+      WHILE (fld # NIL) & (fld.name # id) DO fld := fld.next END ;  (*search id in fields of base types of rec*)
+      IF (fld = NIL) OR (fld.class = Const) THEN
+        NEW(new); new.name := id; new.class := Const; new.rdo := FALSE; new.dsc := NIL; new.next := bot; mth := new;
+        IF fld = NIL THEN new.lev := NofMethods(rec) ELSE new.lev := fld.lev; redef := fld END ;  (*mthno*)
+        IF rec.dsc = bot THEN rec.dsc := new; UpdateLinks(rec, new, bot) ELSE fld0.next := new END
+      ELSE mth := fld; ORS.Mark("mult def")
+      END
+    ELSE mth := fld; ORS.Mark("mult def")
+    END
+  END NewMethod;
+
   PROCEDURE OpenScope*;
     VAR s: Object;
   BEGIN NEW(s); s.class := Head; s.dsc := topScope; s.next := NIL; topScope := s
@@ -128,17 +188,24 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
     FName[i] := 0X
   END MakeFileName;
   
-  PROCEDURE ThisModule(name, orgname: ORS.Ident; non: BOOLEAN; key: LONGINT): Object;
+  PROCEDURE ThisModule(name, orgname: ORS.Ident; decl: BOOLEAN; key: LONGINT): Object;
     VAR mod: Module; obj, obj1: Object;
   BEGIN obj1 := topScope; obj := obj1.next;  (*search for module*)
-    WHILE (obj # NIL) & (obj.name # name) DO obj1 := obj; obj := obj1.next END ;
-    IF obj = NIL THEN  (*insert new module*)
-      NEW(mod); mod.class := Mod; mod.rdo := FALSE;
-      mod.name := name; mod.orgname := orgname; mod.val := key;
-      mod.lev := nofmod; INC(nofmod); mod.type := noType; mod.dsc := NIL; mod.next := NIL;
-      obj1.next := mod; obj := mod
-    ELSE (*module already present*)
-      IF non THEN ORS.Mark("invalid import order") END
+    WHILE (obj # NIL) & (obj(Module).orgname # orgname) DO obj1 := obj; obj := obj1.next END ;
+    IF obj = NIL THEN  (*new module, search for alias*)
+      obj := topScope.next;
+      WHILE (obj # NIL) & (obj.name # name) DO obj := obj.next END ;
+      IF obj = NIL THEN (*insert new module*)
+        NEW(mod); mod.class := Mod; mod.rdo := FALSE;
+        mod.name := name; mod.orgname := orgname; mod.val := key;
+        mod.lev := nofmod; INC(nofmod); mod.type := noType; mod.dsc := NIL; mod.next := NIL;
+        obj1.next := mod; obj := mod
+      ELSIF decl THEN
+        IF obj.rdo THEN ORS.Mark("mult def") ELSE ORS.Mark("conflict with re-import") END
+      ELSE ORS.Mark("conflict with alias")
+      END
+    ELSIF decl THEN (*module already present, explicit import by declaration*)
+      IF obj.rdo THEN ORS.Mark("mult def") ELSE ORS.Mark("invalid import order") END
     END ;
     RETURN obj
   END ThisModule;
@@ -150,7 +217,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
   END Read;
   
   PROCEDURE InType(VAR R: Files.Rider; thismod: Object; VAR T: Type);
-    VAR key, tmp: LONGINT;
+    VAR key: LONGINT;
       ref, class, form, np, readonly: INTEGER;
       fld, par, obj, mod, last: Object;
       t: Type;
@@ -166,7 +233,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
         InType(R, thismod, t.base);
         IF t.base.form = NoTyp THEN t.base := NIL; obj := NIL ELSE obj := t.base.dsc END ;
         Files.ReadNum(R, t.len); (*TD adr/exno*)
-        Files.ReadNum(R,  tmp); t.nofpar := tmp;  (* SHORT(tmp); *)   (*ext level*)
+        Files.ReadNum(R, t.nofpar);  (*ext level*)
         Files.ReadNum(R, t.size);
         Read(R, class); last := NIL;
         WHILE class # 0 DO  (*fields*)
@@ -178,7 +245,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
           obj := fld;*)  Read(R, class)
         END ;
         IF last = NIL THEN t.dsc := obj ELSE last.next := obj END
-      ELSIF form = Proc THEN
+      ELSIF form IN {Proc, TProc} THEN
         InType(R, thismod, t.base);
         obj := NIL; np := 0; Read(R, class);
         WHILE class # 0 DO  (*parameters*)
@@ -259,22 +326,22 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       END
     END OutPar;
 
-    PROCEDURE FindHiddenPointers(VAR R: Files.Rider; typ: Type; offset: LONGINT);
-      VAR fld: Object; i, n: LONGINT;
+    PROCEDURE FindHiddenFields(VAR R: Files.Rider; typ: Type; offset: LONGINT);  (*pointers or procedures*)
+      VAR fld: Object; i, s: LONGINT;
     BEGIN
       IF (typ.form = Pointer) OR (typ.form = NilTyp) THEN Write(R, Fld); Write(R, 0); Files.WriteNum(R, offset);
       ELSIF typ.form = Record THEN fld := typ.dsc;
-        WHILE fld # NIL DO FindHiddenPointers(R, fld.type, fld.val + offset); fld := fld.next END
-      ELSIF typ.form = Array THEN i := 0; n := typ.len;
-        WHILE i < n DO FindHiddenPointers(R, typ.base, typ.base.size * i + offset); INC(i) END
+        WHILE fld # NIL DO FindHiddenFields(R, fld.type, fld.val + offset); fld := fld.next END
+      ELSIF typ.form = Array THEN i := 0; s := typ.len;
+        WHILE i < s DO FindHiddenFields(R, typ.base, typ.base.size * i + offset); INC(i) END
       END
-    END FindHiddenPointers;
+    END FindHiddenFields;
 
   BEGIN tb := t.base;
     IF t.ref > 0 THEN (*type was already output*) Write(R, -t.ref)
     ELSE obj := t.typobj;
       IF obj # NIL THEN Write(R, Ref); t.ref := Ref; INC(Ref) ELSE (*anonymous*) Write(R, 0) END ;
-      Write(R, t.form);;
+      Write(R, t.form);
       IF t.form = Pointer THEN OutType(R, tb)
       ELSIF t.form = Array THEN OutType(R, tb); Files.WriteNum(R, t.len); Files.WriteNum(R, t.size)
       ELSIF t.form = Record THEN
@@ -285,12 +352,12 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
         WHILE fld # bot DO  (*fields*)
           IF fld.expo THEN
             Write(R, Fld); Files.WriteString(R, fld.name); OutType(R, fld.type); Files.WriteNum(R, fld.val); (*offset*)
-          ELSE FindHiddenPointers(R, fld.type, fld.val)
+          ELSE FindHiddenFields(R, fld.type, fld.val)
           END ;
           fld := fld.next
         END ;
         Write(R, 0)
-      ELSIF t.form = Proc THEN OutType(R, t.base); OutPar(R, t.dsc, t.nofpar); Write(R, 0)
+      ELSIF t.form IN {Proc, TProc} THEN OutType(R, tb); OutPar(R, t.dsc, t.nofpar); Write(R, 0)
       END ;
       IF (t.mno > 0) & (obj # NIL) THEN  (*re-export, output name*)
         mod := topScope.next;
@@ -364,14 +431,7 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
     IF cl = Typ THEN type.typobj := obj END ;
     obj.next := system; system := obj
   END enter;
-
-  PROCEDURE update(name: ARRAY OF CHAR; cl: INTEGER; type: Type; n: LONGINT);
-    VAR obj: Object;
-  BEGIN   (* NEW(obj); COPY(name, obj.name); obj.class := cl; obj.type := type; obj.val := n; obj.dsc := NIL;
-    IF cl = Typ THEN type.typobj := obj END ;
-    obj.next := system; system := obj *)
-  END update; 
-
+  
   PROCEDURE Init*(ws: INTEGER);
   BEGIN topScope := universe; nofmod := 1; wordsize := ws;
     IF wordsize = 8 THEN
@@ -379,8 +439,6 @@ MODULE ORB;   (*NW 25.6.2014 / 1.3.2019, CP 2019*)
       enter("LONGINT", Typ, longIntType, 0);
     END
   END Init;
-
-
   
 BEGIN
   byteType := type(Byte, Int, 1);
@@ -394,7 +452,7 @@ BEGIN
   strType := type(String, String, 8);
   longIntType := type(Long, Long, 8); (*used if wordsize is 8, otherwise aliased to intType*)
   longRealType := type(Double, Double, 8); (*used if wordsize is 8, otherwise aliased to realType*)
-    
+
   (*initialize universe with data types and in-line procedures;
     LONGINT is synonym to INTEGER on 32-bit systems, LONGREAL to REAL.
     LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
@@ -427,7 +485,7 @@ BEGIN
   enter("CHAR", Typ, charType, 0);
   enter("LONGREAL", Typ, realType, 0);
   enter("REAL", Typ, realType, 0);
-  enter("LONGINT", Typ, intType, 0);        
+  enter("LONGINT", Typ, intType, 0);
   enter("INTEGER", Typ, intType, 0);
   topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
   
