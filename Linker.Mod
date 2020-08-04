@@ -1,4 +1,4 @@
-MODULE Linker;  (*Link and create binary on RISC; NW 20.10.2013 CP 21.05.2014 *)
+MODULE Linker;  (*Link and create binary on RISC; NW 20.10.2013 CP 21.05.2014, 4.8.2020 *)
   IMPORT SYSTEM, Files, Modules, Kernel, Texts, Oberon;
   CONST versionkey = 1X; MT = 12; DescSize = 80;
 
@@ -75,7 +75,7 @@ PROCEDURE ThisBinFile(name: ARRAY OF CHAR): Files.File;
       p, u, v, w: INTEGER;  (*addresses*)
       ch: CHAR;
       body: Modules.Command;
-      fixorgP, fixorgD, fixorgT: INTEGER;
+      fixorgP, fixorgD, fixorgT, fixorgM: INTEGER;
       disp, adr, imgadr, inst, pno, vno, dest, offset: INTEGER;
       name1, impname: Modules.ModuleName;
       F: Files.File; R: Files.Rider;
@@ -159,7 +159,7 @@ PROCEDURE ThisBinFile(name: ARRAY OF CHAR): Files.File;
         Files.ReadInt(R, w);
         WHILE w >= 0 DO SYSTEM.PUT(p, mod.data + w - binStart ); INC(p, 4); Files.ReadInt(R, w) END ;
         SYSTEM.PUT(p, 0); INC(p, 4);
-        Files.ReadInt(R, fixorgP); Files.ReadInt(R, fixorgD); Files.ReadInt(R, fixorgT);
+        Files.ReadInt(R, fixorgP); Files.ReadInt(R, fixorgD); Files.ReadInt(R, fixorgT); Files.ReadInt(R, fixorgM);
         Files.ReadInt(R, w); body := SYSTEM.VAL(Modules.Command, mod.code + w - binStart );
         Files.Read(R, ch);
         IF ch # "O" THEN (*corrupted file*)  mod := NIL (* ; error(4, name) *) END

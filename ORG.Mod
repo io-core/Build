@@ -1,14 +1,19 @@
-MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code generator for RISC*)
+MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / AP 1.5.20 Extended Oberon*)
   IMPORT SYSTEM, Files, ORS, ORB;
   (*Code generator for Oberon compiler for RISC processor.
-     Procedural interface to Parser OSAP; result in array "code".
+     Procedural interface to Parser ORP; result in array "code".
      Procedure Close writes code-files*)
 
   CONST WordSize* = 4;
     StkOrg0 = -64; VarOrg0 = 0;  (*for RISC-0 only*)
-    MT = 12; SP = 14; LNK = 15;   (*dedicated registers*)
-    maxCode = 8000; maxStrx = 2400; maxTD = 160; C24 = 1000000H;
+    MT = 12; TR = 13; SP = 14; LNK = 15;   (*dedicated registers*)
+    maxCode = 8800; maxStrx = 3200; maxTD = 160; maxSet = WordSize*8;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
+    Zero = 0; D = 4B00H; (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
+    F2 = -2;  (*F2 memory instruction*)
+    F3 = -1; BCT = 0E7000000H; RTI = 10H; STI = 20H;  (*F3 branch instructions*)
+    C4 = 10H; C6 = 40H; C8 = 100H; C10 = 400H; C12 = 1000H; C14 = 4000H; C16 = 10000H; C18 = 40000H;
+    C20 = 100000H; C22 = 400000H; C24 = 1000000H; C26 = 4000000H; C28 = 10000000H; C30 = 40000000H;
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
     Mov = 0; Lsl = 1; Asr = 2; Ror= 3; And = 4; Ann = 5; Ior = 6; Xor = 7;
@@ -16,7 +21,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
     Fad = 12; Fsb = 13; Fml = 14; Fdv = 15;
     Ldr = 8; Str = 10;
     BR = 0; BLR = 1; BC = 2; BL = 3;
-    MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
+    MI = 0; PL = 8; EQ = 1; NE = 9; CS = 2; CC = 10; LT = 5; GE = 13; LE = 6; GT = 14;
 
     TYPE Item* = RECORD
       mode*: INTEGER;
@@ -24,6 +29,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
       a*, b*, r: LONGINT;
       rdo*: BOOLEAN  (*read only*)
     END ;
+    LabelRange* = RECORD low*, high*, label*: INTEGER END ;
 
   (* Item forms and meaning of fields:
     mode    r      a       b
@@ -35,12 +41,12 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
     RegI   regno   off     -
     Cond  cond   Fchain  Tchain  *)
 
-  VAR pc*, varsize: LONGINT;   (*program counter, data index*)
-    tdx, strx: LONGINT;
+  VAR pc*: LONGINT;    (*program counter*)
+    varx, strx, tdw: LONGINT;  (*varx and strx in bytes, tdw in words*)
     entry: LONGINT;   (*main entry point*)
     RH: LONGINT;  (*available registers R[0] ... R[H-1]*)
     frame: LONGINT;  (*frame offset changed in SaveRegs and RestoreRegs*)
-    fixorgP, fixorgD, fixorgT: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
+    fixorgP, fixorgD, fixorgT, fixorgM: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     check: BOOLEAN;  (*emit run-time checks*)
     version: INTEGER;  (* 0 = RISC-0, 1 = RISC-5 *)
     
@@ -223,7 +229,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
   END loadTypTagAdr;
 
   PROCEDURE loadStringAdr(VAR x: Item);
-  BEGIN GetSB(0); Put1a(Add, RH, RH, varsize+x.a); x.mode := Reg; x.r := RH; incR
+  BEGIN GetSB(0); Put1a(Add, RH, RH, varx+x.a); x.mode := Reg; x.r := RH; incR
   END loadStringAdr;
 
   (* Items: Conversion from constants or from Objects on the Heap to Items on the Stack*)
@@ -349,8 +355,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
     ELSE Q(T, dcw);
       WHILE k < 3 DO data[dcw] := -1; INC(dcw); INC(k) END
     END ;
-    FindPtrFlds(T, 0, dcw); data[dcw] := -1; INC(dcw); tdx := dcw; dc := dcw*4;
-    IF tdx >= maxTD THEN ORS.Mark("too many record types"); tdx := 0 END
+    FindPtrFlds(T, 0, dcw); data[dcw] := -1; INC(dcw); tdw := dcw; dc := dcw*4;
+    IF tdw >= maxTD THEN ORS.Mark("too many record types"); tdw := 0 END
   END BuildTD;
 
   PROCEDURE TypeTest*(VAR x: Item; T: ORB.Type; varpar, isguard: BOOLEAN);
@@ -995,14 +1001,14 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
   END Condition;
 
   PROCEDURE Open*(v: INTEGER);
-  BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; check := v # 0; version := v;
+  BEGIN pc := 0; tdw := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; fixorgM := 0; check := v # 0; version := v;
     IF v = 0 THEN pc := 1;
       REPEAT code[pc] := 0; INC(pc) UNTIL pc = 8
     END
   END Open;
 
   PROCEDURE SetDataSize*(dc: LONGINT);
-  BEGIN varsize := dc
+  BEGIN varx := dc
   END SetDataSize;
 
   PROCEDURE Header*;
@@ -1058,7 +1064,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
       END ;
       obj := obj.next
     END ;
-    size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
+    size := varx + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varx includes type descriptors*)
     
     ORB.MakeFileName(name, modid, ".rsc"); (*write code file*)
     F := Files.New(name); Files.Set(R, F, 0); Files.WriteString(R, modid); Files.WriteInt(R, key); Files.Write(R, CHR(version));
@@ -1069,10 +1075,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
       obj := obj.next
     END ;
     Files.Write(R, 0X);
-    Files.WriteInt(R, tdx*4);
+    Files.WriteInt(R, tdw*4);
     i := 0;
-    WHILE i < tdx DO Files.WriteInt(R, data[i]); INC(i) END ; (*type descriptors*)
-    Files.WriteInt(R, varsize - tdx*4);  (*data*)
+    WHILE i < tdw DO Files.WriteInt(R, data[i]); INC(i) END ; (*type descriptors*)
+    Files.WriteInt(R, varx - tdw*4);  (*data*)
     Files.WriteInt(R, strx);
     FOR i := 0 TO strx-1 DO Files.Write(R, str[i]) END ;  (*strings*)
     Files.WriteInt(R, pc);  (*code len*)
@@ -1107,7 +1113,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 17.9.2018  Oberon compiler; code 
       obj := obj.next
     END ;
     Files.WriteInt(R, -1);
-    Files.WriteInt(R, fixorgP); Files.WriteInt(R, fixorgD); Files.WriteInt(R, fixorgT); Files.WriteInt(R, entry);
+    Files.WriteInt(R, fixorgP); Files.WriteInt(R, fixorgD); Files.WriteInt(R, fixorgT); Files.WriteInt(R, fixorgM);
+    Files.WriteInt(R, entry);
     Files.Write(R, "O"); Files.Register(F)
   END Close;
 
