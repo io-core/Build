@@ -52,39 +52,39 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     
     relmap: ARRAY 6 OF INTEGER;  (*condition codes for relations*)
     code: ARRAY maxCode OF LONGINT;
-    data: ARRAY maxTD OF LONGINT;  (*type descriptors*)
-    str: ARRAY maxStrx OF CHAR;
+    str: ARRAY maxStrx OF CHAR;  (*strings*)
+    td: ARRAY maxTD OF LONGINT;  (*type descriptors*)
 
   (*instruction assemblers according to formats*)
 
   PROCEDURE Put0(op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    code[pc] := ((a*10H + b) * 10H + op) * 10000H + c; INC(pc)
+    code[pc] := ((a*C4 + b) * C4 + op) * C16 + c; INC(pc)
   END Put0;
 
   PROCEDURE Put1(op, a, b, im: LONGINT);
-  BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
+  BEGIN (*emit format-1 instruction, -C16 <= im < C16*)
     IF im < 0 THEN INC(op, V) END ;
-    code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H); INC(pc)
+    code[pc] := (((a+C6) * C4 + b) * C4 + op) * C16 + (im MOD C16); INC(pc)
   END Put1;
 
   PROCEDURE Put1a(op, a, b, im: LONGINT);
-  BEGIN (*same as Put1, but with range test  -10000H <= im < 10000H*)
-    IF (im >= -10000H) & (im <= 0FFFFH) THEN Put1(op, a, b, im)
-    ELSE Put1(Mov+U, RH, 0, im DIV 10000H);
-      IF im MOD 10000H # 0 THEN Put1(Ior, RH, RH, im MOD 10000H) END ;
+  BEGIN (*same as Put1, but with range test  -C16 <= im < C16*)
+    IF (im >= -C16) & (im <= 0FFFFH) THEN Put1(op, a, b, im)
+    ELSE Put1(Mov+U, RH, 0, im DIV C16);
+      IF im MOD C16 # 0 THEN Put1(Ior, RH, RH, im MOD C16) END ;
       Put0(op, a, b, RH)
     END
   END Put1a;
 
   PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc)
+    code[pc] := ((op * C4 + a) * C4 + b) * C20 + (off MOD C20); INC(pc)
   END Put2;
 
   PROCEDURE Put3(op, cond, off: LONGINT);
   BEGIN (*emit branch instruction*)
-    code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc)
+    code[pc] := ((op+12) * C4 + cond) * C24 + (off MOD C24); INC(pc)
   END Put3;
 
   PROCEDURE incR;
@@ -104,7 +104,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END SetCC;
 
   PROCEDURE Trap(cond, num: LONGINT);
-  BEGIN Put3(BLR, cond, ORS.Pos()*100H + num*10H + MT)
+  BEGIN Put3(BLR, cond, ORS.Pos()*C8 + num*C4 + MT)
   END Trap;
 
   (*handling of forward reference, fixups of branch addresses and constant tables*)
@@ -126,7 +126,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE FixLink*(L: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-    WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
+    WHILE L # 0 DO L1 := code[L] MOD C16; fix(L, pc-L-1); L := L1 END
   END FixLink;
 
   PROCEDURE FixLinkWith(L0, dst: LONGINT);
@@ -142,7 +142,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     VAR L2, L3: LONGINT;
   BEGIN 
     IF L0 # 0 THEN L3 := L0;
-      REPEAT L2 := L3; L3 := code[L2] MOD 40000H UNTIL L3 = 0;
+      REPEAT L2 := L3; L3 := code[L2] MOD C16 UNTIL L3 = 0;
       code[L2] := code[L2] + L1; L1 := L0
     END ;
     RETURN L1
@@ -170,11 +170,11 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
         IF x.type.form = ORB.Proc THEN
           IF x.r > 0 THEN ORS.Mark("not allowed")
           ELSIF x.r = 0 THEN Put3(BL, 7, 0); Put1a(Sub, RH, LNK, pc*4 - x.a)
-          ELSE GetSB(x.r); Put1(Add, RH, RH, x.a + 100H) (*mark as progbase-relative*)
+          ELSE GetSB(x.r); Put1(Add, RH, RH, x.a + C8) (*mark as progbase-relative*)
           END
-        ELSIF (x.a <= 0FFFFH) & (x.a >= -10000H) THEN Put1(Mov, RH, 0, x.a)
-        ELSE Put1(Mov+U, RH, 0, x.a DIV 10000H MOD 10000H);
-          IF x.a MOD 10000H # 0 THEN Put1(Ior, RH, RH, x.a MOD 10000H) END
+        ELSIF (x.a <= 0FFFFH) & (x.a >= -C16) THEN Put1(Mov, RH, 0, x.a)
+        ELSE Put1(Mov+U, RH, 0, x.a DIV C16 MOD C16);
+          IF x.a MOD C16 # 0 THEN Put1(Ior, RH, RH, x.a MOD C16) END
         END ;
         x.r := RH; incR
       ELSIF x.mode = ORB.Var THEN
@@ -215,7 +215,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF x.type.form = ORB.Bool THEN
       IF x.mode = ORB.Const THEN x.r := 15 - x.a*8
       ELSE load(x);
-        IF code[pc-1] DIV 40000000H # -2 THEN Put1(Cmp, x.r, x.r, 0) END ;
+        IF code[pc-1] DIV C30 # -2 THEN Put1(Cmp, x.r, x.r, 0) END ;
         x.r := NE; DEC(RH)
       END ;
       x.mode := Cond; x.a := 0; x.b := 0
@@ -322,10 +322,18 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     x.mode := RegI; x.a := 0; x.b := 0
   END DeRef;
 
+  PROCEDURE Method*(VAR x: Item; y: ORB.Object; wasderef, super: BOOLEAN);
+  BEGIN loadAdr(x);  (*receiver*)
+    IF super THEN x.a := y.val; (*mthadr/exno*) x.b := -y.type.mno (*global/imported, x.b <= 0*)
+    ELSE x.a := y.lev; (*mthno*)
+      IF wasderef THEN x.b := ORB.Var (*pointer*) ELSE x.b := ORB.Par (*record*) END (*x.b > 0*)
+    END
+  END Method;
+
   PROCEDURE Q(T: ORB.Type; VAR dcw: LONGINT);
   BEGIN (*one entry of type descriptor extension table*)
     IF T.base # NIL THEN
-      Q(T.base, dcw); data[dcw] := (T.mno*1000H + T.len) * 1000H + dcw - fixorgT;
+      Q(T.base, dcw); td[dcw] := (T.mno*1000H + T.len) * 1000H + dcw - fixorgT;
       fixorgT := dcw; INC(dcw)
     END
   END Q;
@@ -333,7 +341,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE FindPtrFlds(typ: ORB.Type; off: LONGINT; VAR dcw: LONGINT);
     VAR fld: ORB.Object; i, s: LONGINT;
   BEGIN
-    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN data[dcw] := off; INC(dcw)
+    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN td[dcw] := off; INC(dcw)
     ELSIF typ.form = ORB.Record THEN
       fld := typ.dsc;
       WHILE fld # NIL DO FindPtrFlds(fld.type, fld.val + off, dcw); fld := fld.next END
@@ -349,13 +357,13 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF s <= 24 THEN s := 32 ELSIF s <= 56 THEN s := 64 ELSIF s <= 120 THEN s := 128
     ELSE s := (s+263) DIV 256 * 256
     END ;
-    T.len := dc; data[dcw] := s; INC(dcw);  (*len used as address*)
+    T.len := dc; td[dcw] := s; INC(dcw);  (*len used as address*)
     k := T.nofpar;   (*extension level!*)
     IF k > 3 THEN ORS.Mark("ext level too large")
     ELSE Q(T, dcw);
-      WHILE k < 3 DO data[dcw] := -1; INC(dcw); INC(k) END
+      WHILE k < 3 DO td[dcw] := -1; INC(dcw); INC(k) END
     END ;
-    FindPtrFlds(T, 0, dcw); data[dcw] := -1; INC(dcw); tdw := dcw; dc := dcw*4;
+    FindPtrFlds(T, 0, dcw); td[dcw] := -1; INC(dcw); tdw := dcw; dc := dcw*4;
     IF tdw >= maxTD THEN ORS.Mark("too many record types"); tdw := 0 END
   END BuildTD;
 
@@ -574,7 +582,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN
     IF (y.mode = ORB.Const) & (y.type.form # ORB.Proc) THEN
       load(x);
-      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV 40000000H # -2) THEN Put1a(Cmp, x.r, x.r, y.a) END ;
+      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV C30 # -2) THEN Put1a(Cmp, x.r, x.r, y.a) END ;
       DEC(RH)
     ELSE
       IF (x.mode = Cond) OR (y.mode = Cond) THEN ORS.Mark("not implemented") END ;
@@ -775,7 +783,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       IF x.r >= 0 THEN Put3(BL, 7, (x.a DIV 4)-pc-1)
       ELSE (*imported*)
         IF pc - fixorgP < 1000H THEN
-          Put3(BL, 7, ((-x.r) * 100H + x.a) * 1000H + pc-fixorgP); fixorgP := pc-1
+          Put3(BL, 7, ((-x.r) * C8 + x.a) * 1000H + pc-fixorgP); fixorgP := pc-1
         ELSE ORS.Mark("fixup impossible")
         END
       END
@@ -797,7 +805,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     VAR a, r: LONGINT;
   BEGIN frame := 0;
     IF ~int THEN (*procedure prolog*)
-      IF locblksize >= 10000H THEN ORS.Mark("too many locals") END ;
+      IF locblksize >= C16 THEN ORS.Mark("too many locals") END ;
       a := 4; r := 0;
       Put1(Sub, SP, SP, locblksize); Put2(Str, LNK, SP, 0);
       WHILE a < parblksize DO Put2(Str, r, SP, a); INC(r); INC(a, 4) END
@@ -814,7 +822,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       Put2(Ldr, LNK, SP, 0); Put1(Add, SP, SP, size); Put3(BR, 7, LNK)
     ELSE (*interrupt return, restore R2, R1, R0*)
       Put2(Ldr, 2, SP, 8); Put2(Ldr, 1, SP, 4); Put2(Ldr, 0, SP, 0); Put1(Add, SP, SP, size);
-      Put3(BR, 7, 10H) (*RTI*)
+      Put3(BR, 7, C4) (*RTI*)
     END ;
     RH := 0
   END Return;
@@ -979,7 +987,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   PROCEDURE Register*(VAR x: Item);
   BEGIN (*x.mode = Const*)
-    Put0(Mov, RH, 0, x.a MOD 10H); x.mode := Reg; x.r := RH; incR
+    Put0(Mov, RH, 0, x.a MOD C4); x.mode := Reg; x.r := RH; incR
   END Register;
 
   PROCEDURE H*(VAR x: Item);
@@ -1077,8 +1085,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Files.Write(R, 0X);
     Files.WriteInt(R, tdw*4);
     i := 0;
-    WHILE i < tdw DO Files.WriteInt(R, data[i]); INC(i) END ; (*type descriptors*)
-    Files.WriteInt(R, varx - tdw*4);  (*data*)
+    WHILE i < tdw DO Files.WriteInt(R, td[i]); INC(i) END ; (*type descriptors*)
+    Files.WriteInt(R, varx - tdw*4);  (*td*)
     Files.WriteInt(R, strx);
     FOR i := 0 TO strx-1 DO Files.Write(R, str[i]) END ;  (*strings*)
     Files.WriteInt(R, pc);  (*code len*)
@@ -1099,9 +1107,9 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
         IF (obj.class = ORB.Const) & (obj.type.form = ORB.Proc) OR (obj.class = ORB.Var) THEN
           Files.WriteInt(R, obj.val);
         ELSIF obj.class = ORB.Typ THEN
-          IF obj.type.form = ORB.Record THEN Files.WriteInt(R,  obj.type.len MOD 10000H)
+          IF obj.type.form = ORB.Record THEN Files.WriteInt(R,  obj.type.len MOD C16)
           ELSIF (obj.type.form = ORB.Pointer) & ((obj.type.base.typobj = NIL) OR (obj.type.base.typobj.exno = 0)) THEN
-            Files.WriteInt(R,  obj.type.base.len MOD 10000H)
+            Files.WriteInt(R,  obj.type.base.len MOD C16)
           END
         END
       END ;
@@ -1118,5 +1126,5 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Files.Write(R, "O"); Files.Register(F)
   END Close;
 
-BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13;
+BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13
 END ORG.
