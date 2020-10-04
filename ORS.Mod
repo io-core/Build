@@ -11,7 +11,7 @@ MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
   in ival, if real in rval, and if string in str (and slen) *)
   
   CONST IdLen* = 32;
-    NKW = 34;  (*nof keywords*)
+    NKW = 35;  (*nof keywords*)
     maxExp = 38; stringBufSize = 256;
   
     (*lexical symbols*)
@@ -27,8 +27,8 @@ MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
     rbrak* = 45; rbrace* = 46; then* = 47; of* = 48; do* = 49;
     to* = 50; by* = 51; semicolon* = 52; end* = 53; bar* = 54;
     else* = 55; elsif* = 56; until* = 57; return* = 58;
-    array* = 60; record* = 61; pointer* = 62; const* = 63; type* = 64;
-    var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot = 70;
+    array* = 60; record* = 61; pointer* = 62; interface* = 63; const* = 64; type* = 65;
+    var* = 66; procedure* = 67; begin* = 68; import* = 69; module* = 70; eot = 71;
 
   TYPE Ident* = ARRAY IdLen OF CHAR;
 
@@ -308,5 +308,6 @@ BEGIN Texts.OpenWriter(W); k := 0; KWX[0] := 0; KWX[1] := 0;
   EnterKW(pointer, "POINTER");
   KWX[7] := k; KWX[8] := k;
   EnterKW(procedure, "PROCEDURE");
+  EnterKW(interface, "INTERFACE");
   KWX[9] := k
 END ORS.
