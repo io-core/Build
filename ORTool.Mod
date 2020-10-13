@@ -1,3 +1,10 @@
+(* begin-module-description
+Module ORTool provides symbol file, module file, and loaded module reporting tools.
+
+ORP uses SYSTEM, Files, Modules, Texts, Oberon, ORB
+
+
+end-module-description *)
 MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
   IMPORT SYSTEM, Files, Modules, Texts, Oberon, ORB;
   CONST TAB = 09X;  (*copied from Input for use as cross development tool*)

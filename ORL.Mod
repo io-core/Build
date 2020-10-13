@@ -1,3 +1,10 @@
+(* begin-module-description
+Module ORL links modules to create bin files that may be placed in the boot sectors of an Oberon disk image
+
+ORP uses SYSTEM, Kernel, Disk, Files, Modules, Texts, Oberon
+
+
+end-module-description *)
 MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 6.8.20 Extended Oberon*)
   IMPORT SYSTEM, Kernel, Disk, Files, Modules, Texts, Oberon;
   CONST versionkey = 1X; versionkey0 = 0X; DescSize = 96; MnLength = 32; BootSec = 2; FPrint = 12345678H;
