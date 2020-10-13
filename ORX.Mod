@@ -1,7 +1,7 @@
 (* begin-module-description
 Module ORX is a boot converter for RISC 
 
-ORP uses Files, Texts, Oberon
+ORX uses Files, Texts, Oberon
 
 
 end-module-description *)

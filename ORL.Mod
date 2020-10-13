@@ -1,7 +1,7 @@
 (* begin-module-description
 Module ORL links modules to create bin files that may be placed in the boot sectors of an Oberon disk image
 
-ORP uses SYSTEM, Kernel, Disk, Files, Modules, Texts, Oberon
+ORL uses SYSTEM, Kernel, Disk, Files, Modules, Texts, Oberon
 
 
 end-module-description *)

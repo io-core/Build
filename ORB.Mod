@@ -1,7 +1,7 @@
 (* begin-module-description
 Module ORB manages the symbol table for the Oberon compiler and reads and writes 'smb' files
 
-ORP uses Files, ORS
+ORB uses Files, ORS
 
 
 end-module-description *)

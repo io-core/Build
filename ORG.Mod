@@ -1,7 +1,7 @@
 (* begin-module-description
 Module ORG generates the processor-specific instructions for executing an Oberon program. 
 
-ORP uses SYSTEM, Files, ORS, ORB
+ORG uses SYSTEM, Files, ORS, ORB
 
 
 end-module-description *)

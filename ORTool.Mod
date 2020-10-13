@@ -1,7 +1,7 @@
 (* begin-module-description
 Module ORTool provides symbol file, module file, and loaded module reporting tools.
 
-ORP uses SYSTEM, Files, Modules, Texts, Oberon, ORB
+ORTool uses SYSTEM, Files, Modules, Texts, Oberon, ORB
 
 
 end-module-description *)
