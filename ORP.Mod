@@ -211,7 +211,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   (* expressions *)
 
   (* begin-procedure-description
-
+`TypeTest` marks an error if the form of x is incompatible with T. If compatible, x.type is set to T.
   end-procedure-description *)
   PROCEDURE TypeTest(VAR x: ORG.Item; T: ORB.Type; guard: BOOLEAN);
     VAR xt: ORB.Type;
@@ -237,7 +237,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END TypeTest;
 
   (* begin-procedure-description
-
+`selector` generates the array item, procedure, or method dereference on an array or record.
   end-procedure-description *)
   PROCEDURE selector(VAR x: ORG.Item);
     VAR y: ORG.Item; obj, fld: ORB.Object; xt: ORB.Type; deref: BOOLEAN;
@@ -313,7 +313,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END selector;
 
   (* begin-procedure-description
-
+`EqualSignatures` verifies that a procedure may be assigned to a procedure variable.
   end-procedure-description *)
   PROCEDURE EqualSignatures(t0, t1: ORB.Type): BOOLEAN;
     VAR p0, p1: ORB.Object; com, ext: BOOLEAN;
@@ -343,7 +343,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END EqualSignatures;
 
   (* begin-procedure-description
-
+`CompTypes` verifies assigment compatibility by type.
   end-procedure-description *)
   PROCEDURE CompTypes(t0, t1: ORB.Type; varpar: BOOLEAN): BOOLEAN;
   BEGIN (*check for assignment compatibility*)
@@ -357,7 +357,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END CompTypes;
 
   (* begin-procedure-description
-
+`Parameter` consumes a function call parameter and produces function call proloogue code for the parameter.
   end-procedure-description *)
   PROCEDURE Parameter(par: ORB.Object);
     VAR x: ORG.Item; varpar: BOOLEAN;
@@ -388,7 +388,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END Parameter;
 
   (* begin-procedure-description
-
+`IParameter` consumes an Interface call parameter and produces Interface call prologue code for the parameter.
   end-procedure-description *)
   PROCEDURE IParameter(par: ORB.Object);
     VAR x: ORG.Item; varpar: BOOLEAN;
@@ -419,7 +419,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END IParameter;
 
   (* begin-procedure-description
-
+`ParamList` consumes the function call parameters, resulting in a function call prologue.
   end-procedure-description *)
   PROCEDURE ParamList(VAR x: ORG.Item);
     VAR n: INTEGER; par: ORB.Object;
@@ -444,7 +444,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END ParamList;
 
   (* begin-procedure-description
-
+`IParamList` consumes the Interface call parameters, resulting in a Interface call prologue.
   end-procedure-description *)
   PROCEDURE IParamList(VAR x: ORG.Item);
     VAR n: INTEGER; par: ORB.Object;
@@ -469,7 +469,8 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END IParamList;
 
   (* begin-procedure-description
-
+`StandFunc` consumes standard language functions and produces inline code for those functions.
+Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `SBC` `UML` `BIT` `REG` `VAL` `ADR` `SIZE` `COND` `H`
   end-procedure-description *)
   PROCEDURE StandFunc(VAR x: ORG.Item; fct: LONGINT; restyp: ORB.Type);
     VAR y: ORG.Item; n, npar: LONGINT;
@@ -516,7 +517,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END StandFunc;
 
   (* begin-procedure-description
-
+`element` produces a reference to an element in a set.
   end-procedure-description *)
   PROCEDURE element(VAR x: ORG.Item);
     VAR y: ORG.Item;
@@ -528,7 +529,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END element;
   
   (* begin-procedure-description
-
+`set` produces a set from elements.
   end-procedure-description *)
   PROCEDURE set(VAR x: ORG.Item);
     VAR y: ORG.Item;
