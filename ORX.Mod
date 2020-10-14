@@ -1,10 +1,10 @@
-(* begin-module-description
+(* begin-module-use-description
 Module ORX is a boot converter for RISC 
 
 ORX uses Files, Texts, Oberon
 
 
-end-module-description *)
+end-module-use-description *)
 MODULE ORX;  (*Oberon boot converter for RISC / AP 13.6.20 Extended Oberon*)
   IMPORT Files, Texts, Oberon;
   CONST CR = 0DX; noerr = 0; badfile = 4;  (*copied from Modules for use as cross development tool*)

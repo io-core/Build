@@ -1,10 +1,10 @@
-(* begin-module-description
+(* begin-module-use-description
 Module ORB manages the symbol table for the Oberon compiler and reads and writes 'smb' files
 
 ORB uses Files, ORS
 
 
-end-module-description *)
+end-module-use-description *)
 MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.20 Extended Oberon*)
   IMPORT Files, ORS;
   (*Definition of data types Object and Type, which together form the data structure

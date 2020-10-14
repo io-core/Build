@@ -1,10 +1,10 @@
-(* begin-module-description
+(* begin-module-use-description
 Module ORS does lexical analysis of the Oberon source code and defines symbols and operations
 
 ORS uses SYSTEM, Texts, Oberon
 
 
-end-module-description *)
+end-module-use-description *)
 MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
   IMPORT SYSTEM, Texts, Oberon;
 
