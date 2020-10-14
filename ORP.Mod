@@ -44,12 +44,11 @@ ORTool.DecObj Sierpinski.rsc
 end-package-description *)
 
 (* begin-module-description
+
 Module ORP reads the source code of an Oberon program and produces an executable binary module.
 
-ORP uses ORG, ORB, and ORS.
-
-
 end-module-description *)
+
 MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon*)
   IMPORT Texts, Oberon, ORS, ORB, ORG;
   (*Author: Niklaus Wirth, 2014. Oberon-2 extensions by Andreas Pirklbauer, 2020.
