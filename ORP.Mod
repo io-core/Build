@@ -81,11 +81,11 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
     W: Texts.Writer;
 
   (* begin-section-description
-## Symbol Check Procedures
+## Checking Symbols and Types
   end-section-description *)
 
   (* begin-procedure-description
-Check consumes the current token if it matches the expected symbol, otherwise an error is marked.
+`Check` consumes the current token if it matches the expected symbol, otherwise an error is marked.
   end-procedure-description *)
   PROCEDURE Check(s: INTEGER; msg: ARRAY OF CHAR);
   BEGIN
@@ -93,7 +93,7 @@ Check consumes the current token if it matches the expected symbol, otherwise an
   END Check;
 
   (* begin-procedure-description
-Qualident generates a reference to a previously defined item if possible otherwise an error is marked.
+`Qualident` generates a reference to a previously defined item if possible otherwise an error is marked.
   end-procedure-description *)
   PROCEDURE qualident(VAR obj: ORB.Object);
   BEGIN obj := ORB.thisObj(); ORS.Get(sym);
@@ -110,7 +110,7 @@ Qualident generates a reference to a previously defined item if possible otherwi
   END qualident;
 
   (* begin-procedure-description
-CheckBool marks an error if the item is not a boolean.
+`CheckBool` marks an error if the item is not a boolean.
   end-procedure-description *)
   PROCEDURE CheckBool(VAR x: ORG.Item);
   BEGIN
@@ -118,7 +118,7 @@ CheckBool marks an error if the item is not a boolean.
   END CheckBool;
 
   (* begin-procedure-description
-CheckInt marks an error if the item is not an Int.
+`CheckInt` marks an error if the item is not an Int.
   end-procedure-description *)
   PROCEDURE CheckInt(VAR x: ORG.Item);
   BEGIN
@@ -126,7 +126,7 @@ CheckInt marks an error if the item is not an Int.
   END CheckInt;
 
   (* begin-procedure-description
-CheckReal marks an error if the item is not a Real.
+`CheckReal` marks an error if the item is not a Real.
   end-procedure-description *)
   PROCEDURE CheckReal(VAR x: ORG.Item);
   BEGIN
@@ -134,7 +134,7 @@ CheckReal marks an error if the item is not a Real.
   END CheckReal;
 
   (* begin-procedure-description
-CheckSet marks an error if the item is not a Set.
+`CheckSet` marks an error if the item is not a Set.
   end-procedure-description *)
   PROCEDURE CheckSet(VAR x: ORG.Item);
   BEGIN
@@ -142,7 +142,7 @@ CheckSet marks an error if the item is not a Set.
   END CheckSet;
 
   (* begin-procedure-description
-CheckSetVal marks an error if the item is not a Set Value.
+`CheckSetVal` marks an error if the item is not a Set Value.
   end-procedure-description *)
   PROCEDURE CheckSetVal(VAR x: ORG.Item);
   BEGIN
@@ -153,7 +153,7 @@ CheckSetVal marks an error if the item is not a Set Value.
   END CheckSetVal;
 
   (* begin-procedure-description
-CheckConst marks an error if the value is not a Constant.
+`CheckConst` marks an error if the value is not a Constant.
   end-procedure-description *)
   PROCEDURE CheckConst(VAR x: ORG.Item);
   BEGIN
@@ -161,7 +161,7 @@ CheckConst marks an error if the value is not a Constant.
   END CheckConst;
 
   (* begin-procedure-description
-CheckReadOnly marks an error if the value is not read-only.
+`CheckReadOnly` marks an error if the value is not read-only.
   end-procedure-description *)
   PROCEDURE CheckReadOnly(VAR x: ORG.Item);
   BEGIN
@@ -169,7 +169,7 @@ CheckReadOnly marks an error if the value is not read-only.
   END CheckReadOnly;
 
   (* begin-procedure-description
-CheckExport checks for an export symbol and marks an error if export not at top level.
+`CheckExport` checks for an export symbol and marks an error if export not at top level.
   end-procedure-description *)
   PROCEDURE CheckExport(VAR expo: BOOLEAN);
   BEGIN
@@ -181,7 +181,7 @@ CheckExport checks for an export symbol and marks an error if export not at top 
   END CheckExport;
 
   (* begin-procedure-description
-
+`IsExtension` determines if type t1 is an extension of t0.
   end-procedure-description *)
   PROCEDURE IsExtension(t0, t1: ORB.Type): BOOLEAN;
   BEGIN (*t1 is an extension of t0*)
@@ -189,7 +189,7 @@ CheckExport checks for an export symbol and marks an error if export not at top 
   END IsExtension;
 
   (* begin-procedure-description
-
+`CheckReceiver` ensures that an object is compatible with its receiver or marks an error.
   end-procedure-description *)
   PROCEDURE CheckReceiver(proc: ORB.Object; deref: BOOLEAN);
   BEGIN
@@ -197,7 +197,7 @@ CheckExport checks for an export symbol and marks an error if export not at top 
   END CheckReceiver;
 
   (* begin-procedure-description
-
+`DisallowedMethods` blocks methods from binding to rec and its base types.
   end-procedure-description *)
   PROCEDURE DisallowMethods(rec: ORB.Type);  (*disallow binding methods to rec and its base types*)
   BEGIN
