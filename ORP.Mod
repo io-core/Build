@@ -1,21 +1,43 @@
 (* begin-package-description
 ## Overview
-The Oberon compiler is comprised of four core packages and several additional packages:
+Integrated Oberon uses a one-pass compiler with four parts, each depending on the next for functionaltiy:
 
-* ORP
-* ORG
-* ORB
-* ORS
+ * A recursive-descent parser of the Oberon-2i language, ORP
+ * A generator of target-specific opcodes (RISC5), ORG
+ * A symbol table and frame tracker, ORB
+ * A scanner and tokenizer, ORS
 
-* ORL
-* ORX
-* ORTool
+In addition, several tools link and examine the binary modules produced by the compiler:
+
+ * A linker and loader, ORL
+ * A binary modifier, ORX
+ * A tool for examining modules, ORTool
 
 ## Examples
 
-USAGE:
+To compile the inner core:
 ```
-ORP.Compile Example.Mod/s
+ORP.Compile Kernel.Mod/s, Filedir.Mod/s, Files.Mod/s, Modules.Mod/s ~
+```
+To link the inner core modules into a bootable binary:
+```
+ORL.Link Modules ~
+```
+To Install the binary into the boot region of the current disk image:
+```
+ORL.Load Modules.bin ~
+```
+To compile an example module:
+```
+ORP.Compile Sierpinski.Mod ~
+```
+To examine the symbol file of the compiled example:
+```
+ORTool.DecSym Sierpinski.smb
+```
+To Examine the binary of the compiled example:
+```
+ORTool.DecObj Sierpinski.rsc
 ```
 
 ## Modules
