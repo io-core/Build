@@ -50,7 +50,7 @@ Module ORP reads the source code of an Oberon program and produces an executable
 end-module-use-description *)
 (* begin-module-develop-description
 
-ORP is a recursive descent parser that visits procedures corresponding to symbols and terms in the Oberon language.
+This **Module ORP** (N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon / CP 10.20 Integrated Oberon) is a recursive descent parser that visits procedures corresponding to symbols and terms in the Oberon language.
 
 end-module-develop-description *)
 MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon*)
