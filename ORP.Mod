@@ -80,6 +80,10 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
     dummy: ORB.Object;
     W: Texts.Writer;
 
+  (* begin-section-description
+## Symbol Check Procedures
+  end-section-description *)
+
   (* begin-procedure-description
 Check consumes the current token if it matches the expected symbol, otherwise an error is marked.
   end-procedure-description *)
@@ -199,6 +203,10 @@ CheckExport checks for an export symbol and marks an error if export not at top 
   BEGIN
     WHILE rec # NIL DO rec.typobj.val := 1; rec := rec.base END
   END DisallowMethods;
+
+  (* begin-section-description
+## Expressions
+  end-section-description *)
 
   (* expressions *)
 
@@ -663,6 +671,10 @@ CheckExport checks for an export symbol and marks an error if export not at top 
     END
   END expression0;
 
+  (* begin-section-description
+## Statements
+  end-section-description *)
+
   (* statements *)
 
   (* begin-procedure-description
@@ -915,6 +927,10 @@ CheckExport checks for an export symbol and marks an error if export not at top 
       END
     UNTIL sym > ORS.semicolon
   END StatSequence;
+
+  (* begin-section-description
+## Types and Declarations
+  end-section-description *)
 
   (* Types and declarations *)
 
