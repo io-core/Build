@@ -85,7 +85,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   end-section-description *)
 
   (* begin-procedure-description
-**Check** consumes the current token if it matches the expected symbol, otherwise an error is marked.
+**Check** -- consumes the current token if it matches the expected symbol, otherwise an error is marked.
   end-procedure-description *)
   PROCEDURE Check(s: INTEGER; msg: ARRAY OF CHAR);
   BEGIN
@@ -93,7 +93,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END Check;
 
   (* begin-procedure-description
-**Qualident** generates a reference to a previously defined item if possible otherwise an error is marked.
+**Qualident** -- generates a reference to a previously defined item if possible otherwise an error is marked.
   end-procedure-description *)
   PROCEDURE qualident(VAR obj: ORB.Object);
   BEGIN obj := ORB.thisObj(); ORS.Get(sym);
@@ -110,7 +110,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
   END qualident;
 
   (* begin-procedure-description
-`CheckBool` marks an error if the item is not a boolean.
+**CheckBool** --  marks an error if the item is not a boolean.
   end-procedure-description *)
   PROCEDURE CheckBool(VAR x: ORG.Item);
   BEGIN
