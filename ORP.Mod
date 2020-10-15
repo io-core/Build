@@ -77,20 +77,22 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 
 
   CONST NofCases = 256; C20 = 100000H;
 
-  TYPE PtrBase = POINTER TO PtrBaseDesc;
-    PtrBaseDesc = RECORD  (*list of names of pointer base types*)
+  TYPE 
+    PtrBase = POINTER TO PtrBaseDesc;
+    PtrBaseDesc = RECORD             (*list of names of pointer base types*)
       name: ORS.Ident; type: ORB.Type; next: PtrBase
     END ;
   
-  VAR sym: INTEGER;   (*last symbol read*)
-    dc: LONGINT;    (*data counter*)
+  VAR 
+    sym: INTEGER;                    (*last symbol read*)
+    dc: LONGINT;                     (*data counter*)
     level, exno, version: INTEGER;
-    newSF: BOOLEAN;  (*option flag*)
-    expression: PROCEDURE (VAR x: ORG.Item);  (*to avoid forward reference*)
+    newSF: BOOLEAN;                  (*option flag*)
+    expression: PROCEDURE (VAR x: ORG.Item);  
     Type: PROCEDURE (VAR type: ORB.Type; expo: BOOLEAN);
     FormalType: PROCEDURE (VAR typ: ORB.Type; dim: INTEGER);
     modid: ORS.Ident;
-    pbsList: PtrBase;   (*list of names of pointer base types*)
+    pbsList: PtrBase;                (*list of names of pointer base types*)
     dummy: ORB.Object;
     W: Texts.Writer;
 
