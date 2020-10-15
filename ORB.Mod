@@ -5,6 +5,13 @@ ORB uses Files, ORS
 
 
 end-module-use-description *)
+(* begin-module-develop-description
+
+(NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.20 Extended Oberon / CP 10.20 Integrated Oberon)
+
+**ORG** is called from ORP and generates machine code various Oberon-2i language constructs for the Oberon RISC5 architeture.
+
+end-module-develop-description *)
 MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.20 Extended Oberon*)
   IMPORT Files, ORS;
   (*Definition of data types Object and Type, which together form the data structure
@@ -76,6 +83,14 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.2
     nofmod, Ref: INTEGER;
     typtab: ARRAY maxTypTab OF Type;
 
+  (* begin-section-description
+## Object Manipulation
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**NewObj** inserts a new named object.
+  end-procedure-description *)
   PROCEDURE NewObj*(VAR obj: Object; id: ORS.Ident; class: INTEGER);  (*insert new Object with name id*)
     VAR new, x: Object;
   BEGIN x := topScope;
@@ -182,6 +197,11 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.2
   PROCEDURE CloseScope*;
   BEGIN topScope := topScope.dsc
   END CloseScope;
+
+
+  (* begin-section-description
+## Importing module symbol files
+  end-section-description *)
 
   (*------------------------------- Import ---------------------------------*)
 
@@ -314,6 +334,10 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.2
     END
   END Import;
   
+  (* begin-section-description
+## Exporting the module symbol file
+  end-section-description *)
+
   (*-------------------------------- Export ---------------------------------*)
 
   PROCEDURE Write(VAR R: Files.Rider; x: INTEGER);
@@ -429,6 +453,10 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 5.3.2019  in Oberon-07 / AP 24.4.2
     ELSE newSF := FALSE; key := sum
     END
   END Export;
+
+  (* begin-section-description
+## Initialization
+  end-section-description *)
 
   PROCEDURE Init*;
   BEGIN topScope := universe; nofmod := 1
