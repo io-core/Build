@@ -50,7 +50,21 @@ Module ORP reads the source code of an Oberon program and produces an executable
 end-module-use-description *)
 (* begin-module-develop-description
 
-This **Module ORP** (N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon / CP 10.20 Integrated Oberon) is a recursive descent parser that visits procedures corresponding to symbols and terms in the Oberon language.
+(N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon / CP 10.20 Integrated Oberon)
+
+**ORP** implements a one-pass recursive descent parser for the language Oberon-2i.
+
+The structure of the parser is derived from the structure of the language, with constituent parts of the language 
+(e.g. Module, Procedure, Type, Expression, Term, Parameter) represented by a procedure of that name, invoked from the 
+encompassing construct. Each procedure consumes and validates a part of the program source text while populating the 
+symbol table and execution context and also generating machine code faithfully representing that language construct.
+
+This module (ORP) relies on module ORG for code generation, ORB for the symbol table and execution context tracking, and ORS
+for lexical parsing, built-in type identification, and reserved symbols definition.
+
+Oberon-2i is an extension of Oberon-2, adding interfaces (a.k.a dynamic traits) to the language. Oberon-2 is an extension of Oberon, adding type-bound
+procedures and open arrays to the language. Oberon is both an extension and a refinement of Modula-2, which added seperate compilation
+among other features to Pascal, which was developed as a reaction to and refinement of Algol-68.
 
 end-module-develop-description *)
 MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / AP 6.8.20 Extended Oberon*)
