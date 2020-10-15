@@ -5,6 +5,13 @@ ORG uses SYSTEM, Files, ORS, ORB
 
 
 end-module-use-description *)
+(* begin-module-develop-description
+
+(N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / AP 1.9.20 Extended Oberon / CP 10.20 Integrated Oberon)
+
+**ORG** is called from ORP and generates machine code various Oberon-2i language constructs for the Oberon RISC5 architeture.
+
+end-module-develop-description *)
 MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / AP 1.9.20 Extended Oberon*)
   IMPORT SYSTEM, Files, ORS, ORB;
   (*Code generator for Oberon compiler for RISC processor.
@@ -61,8 +68,16 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     str: ARRAY maxStrx OF CHAR;  (*strings*)
     td: ARRAY maxTD OF LONGINT;  (*type descriptors*)
 
+  (* begin-section-description
+## Instruction assemblers according to formats
+  end-section-description *)
+
   (*instruction assemblers according to formats*)
 
+  (* begin-procedure-description
+---
+**incR** allocates the next register as in use or marks an error signalling overflow.
+  end-procedure-description *)
   PROCEDURE incR;
   BEGIN
     IF RH < TR-1 THEN INC(RH) ELSE ORS.Mark("register stack overflow") END
@@ -146,6 +161,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN IF check THEN Trap(EQ, 4) END
   END NilCheck;
 
+  (* begin-section-description
+## Handling of forward reference, fixups of instruction operands
+  end-section-description *)
+
   (*handling of forward reference, fixups of instruction operands*)
 
   PROCEDURE negated(cond: LONGINT): LONGINT;
@@ -203,6 +222,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END ;
     RETURN L1
   END merged;
+
+  (* begin-section-description
+## Loading of operands and addresses into registers
+  end-section-description *)
 
   (* loading of operands and addresses into registers *)
 
@@ -279,6 +302,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     x.mode := Reg; x.r := RH; incR
   END loadStringAdr;
 
+  (* begin-section-description
+## Items: Conversion from constants or from Objects on the Heap to Items on the Stack
+  end-section-description *)
+
   (* Items: Conversion from constants or from Objects on the Heap to Items on the Stack*)
 
   PROCEDURE MakeConstItem*(VAR x: Item; typ: ORB.Type; val: LONGINT);
@@ -307,6 +334,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     ELSE x.r := y.lev
     END
   END MakeItem;
+
+  (* begin-section-description
+## Code generation for Selectors, Variables, Constants
+  end-section-description *)
 
   (* Code generation for Selectors, Variables, Constants *)
 
@@ -455,6 +486,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END
   END TypeTest;
 
+  (* begin-section-description
+## Code generation for Boolean operators
+  end-section-description *)
+
   (* Code generation for Boolean operators *)
 
   PROCEDURE Not*(VAR x: Item);   (* x := ~x *)
@@ -477,6 +512,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE Or2*(VAR x, y: Item);
   BEGIN loadCond(y); x.a := y.a; x.b := merged(y.b, x.b); x.r := y.r
   END Or2;
+
+  (* begin-section-description
+## Code generation for arithmetic operators
+  end-section-description *)
 
   (* Code generation for arithmetic operators *)
 
@@ -559,6 +598,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END
   END DivOp;
 
+  (* begin-section-description
+## Code generation for REAL operators
+  end-section-description *)
+
   (* Code generation for REAL operators *)
 
   PROCEDURE RealOp*(op: INTEGER; VAR x, y: Item);   (* x := x op y *)
@@ -570,6 +613,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END ;
     DEC(RH); x.r := RH-1
   END RealOp;
+
+  (* begin-section-description
+## Code generation for set operators
+  end-section-description *)
 
   (* Code generation for set operators *)
 
@@ -636,6 +683,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END 
   END SetOp;
 
+  (* begin-section-description
+## Code generation for relations
+  end-section-description *)
+
   (* Code generation for relations *)
 
   PROCEDURE IntRelation*(op: INTEGER; VAR x, y: Item);   (* x := x < y *)
@@ -670,6 +721,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Put1(Cmp, RH+2, RH, 0); Put3(BC, NE, -8);
     DEC(RH, 2); SetCC(x, relmap[op - ORS.eql])
   END StringRelation;
+
+  (* begin-section-description
+## Code generation of Assigments
+  end-section-description *)
 
   (* Code generation of Assignments *)
 
@@ -747,6 +802,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Put1(Asr, RH, RH, 24); Put3(BC, NE,  -6);  RH := 0
   END CopyString;
 
+  (* begin-section-description
+## Code generation for parameters
+  end-section-description *)
+
   (* Code generation for parameters *)
 
   PROCEDURE OpenArrayParam*(VAR x: Item);
@@ -787,6 +846,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF par.class = ORB.Par THEN (*record*) loadTypTagAdr(par.type) END  (*type tag -> R1*)
   END ReceiverParam;
 
+  (* begin-section-description
+## For Statements
+  end-section-description *)
+
   (*For Statements*)
 
   PROCEDURE For0*(VAR x, y: Item);
@@ -809,6 +872,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE For2*(VAR x, y, w: Item);
   BEGIN load(x); DEC(RH); Put1a(Add, x.r, x.r, w.a)
   END For2;
+
+  (* begin-section-description
+## Branches, procedure calls, procedure prolog and epilog
+  end-section-description *)
 
   (* Branches, procedure calls, procedure prolog and epilog *)
 
@@ -913,6 +980,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     RH := 0
   END Return;
 
+  (* begin-section-description
+## Case Statements
+  end-section-description *)
+
   (* Case Statements *)
 
   PROCEDURE CaseHead*(VAR x: Item; VAR L0: LONGINT);
@@ -938,6 +1009,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       WHILE j <= tab[i].high DO BJump(tab[i].label); INC(j) END
     END
   END CaseTail;
+
+  (* begin-section-description
+## In-line code procedures
+  end-section-description *)
 
   (* In-line code procedures *)
 
@@ -1045,6 +1120,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     ELSE load(y); Put0(Mov, x.a, 0, y.r); DEC(RH)
     END
   END LDREG;
+
+  (* begin-section-description
+## In-line code functions
+  end-section-description *)
 
   (* In-line code functions *)
 
