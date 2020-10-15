@@ -5,18 +5,27 @@ ORS uses SYSTEM, Texts, Oberon
 
 
 end-module-use-description *)
+(* begin-module-develop-description
+
+(NW 19.9.93 / 20.3.2017  Scanner in Oberon-07)
+
+**ORS** is called from ORP, ORG, and ORB and converts the source text to symbols for their consumption.
+
+Oberon Scanner does lexical analysis. Input is Oberon-Text, output is
+sequence of symbols, i.e identifiers, numbers, strings, and special symbols.
+Recognises all Oberon keywords and skips comments. The keywords are recorded in a table.
+
+`Get(sym)` delivers next symbol from input text with Reader R.
+
+`Mark(msg)` records error and delivers error message with Writer W.
+
+If Get delivers ident, then the identifier (a string) is in variable id, 
+if int or char in ival, if real in rval, and if string in str (and slen) *)
+
+end-module-develop-description *)
 MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
   IMPORT SYSTEM, Texts, Oberon;
-
-(* Oberon Scanner does lexical analysis. Input is Oberon-Text, output is
-  sequence of symbols, i.e identifiers, numbers, strings, and special symbols.
-  Recognises all Oberon keywords and skips comments. The keywords are
-  recorded in a table.
-  Get(sym) delivers next symbol from input text with Reader R.
-  Mark(msg) records error and delivers error message with Writer W.
-  If Get delivers ident, then the identifier (a string) is in variable id, if int or char
-  in ival, if real in rval, and if string in str (and slen) *)
-  
+ 
   CONST IdLen* = 32;
     NKW = 35;  (*nof keywords*)
     maxExp = 38; stringBufSize = 256;
@@ -54,6 +63,10 @@ MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
     keyTab: ARRAY NKW OF
         RECORD sym: INTEGER; id: ARRAY 12 OF CHAR END;
   
+  (* begin-procedure-description
+---
+**CopyId** copies an object.
+  end-procedure-description *)
   PROCEDURE CopyId*(VAR ident: Ident);
   BEGIN ident := id
   END CopyId;
