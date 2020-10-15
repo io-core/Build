@@ -778,13 +778,17 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END StandProc;
 
   (* begin-procedure-description
-
+---
+**StatSequence** matches a statement sequence.
   end-procedure-description *)
   PROCEDURE StatSequence;
     VAR obj: ORB.Object;
       x, y, z, w: ORG.Item;
       L0, L1, rx: LONGINT;
 
+  (* begin-procedure-description
+**TypeCase** (interior procedure)
+  end-procedure-description *)
     PROCEDURE TypeCase(obj: ORB.Object; VAR L0: LONGINT);
       VAR typobj: ORB.Object; x: ORG.Item;
         orgtype: ORB.Type;  (*original type of case var*)
@@ -800,7 +804,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     END TypeCase;
 
   (* begin-procedure-description
-
+**TypeCasePart** (interior procedure) matches part of a TypeCase construction.
   end-procedure-description *)
     PROCEDURE TypeCasePart;
       VAR obj: ORB.Object; L0: LONGINT;
@@ -813,7 +817,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     END TypeCasePart;
 
   (* begin-procedure-description
-
+**CaseLabel** (interior procedure) generates matching a label in a case construction.
   end-procedure-description *)
     PROCEDURE CaseLabel(VAR x: ORG.Item);
     BEGIN expression(x); CheckConst(x);
@@ -824,7 +828,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     END CaseLabel;
 
   (* begin-procedure-description
-
+**NumericCase** (interior procedure) generates matching a value in a case construction.
   end-procedure-description *)
     PROCEDURE NumericCase(LabelForm: INTEGER; VAR n: INTEGER; VAR tab: ARRAY OF ORG.LabelRange);
       VAR x, y: ORG.Item; i: INTEGER; continue: BOOLEAN;
@@ -854,13 +858,16 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     END NumericCase;
 
   (* begin-procedure-description
-
+**CaseExpression** (interior procedure) Generates the expression portion of a case construction.
   end-procedure-description *)
     PROCEDURE CaseExpression(VAR x: ORG.Item);
     BEGIN expression(x);
       IF ~(x.type.form IN {ORB.Int, ORB.Byte, ORB.Char}) THEN ORS.Mark("invalid type"); x.type := ORB.intType END
     END CaseExpression;
 
+  (* begin-procedure-description
+**NumericCasePart** (interior procedure)
+  end-procedure-description *)
     PROCEDURE NumericCasePart;
       VAR x: ORG.Item; L0, L1, L2: LONGINT; n, labelform: INTEGER;
         tab: ARRAY NofCases OF ORG.LabelRange;  (*ordered table of label ranges*)
@@ -873,9 +880,6 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ORG.CaseTail(L0, L1, n, tab); ORG.FixLink(L2)
     END NumericCasePart;
 
-  (* begin-procedure-description
-
-  end-procedure-description *)
   BEGIN (* StatSequence *)
     REPEAT (*sync*) obj := NIL;
       IF ~((sym >= ORS.ident) & (sym <= ORS.for) OR (sym >= ORS.semicolon)) THEN
@@ -985,7 +989,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   (* Types and declarations *)
 
   (* begin-procedure-description
-
+---
+**IdentList** matches a comma separated list of identifiers or marks an error.
   end-procedure-description *)
   PROCEDURE IdentList(class: INTEGER; VAR first: ORB.Object);
     VAR obj: ORB.Object;
@@ -1004,7 +1009,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END IdentList;
 
   (* begin-procedure-description
-
+---
+**ArrayType** matches the definiton of an Array Type or marks an error.
   end-procedure-description *)
   PROCEDURE ArrayType(VAR type: ORB.Type; expo: BOOLEAN);
     VAR x: ORG.Item; typ: ORB.Type; len: LONGINT;
@@ -1027,7 +1033,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END ArrayType;
 
   (* begin-procedure-description
-
+---
+**RecordType** matches the definition of a Record Type or marks an error.
   end-procedure-description *)
   PROCEDURE RecordType(VAR type: ORB.Type; expo: BOOLEAN);
     VAR obj, obj0, new, bot, base: ORB.Object;
@@ -1076,7 +1083,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END RecordType;
 
   (* begin-procedure-description
-
+---
+**FPSection** matches the parameters to a function or marks an error.
   end-procedure-description *)
   PROCEDURE FPSection(VAR adr: LONGINT; VAR nofpar: INTEGER);
     VAR obj, first: ORB.Object; tp: ORB.Type;
@@ -1098,7 +1106,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END FPSection;
 
   (* begin-procedure-description
-
+---
+**ProcedureType** matches a Procedure Type definition or marks an error.
   end-procedure-description *)
   PROCEDURE ProcedureType(ptype: ORB.Type; VAR parblksize: LONGINT);
     VAR obj: ORB.Object; size: LONGINT; nofpar: INTEGER;
@@ -1125,7 +1134,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END ProcedureType;
 
   (* begin-procedure-description
-
+---
+**FormalType0** matches the definition of a type or marks an error.
   end-procedure-description *)
   PROCEDURE FormalType0(VAR typ: ORB.Type; dim: INTEGER);
     VAR obj: ORB.Object; dmy: LONGINT;
@@ -1147,7 +1157,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END FormalType0;
 
   (* begin-procedure-description
-
+---
+**CheckRecLevel** ensures that the ptr base is global.
   end-procedure-description *)
   PROCEDURE CheckRecLevel(lev: INTEGER);
   BEGIN
@@ -1155,7 +1166,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END CheckRecLevel;
 
   (* begin-procedure-description
-
+---
+**InterfaceType** matches the definition of an Interface or marks an error.
   end-procedure-description *)
   PROCEDURE InterfaceType(VAR type: ORB.Type; expo: BOOLEAN);
     VAR obj, objr, obj0, new, bot, base, proc, redef: ORB.Object;
@@ -1188,7 +1200,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END InterfaceType;
 
   (* begin-procedure-description
-
+---
+**Type0** matches a type definition or marks an error.
   end-procedure-description *)
   PROCEDURE Type0(VAR type: ORB.Type; expo: BOOLEAN);
     VAR dmy: LONGINT; obj: ORB.Object; ptbase: PtrBase;
@@ -1236,7 +1249,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END Type0;
 
   (* begin-procedure-description
-
+---
+**Declarations** dispatches the definition of constants, types, and variables.
   end-procedure-description *)
   PROCEDURE Declarations(VAR varsize: LONGINT);
     VAR obj, first: ORB.Object;
@@ -1309,7 +1323,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END Declarations;
 
   (* begin-procedure-description
-
+---
+**Receiver** matches something...
   end-procedure-description *)
   PROCEDURE Receiver(VAR class: INTEGER; VAR name: ORS.Ident; VAR typ, rec: ORB.Type);
     VAR obj: ORB.Object;
@@ -1334,7 +1349,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END Receiver;
 
   (* begin-procedure-description
-
+---
+**ProcedureDecl** matches the definition of a procedure or marks an error.
   end-procedure-description *)
   PROCEDURE ProcedureDecl;
     VAR proc, redef, obj: ORB.Object;
@@ -1344,7 +1360,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       int, expo: BOOLEAN;
 
   (* begin-procedure-description
-
+**Body** (interior procedure) matches the body of the procedure or marks an error.
   end-procedure-description *)
     PROCEDURE Body(proc: ORB.Object; parblksize: LONGINT; int: BOOLEAN);
       VAR x: ORG.Item; locblksize: LONGINT;
@@ -1413,7 +1429,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END ProcedureDecl;
 
   (* begin-procedure-description
-
+---
+**ImportList** matches the names of modules imported by this module and ensures their compatibility or marks an error.
   end-procedure-description *)
   PROCEDURE ImportList;
     VAR impid, impid1: ORS.Ident;
@@ -1435,7 +1452,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END ImportList;
 
   (* begin-procedure-description
-
+---
+**Module** begins the recursive descent parsing of the source text and emits an object code file on completion or marks an error.
   end-procedure-description *)
   PROCEDURE Module;
     VAR key: LONGINT;
@@ -1478,7 +1496,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END Module;
 
   (* begin-procedure-description
-
+---
+**Option** determines if the compilation will generate a new symbol file.
   end-procedure-description *)
   PROCEDURE Option(VAR S: Texts.Scanner);
   BEGIN newSF := FALSE;
@@ -1489,7 +1508,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   END Option;
 
   (* begin-procedure-description
-
+---
+**Compile** locates the source to compile, prepares the inital compiler state and calls Module to compile.
   end-procedure-description *)
   PROCEDURE Compile*;
     VAR beg, end, time: LONGINT; res: INTEGER;
