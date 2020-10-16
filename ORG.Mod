@@ -19,12 +19,12 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
      Procedure Close writes code-files*)
 
   CONST WordSize* = 4;
-    StkOrg0 = -64; VarOrg0 = 0;  (*for RISC-0 only*)
-    TR = 13; SP = 14; LNK = 15;   (*dedicated registers*)
+    StkOrg0 = -64; VarOrg0 = 0;      (*for RISC-0 only*)
+    TR = 13; SP = 14; LNK = 15;      (*dedicated registers*)
     maxCode = 8800; maxStrx = 3200; maxTD = 160; maxSet = WordSize*8;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
-    Zero = 0; D = 4B00H; (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
-    F2 = -2;  (*F2 memory instruction*)
+    Zero = 0; D = 4B00H;             (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
+    F2 = -2;                         (*F2 memory instruction*)
     F3 = -1; BCT = 0E7000000H; RTI = 10H; STI = 20H;  (*F3 branch instructions*)
     C4 = 10H; C6 = 40H; C8 = 100H; C10 = 400H; C12 = 1000H; C14 = 4000H; C16 = 10000H; C18 = 40000H;
     C20 = 100000H; C22 = 400000H; C24 = 1000000H; C26 = 4000000H; C28 = 10000000H; C30 = 40000000H;
@@ -37,31 +37,36 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; CS = 2; CC = 10; LT = 5; GE = 13; LE = 6; GT = 14;
 
-  TYPE Item* = RECORD
+  TYPE 
+    Item* = RECORD
       mode*: INTEGER;
       type*: ORB.Type;
       a*, b*, r: LONGINT;
       rdo*: BOOLEAN  (*read only*)
     END ;
-    LabelRange* = RECORD low*, high*, label*: INTEGER END ;
+
+    LabelRange* = RECORD 
+      low*, high*, label*: INTEGER 
+    END ;
 
   (* Item forms and meaning of fields:
     mode    r      a       b
     --------------------------------
     Const   -     value (proc adr)  (immediate value)
-    Var     base   off     -               (direct adr)
-    Par      -     off0     off1         (indirect adr)
+    Var     base   off     -        (direct adr)
+    Par      -     off0     off1    (indirect adr)
     Reg    regno
     RegI   regno   off     -
     Cond  cond   Fchain  Tchain  *)
 
-  VAR pc*: LONGINT;    (*program counter*)
-    varx, strx, tdw: LONGINT;  (*varx and strx in bytes, tdw in words*)
-    entry: LONGINT;   (*main entry point*)
-    RH: LONGINT;  (*available registers R[0] ... R[H-1]*)
-    frame: LONGINT;  (*frame offset changed in SaveRegs and RestoreRegs*)
+  VAR 
+    pc*: LONGINT;                (*program counter*)
+    varx, strx, tdw: LONGINT;    (*varx and strx in bytes, tdw in words*)
+    entry: LONGINT;              (*main entry point*)
+    RH: LONGINT;                 (*available registers R[0] ... R[H-1]*)
+    frame: LONGINT;              (*frame offset changed in SaveRegs and RestoreRegs*)
     fixorgP, fixorgD, fixorgT, fixorgM: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
-    check: BOOLEAN;  (*emit run-time checks*)
+    check: BOOLEAN;              (*emit run-time checks*)
     version: INTEGER;  (* 0 = RISC-0, 1 = RISC-5 *)
     relmap: ARRAY 6 OF INTEGER;  (*condition codes for relations*)
     code: ARRAY maxCode OF LONGINT;
@@ -69,7 +74,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     td: ARRAY maxTD OF LONGINT;  (*type descriptors*)
 
   (* begin-section-description
-## ---------- Instruction assemblers according to formats ----------
+## ---------- Instruction assemblers according to formats
   end-section-description *)
 
   (*instruction assemblers according to formats*)
@@ -162,7 +167,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END NilCheck;
 
   (* begin-section-description
-## ---------- Handling of forward reference, fixups of instruction operands ----------
+## ---------- Handling of forward reference, fixups of instruction operands
   end-section-description *)
 
   (*handling of forward reference, fixups of instruction operands*)
@@ -224,7 +229,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END merged;
 
   (* begin-section-description
-## Loading of operands and addresses into registers
+## ----------  Loading of operands and addresses into registers
   end-section-description *)
 
   (* loading of operands and addresses into registers *)
@@ -303,7 +308,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END loadStringAdr;
 
   (* begin-section-description
-## Items: Conversion from constants or from Objects on the Heap to Items on the Stack
+## ----------  Items: Conversion from constants or from Objects on the Heap to Items on the Stack
   end-section-description *)
 
   (* Items: Conversion from constants or from Objects on the Heap to Items on the Stack*)
@@ -336,7 +341,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END MakeItem;
 
   (* begin-section-description
-## Code generation for Selectors, Variables, Constants
+## ----------  Code generation for Selectors, Variables, Constants
   end-section-description *)
 
   (* Code generation for Selectors, Variables, Constants *)
@@ -487,7 +492,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END TypeTest;
 
   (* begin-section-description
-## Code generation for Boolean operators
+## ----------  Code generation for Boolean operators
   end-section-description *)
 
   (* Code generation for Boolean operators *)
@@ -514,7 +519,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END Or2;
 
   (* begin-section-description
-## Code generation for arithmetic operators
+## ----------  Code generation for arithmetic operators
   end-section-description *)
 
   (* Code generation for arithmetic operators *)
@@ -599,7 +604,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END DivOp;
 
   (* begin-section-description
-## Code generation for REAL operators
+## ----------  Code generation for REAL operators
   end-section-description *)
 
   (* Code generation for REAL operators *)
@@ -615,7 +620,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END RealOp;
 
   (* begin-section-description
-## Code generation for set operators
+## ----------  Code generation for set operators
   end-section-description *)
 
   (* Code generation for set operators *)
@@ -684,7 +689,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END SetOp;
 
   (* begin-section-description
-## Code generation for relations
+## ----------  Code generation for relations
   end-section-description *)
 
   (* Code generation for relations *)
@@ -723,7 +728,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END StringRelation;
 
   (* begin-section-description
-## Code generation of Assigments
+## ----------  Code generation of Assigments
   end-section-description *)
 
   (* Code generation of Assignments *)
@@ -803,7 +808,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END CopyString;
 
   (* begin-section-description
-## Code generation for parameters
+## ----------  Code generation for parameters
   end-section-description *)
 
   (* Code generation for parameters *)
@@ -847,7 +852,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END ReceiverParam;
 
   (* begin-section-description
-## For Statements
+## ----------  For Statements
   end-section-description *)
 
   (*For Statements*)
@@ -874,7 +879,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END For2;
 
   (* begin-section-description
-## Branches, procedure calls, procedure prolog and epilog
+## ----------  Branches, procedure calls, procedure prolog and epilog
   end-section-description *)
 
   (* Branches, procedure calls, procedure prolog and epilog *)
@@ -981,7 +986,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END Return;
 
   (* begin-section-description
-## Case Statements
+## ----------  Case Statements
   end-section-description *)
 
   (* Case Statements *)
@@ -1011,7 +1016,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END CaseTail;
 
   (* begin-section-description
-## In-line code procedures
+## ----------  In-line code procedures
   end-section-description *)
 
   (* In-line code procedures *)
@@ -1122,7 +1127,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END LDREG;
 
   (* begin-section-description
-## In-line code functions
+## ----------  In-line code functions
   end-section-description *)
 
   (* In-line code functions *)
