@@ -69,7 +69,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     td: ARRAY maxTD OF LONGINT;  (*type descriptors*)
 
   (* begin-section-description
->> *Instruction assemblers according to formats*
+## ---------- Instruction assemblers according to formats ----------
   end-section-description *)
 
   (*instruction assemblers according to formats*)
@@ -162,7 +162,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END NilCheck;
 
   (* begin-section-description
-## Handling of forward reference, fixups of instruction operands
+## ---------- Handling of forward reference, fixups of instruction operands ----------
   end-section-description *)
 
   (*handling of forward reference, fixups of instruction operands*)
