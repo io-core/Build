@@ -18,10 +18,12 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
      Procedural interface to Parser ORP; result in array "code".
      Procedure Close writes code-files*)
 
-  CONST WordSize* = 4;
+  CONST 
+    WordSize* = 4;
     StkOrg0 = -64; VarOrg0 = 0;      (*for RISC-0 only*)
     TR = 13; SP = 14; LNK = 15;      (*dedicated registers*)
-    maxCode = 8800; maxStrx = 3200; maxTD = 160; maxSet = WordSize*8;
+    maxCode = 8800; maxStrx = 3200; 
+    maxTD = 160; maxSet = WordSize*8;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
     Zero = 0; D = 4B00H;             (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
     F2 = -2;                         (*F2 memory instruction*)
@@ -1224,6 +1226,18 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN (*x.mode = Const*) SetCC(x, x.a)
   END Condition;
 
+  (* begin-section-description
+## ---------- Initialization and Completion
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**Open** initializes the code production global variables and the top of 8 elements of the code array to zero.
+
+Zeroed global variables: `strx` `tdw` `RH` `fixorgP` `fixorgD` `fixorgT` `fixorgM` 
+
+The `PC` is placed at code word index 8 and `check` is true if the `version` passed in is not zero.
+  end-procedure-description *)
   PROCEDURE Open*(v: INTEGER);
   BEGIN pc := 0; strx := 0; tdw := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; fixorgM := 0; check := v # 0; version := v;
     IF v = 0 THEN pc := 1;
@@ -1231,10 +1245,20 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END
   END Open;
 
+  (* begin-procedure-description
+---
+**SetDataSize** updates the varx code production global variable.
+  end-procedure-description *)
   PROCEDURE SetDataSize*(dc: LONGINT);
   BEGIN varx := dc
   END SetDataSize;
 
+  (* begin-procedure-description
+---
+**Header** sets up the stack (for a RISC-0 standalone module) or prepares the stack for a Branch-Link-return (the usual case.)
+
+Every call to header updates the global `entry` variable... at the end of compilation the last update reflects the module entry point.
+  end-procedure-description *)
   PROCEDURE Header*;
   BEGIN entry := pc*4;
     IF version = 0 THEN code[0] := BCT - 1 + pc;  Put1a(Mov, SP, 0, StkOrg0)  (*RISC-0*)
