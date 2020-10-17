@@ -1247,7 +1247,7 @@ The `PC` is placed at code word index 8 and `check` is true if the `version` pas
 
   (* begin-procedure-description
 ---
-**SetDataSize** updates the varx code production global variable.
+**SetDataSize** updates the `varx` code production global variable.
   end-procedure-description *)
   PROCEDURE SetDataSize*(dc: LONGINT);
   BEGIN varx := dc
@@ -1266,6 +1266,10 @@ Every call to header updates the global `entry` variable... at the end of compil
     END
   END Header;
 
+  (* begin-procedure-description
+---
+**NofRefs** recursively determines the number of references in a type.
+  end-procedure-description *)
   PROCEDURE NofRefs(ftyp: SET; typ: ORB.Type): LONGINT;
     VAR fld: ORB.Object; n: LONGINT;
   BEGIN
@@ -1278,6 +1282,10 @@ Every call to header updates the global `entry` variable... at the end of compil
     RETURN n
   END NofRefs;
 
+  (* begin-procedure-description
+---
+**FindRefs** recursively finds references in a type and writes them out to the file.
+  end-procedure-description *)
   PROCEDURE FindRefs(VAR R: Files.Rider; ftyp: SET; typ: ORB.Type; off: LONGINT);
     VAR fld: ORB.Object; i, s: LONGINT;
   BEGIN
@@ -1289,6 +1297,10 @@ Every call to header updates the global `entry` variable... at the end of compil
     END
   END FindRefs;
 
+  (* begin-procedure-description
+---
+**Close** completes the epilogue of the binary, writes out imports, commands, and fixup tables, and writes the module code to disk.
+  end-procedure-description *)
   PROCEDURE Close*(VAR modid: ORS.Ident; key, nofent: LONGINT);
     VAR obj: ORB.Object;
       i, comsize, nofimps, nofrefs, size, tdx, base: LONGINT;
@@ -1375,5 +1387,9 @@ Every call to header updates the global `entry` variable... at the end of compil
     Files.Write(R, "O"); Files.Register(F)
   END Close;
 
+  (* begin-procedure-description
+---
+**The initialzation code for this module** sets the 6 values in the global relmap array. 
+  end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13
 END ORG.
