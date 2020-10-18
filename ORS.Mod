@@ -20,7 +20,7 @@ Recognises all Oberon keywords and skips comments. The keywords are recorded in 
 `Mark(msg)` records error and delivers error message with Writer W.
 
 If Get delivers ident, then the identifier (a string) is in variable id, 
-if int or char in ival, if real in rval, and if string in str (and slen) *)
+if int or char in ival, if real in rval, and if string in str (and slen) 
 
 end-module-develop-description *)
 MODULE ORS; (* NW 19.9.93 / 20.3.2017  Scanner in Oberon-07*)
