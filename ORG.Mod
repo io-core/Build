@@ -1389,7 +1389,10 @@ Every call to header updates the global `entry` variable... at the end of compil
 
   (* begin-procedure-description
 ---
-**The initialzation code for this module** sets the 6 values in the global relmap array. 
+**The initialzation code for this module** merely sets the 6 values in the global relmap array. 
+
+This module's global variables are initialized by ORP calling ORG.Open, once it has begun parsing the source code's Module
+definition and determined that its module imports are available and of compatible object filetype.
   end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13
 END ORG.
