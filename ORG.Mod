@@ -1208,6 +1208,29 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Put0(Mov, RH, 0, x.a MOD C4); x.mode := Reg; x.r := RH; incR
   END Register;
 
+  PROCEDURE StoreRegs*(VAR x: Item);
+    VAR a, r: LONGINT;
+  BEGIN
+    IF x.mode IN {ORB.Var, ORB.Par} THEN 
+      Put2(Str, 0, SP, 4);       (* put r0 on the stack *)
+
+      IF x.mode = ORB.Var THEN
+        IF x.r > 0 THEN (*local*) Put1a(Add, 0, SP, x.a + frame) ELSE PutPair(x.r, Add, 0, 0, x.a, 1) END ;
+      ELSIF x.mode = ORB.Par THEN Put2(Ldr, 0, SP, x.a + frame);
+        IF x.b # 0 THEN Put1a(Add, 0, 0, x.b) END ;
+      ELSE ORS.Mark("address error")
+
+      (* TODO: make sure x has space for the registers *)
+      a := 4; r := 1;            (* push regs , r0 clobbered *)
+      WHILE r < 15 DO Put2(Str, r, 0, a); INC(r); INC(a, 4) END;
+      Put2(Str, r, 0, a);       (* will need to correct the PC *)
+      Put2(Ldr, 1, SP, 4);
+      Put2(Str, 0, 1, 0);
+      Put2(Ldr, 1, 1, 4); 
+    ELSE ORS.Mark("not StoreRegs compatible")
+    END
+  END StoreRegs;
+
   PROCEDURE H*(VAR x: Item);
   BEGIN (*x.mode = Const*)
     Put0(Mov + U + x.a MOD 2 * V, RH, 0, 0); x.mode := Reg; x.r := RH; incR
