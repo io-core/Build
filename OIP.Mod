@@ -1,17 +1,41 @@
-MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for x86_64 in Oberon-07*)
+(* begin-module-use-description
+
+Module OIP reads the source code of an Oberon program and produces an executable x86_64 binary module.
+
+end-module-use-description *)
+(* begin-module-develop-description
+
+(N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / CP 2020 adapted to x86_64)
+
+**OIP** implements a one-pass recursive descent parser for the language Oberon.
+
+The structure of the parser is derived from the structure of the language, with constituent parts of the language 
+(e.g. Module, Procedure, Type, Expression, Term, Parameter) represented by a procedure of that name, invoked from the 
+encompassing construct. Each procedure consumes and validates a part of the program source text while populating the 
+symbol table and execution context and also generating machine code faithfully representing that language construct.
+
+This module (OIP) relies on module OIG for code generation, ORB for the symbol table, execution context tracking and reserved words, and ORS
+for lexical parsing and built-in type identification.
+
+end-module-develop-description *)
+MODULE OIP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07 / CP 2020 adapted to x86_64*)
   IMPORT Texts, Oberon, ORS, ORB, OIG;
   (*Author: Niklaus Wirth, 2014.
     Parser of Oberon compiler. Uses Scanner ORS to obtain symbols (tokens),
     ORB for definition of data structures and for handling import and export, and
-    OIG to produce binary code. OIP performs type checking and data allocation.
+    OAG to produce binary code. OAP performs type checking and data allocation.
     Parser is target-independent, except for part of the handling of allocations.*)
 
-  TYPE PtrBase = POINTER TO PtrBaseDesc;
+  CONST
+
+  TYPE 
+    PtrBase = POINTER TO PtrBaseDesc;
     PtrBaseDesc = RECORD  (*list of names of pointer base types*)
       name: ORS.Ident; type: ORB.Type; next: PtrBase
     END ;
   
-  VAR sym: INTEGER;   (*last symbol read*)
+  VAR 
+    sym: INTEGER;   (*last symbol read*)
     dc: LONGINT;    (*data counter*)
     level, exno, version: INTEGER;
     newSF: BOOLEAN;  (*option flag*)
@@ -23,11 +47,23 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     dummy: ORB.Object;
     W: Texts.Writer;
 
+(* begin-section-description
+## ---------- Tests
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**Check** marks an error if the current symbol does not match the expeted symbol.
+  end-procedure-description *)
   PROCEDURE Check(s: INTEGER; msg: ARRAY OF CHAR);
   BEGIN
     IF sym = s THEN ORS.Get(sym) ELSE ORS.Mark(msg) END
   END Check;
 
+  (* begin-procedure-description
+---
+**Qualident** generates a reference to a previously defined item if possible otherwise an error is marked.
+  end-procedure-description *)
   PROCEDURE qualident(VAR obj: ORB.Object);
   BEGIN obj := ORB.thisObj(); ORS.Get(sym);
     IF obj = NIL THEN ORS.Mark("undef"); obj := dummy END ;
@@ -40,26 +76,46 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END qualident;
 
+  (* begin-procedure-description
+---
+**CheckBool** marks an error if the item is not a boolean.
+  end-procedure-description *)
   PROCEDURE CheckBool(VAR x: OIG.Item);
   BEGIN
     IF x.type.form # ORB.Bool THEN ORS.Mark("not Boolean"); x.type := ORB.boolType END
   END CheckBool;
 
+  (* begin-procedure-description
+---
+**CheckInt** marks an error if the item is not an Int.
+  end-procedure-description *)
   PROCEDURE CheckInt(VAR x: OIG.Item);
   BEGIN
     IF x.type.form # ORB.Int THEN ORS.Mark("not Integer"); x.type := ORB.intType END
   END CheckInt;
 
+  (* begin-procedure-description
+---
+**CheckReal** marks an error if the item is not a Real.
+  end-procedure-description *)
   PROCEDURE CheckReal(VAR x: OIG.Item);
   BEGIN
     IF x.type.form # ORB.Real THEN ORS.Mark("not Real"); x.type := ORB.realType END
   END CheckReal;
 
+  (* begin-procedure-description
+---
+**CheckSet** marks an error if the item is not a Set.
+  end-procedure-description *)
   PROCEDURE CheckSet(VAR x: OIG.Item);
   BEGIN
     IF x.type.form # ORB.Set THEN ORS.Mark("not Set"); x.type := ORB.setType END 
   END CheckSet;
 
+  (* begin-procedure-description
+---
+**CheckSetVal** marks an error if the item is not a Set Value.
+  end-procedure-description *)
   PROCEDURE CheckSetVal(VAR x: OIG.Item);
   BEGIN
     IF x.type.form # ORB.Int THEN ORS.Mark("not Int"); x.type := ORB.setType
@@ -68,16 +124,28 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END 
   END CheckSetVal;
 
+  (* begin-procedure-description
+---
+**CheckConst** marks an error if the value is not a Constant.
+  end-procedure-description *)
   PROCEDURE CheckConst(VAR x: OIG.Item);
   BEGIN
     IF x.mode # ORB.Const THEN ORS.Mark("not a constant"); x.mode := ORB.Const END
   END CheckConst;
 
+  (* begin-procedure-description
+---
+**CheckReadOnly** marks an error if the value is not read-only.
+  end-procedure-description *)
   PROCEDURE CheckReadOnly(VAR x: OIG.Item);
   BEGIN
     IF x.rdo THEN ORS.Mark("read-only") END
   END CheckReadOnly;
 
+  (* begin-procedure-description
+---
+**CheckExport** checks for an export symbol and marks an error if export not at top level.
+  end-procedure-description *)
   PROCEDURE CheckExport(VAR expo: BOOLEAN);
   BEGIN
     IF sym = ORS.times THEN
@@ -87,6 +155,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END CheckExport;
 
+  (* begin-procedure-description
+---
+**IsExtension** determines if type t1 is an extension of t0.
+  end-procedure-description *)
   PROCEDURE IsExtension(t0, t1: ORB.Type): BOOLEAN;
   BEGIN (*t1 is an extension of t0*)
     RETURN (t0 = t1) OR (t1 # NIL) & IsExtension(t0, t1.base)
@@ -94,6 +166,14 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
 
   (* expressions *)
 
+(* begin-section-description
+## ---------- Expressions
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**TypeTest** checks for assignment type compatibility.
+  end-procedure-description *)
   PROCEDURE TypeTest(VAR x: OIG.Item; T: ORB.Type; guard: BOOLEAN);
     VAR xt: ORB.Type;
   BEGIN xt := x.type;
@@ -110,13 +190,17 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
           END
         ELSE ORS.Mark("incompatible types")
         END
-      ELSIF ~guard THEN OIG.MakeConstItem(x, ORB.boolType, 1)
+      ELSIF ~guard THEN OIG.TypeTest(x, NIL, FALSE, FALSE)
       END
     ELSE ORS.Mark("type mismatch")
     END ;
     IF ~guard THEN x.type := ORB.boolType END
   END TypeTest;
 
+  (* begin-procedure-description
+---
+**selector** generates the array item, procedure, or method dereference on an array or record.
+  end-procedure-description *)
   PROCEDURE selector(VAR x: OIG.Item);
     VAR y: OIG.Item; obj: ORB.Object;
   BEGIN
@@ -161,6 +245,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END selector;
 
+  (* begin-procedure-description
+---
+**EqualSignatures** verifies that a procedure may be assigned to a procedure variable.
+  end-procedure-description *)
   PROCEDURE EqualSignatures(t0, t1: ORB.Type): BOOLEAN;
     VAR p0, p1: ORB.Object; com: BOOLEAN;
   BEGIN com := TRUE;
@@ -180,6 +268,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     RETURN com
   END EqualSignatures;
 
+  (* begin-procedure-description
+---
+**CompTypes** verifies assigment compatibility by type.
+  end-procedure-description *)
   PROCEDURE CompTypes(t0, t1: ORB.Type; varpar: BOOLEAN): BOOLEAN;
   BEGIN (*check for assignment compatibility*)
     RETURN (t0 = t1)    (*openarray assignment disallowed in OIG*)
@@ -191,6 +283,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
         OR (t0.form IN {ORB.Pointer, ORB.Proc}) & (t1.form = ORB.NilTyp))
   END CompTypes;
 
+  (* begin-procedure-description
+---
+**Parameter** consumes a function call parameter and produces function call proloogue code for the parameter.
+  end-procedure-description *)
   PROCEDURE Parameter(par: ORB.Object);
     VAR x: OIG.Item; varpar: BOOLEAN;
   BEGIN expression(x);
@@ -219,13 +315,17 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END Parameter;
 
+  (* begin-procedure-description
+---
+**ParamList** consumes the function call parameters, resulting in a function call prologue.
+  end-procedure-description *)
   PROCEDURE ParamList(VAR x: OIG.Item);
     VAR n: INTEGER; par: ORB.Object;
   BEGIN par := x.type.dsc; n := 0;
     IF sym # ORS.rparen THEN
       Parameter(par); n := 1;
       WHILE sym <= ORS.comma DO
-        Check(sym, "comma?");
+        Check(ORS.comma, "comma?");
         IF par # NIL THEN par := par.next END ;
         INC(n); Parameter(par)
       END ;
@@ -237,6 +337,12 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END ParamList;
 
+  (* begin-procedure-description
+---
+**StandFunc** consumes standard language functions and produces inline code for those functions.
+
+Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `SBC` `UML` `BIT` `REG` `VAL` `ADR` `SIZE` `COND` `H`
+  end-procedure-description *)
   PROCEDURE StandFunc(VAR x: OIG.Item; fct: LONGINT; restyp: ORB.Type);
     VAR y: OIG.Item; n, npar: LONGINT;
   BEGIN Check(ORS.lparen, "no (");
@@ -281,6 +387,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END StandFunc;
 
+  (* begin-procedure-description
+---
+**element** produces a reference to an element in a set.
+  end-procedure-description *)
   PROCEDURE element(VAR x: OIG.Item);
     VAR y: OIG.Item;
   BEGIN expression(x); CheckSetVal(x);
@@ -290,6 +400,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     x.type := ORB.setType
   END element;
   
+  (* begin-procedure-description
+---
+**set** produces a set from elements.
+  end-procedure-description *)
   PROCEDURE set(VAR x: OIG.Item);
     VAR y: OIG.Item;
   BEGIN
@@ -306,6 +420,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END set; 
 
+  (* begin-procedure-description
+---
+**factor** generates code that produces a value from identifiers, applications of functions and procedures, etc. for use in a calculation or assignment.
+  end-procedure-description *)
   PROCEDURE factor(VAR x: OIG.Item);
     VAR obj: ORB.Object; rx: LONGINT;
   BEGIN (*sync*)
@@ -338,6 +456,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END factor;
 
+  (* begin-procedure-description
+---
+**term** combines factors via multiplication and division, resulting in a value.
+  end-procedure-description *)
   PROCEDURE term(VAR x: OIG.Item);
     VAR y: OIG.Item; op, f: INTEGER;
   BEGIN factor(x); f := x.type.form;
@@ -361,6 +483,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END term;
 
+  (* begin-procedure-description
+---
+**SimpleExpression** combines terms via addition, subtraction, boolean, and set operations, resulting in a value.
+  end-procedure-description *)
   PROCEDURE SimpleExpression(VAR x: OIG.Item);
     VAR y: OIG.Item; op: INTEGER;
   BEGIN
@@ -379,6 +505,13 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END SimpleExpression;
 
+  (* begin-procedure-description
+---
+**expression0** produces code handling arbitrary arithmetic and logical operations, resulting in a value.
+
+expression0 is assigned to the procedure variable `expression` to allow the forward reference.
+
+  end-procedure-description *)
   PROCEDURE expression0(VAR x: OIG.Item);
     VAR y: OIG.Item; obj: ORB.Object; rel, xf, yf: INTEGER;
   BEGIN SimpleExpression(x);
@@ -423,6 +556,14 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
 
   (* statements *)
 
+(* begin-section-description
+## ---------- Statements
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**StandProc** sets the keyboard initial state and populates the scancode to ascii table.
+  end-procedure-description *)
   PROCEDURE StandProc(pno: LONGINT);
     VAR nap, npar: LONGINT; (*nof actual/formal parameters*)
       x, y, z: OIG.Item;
@@ -460,12 +601,19 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END StandProc;
 
+  (* begin-procedure-description
+---
+**StatSequence** matches a statement sequence.
+  end-procedure-description *)
   PROCEDURE StatSequence;
     VAR obj: ORB.Object;
       orgtype: ORB.Type; (*original type of case var*)
       x, y, z, w: OIG.Item;
       L0, L1, rx: LONGINT;
 
+  (* begin-procedure-description
+**TypeCase** (interior procedure)
+  end-procedure-description *)
     PROCEDURE TypeCase(obj: ORB.Object; VAR x: OIG.Item);
       VAR typobj: ORB.Object;
     BEGIN
@@ -478,6 +626,9 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
       END
      END TypeCase;
 
+  (* begin-procedure-description
+**SkipCase** (interior procedure)
+  end-procedure-description *)
     PROCEDURE SkipCase;
     BEGIN 
       WHILE sym # ORS.colon DO ORS.Get(sym) END ;
@@ -593,6 +744,14 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
 
   (* Types and declarations *)
 
+(* begin-section-description
+## ---------- Types and declarations
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**IdentList** matches a comma separated list of identifiers.
+  end-procedure-description *)
   PROCEDURE IdentList(class: INTEGER; VAR first: ORB.Object);
     VAR obj: ORB.Object;
   BEGIN
@@ -609,6 +768,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END IdentList;
   
+  (* begin-procedure-description
+---
+**ArrayType** matches the definiton of an Array Type or marks an error.
+  end-procedure-description *)
   PROCEDURE ArrayType(VAR type: ORB.Type);
     VAR x: OIG.Item; typ: ORB.Type; len: LONGINT;
   BEGIN NEW(typ); typ.form := ORB.NoTyp;
@@ -625,6 +788,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     typ.form := ORB.Array; typ.len := len; type := typ
   END ArrayType;
 
+  (* begin-procedure-description
+---
+**RecordType** matches the definition of a Record Type or marks an error.
+  end-procedure-description *)
   PROCEDURE RecordType(VAR type: ORB.Type);
     VAR obj, obj0, new, bot, base: ORB.Object;
       typ, tp: ORB.Type;
@@ -670,6 +837,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     typ.form := ORB.Record; typ.dsc := bot; typ.size := (offset + 3) DIV 4 * 4; type := typ
   END RecordType;
 
+  (* begin-procedure-description
+---
+**FPSection** matches the parameters to a function or marks an error.
+  end-procedure-description *)
   PROCEDURE FPSection(VAR adr: LONGINT; VAR nofpar: INTEGER);
     VAR obj, first: ORB.Object; tp: ORB.Type;
       parsize: LONGINT; cl: INTEGER; rdo: BOOLEAN;
@@ -689,6 +860,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     IF adr >= 52 THEN ORS.Mark("too many parameters") END
   END FPSection;
 
+  (* begin-procedure-description
+---
+**ProcedureType** matches a Procedure Type definition or marks an error.
+  end-procedure-description *)
   PROCEDURE ProcedureType(ptype: ORB.Type; VAR parblksize: LONGINT);
     VAR obj: ORB.Object; size: LONGINT; nofpar: INTEGER;
   BEGIN ptype.base := ORB.noType; size := parblksize; nofpar := 0; ptype.dsc := NIL;
@@ -713,6 +888,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     ptype.nofpar := nofpar; parblksize := size
   END ProcedureType;
 
+  (* begin-procedure-description
+---
+**FormalType0** matches the definition of a type or marks an error.
+  end-procedure-description *)
   PROCEDURE FormalType0(VAR typ: ORB.Type; dim: INTEGER);
     VAR obj: ORB.Object; dmy: LONGINT;
   BEGIN
@@ -732,11 +911,19 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END FormalType0;
 
+  (* begin-procedure-description
+---
+**CheckRecLevel** ensures that the ptr base is global.
+  end-procedure-description *)
   PROCEDURE CheckRecLevel(lev: INTEGER);
   BEGIN
     IF lev # 0 THEN ORS.Mark("ptr base must be global") END
   END CheckRecLevel;
 
+  (* begin-procedure-description
+---
+**Type0** matches a type definition or marks an error.
+  end-procedure-description *)
   PROCEDURE Type0(VAR type: ORB.Type);
     VAR dmy: LONGINT; obj: ORB.Object; ptbase: PtrBase;
   BEGIN type := ORB.intType; (*sync*)
@@ -779,6 +966,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END Type0;
 
+  (* begin-procedure-description
+---
+**Declarations** dispatches the definition of constants, types, and variables.
+  end-procedure-description *)
   PROCEDURE Declarations(VAR varsize: LONGINT);
     VAR obj, first: ORB.Object;
       x: OIG.Item; tp: ORB.Type; ptbase: PtrBase;
@@ -845,6 +1036,10 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     IF (sym >= ORS.const) & (sym <= ORS.var) THEN ORS.Mark("declaration in bad order") END
   END Declarations;
 
+  (* begin-procedure-description
+---
+**ProcedureDecl** matches the definition of a procedure or marks an error.
+  end-procedure-description *)
   PROCEDURE ProcedureDecl;
     VAR proc: ORB.Object;
       type: ORB.Type;
@@ -889,40 +1084,52 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
         ORS.Get(sym)
       ELSE ORS.Mark("no proc id")
       END
+    ELSE ORS.Mark("proc id expected")
     END
   END ProcedureDecl;
 
+  (* begin-procedure-description
+---
+**Import** consumes the names of modules imported by this module and ensures their compatibility or marks an error.
+  end-procedure-description *)
+  PROCEDURE Import;
+    VAR impid, impid1: ORS.Ident;
+  BEGIN
+    IF sym = ORS.ident THEN
+      ORS.CopyId(impid); ORS.Get(sym);
+      IF sym = ORS.becomes THEN
+        ORS.Get(sym);
+        IF sym = ORS.ident THEN ORS.CopyId(impid1); ORS.Get(sym)
+        ELSE ORS.Mark("id expected"); impid1 := impid
+        END
+      ELSE impid1 := impid
+      END ;
+      ORB.Import(impid, impid1)
+    ELSE ORS.Mark("id expected")
+    END
+  END Import;
+
+  (* begin-procedure-description
+---
+**Module** begins the recursive descent parsing of the source text and emits an object code file on completion or marks an error.
+  end-procedure-description *)
   PROCEDURE Module;
     VAR key: LONGINT;
-      impid, impid1: ORS.Ident;
   BEGIN Texts.WriteString(W, "  compiling "); ORS.Get(sym);
     IF sym = ORS.module THEN
       ORS.Get(sym);
-      IF sym = ORS.times THEN version := 0; Texts.Write(W, "*"); ORS.Get(sym) ELSE version := 1 END ;
-      ORB.Init(OIG.WordSize); ORB.OpenScope;
+      IF sym = ORS.times THEN version := 0; dc := 8; Texts.Write(W, "*"); ORS.Get(sym) ELSE dc := 0; version := 1 END ;
+      ORB.Clear; ORB.OpenScope;
       IF sym = ORS.ident THEN
         ORS.CopyId(modid); ORS.Get(sym);
         Texts.WriteString(W, modid); Texts.Append(Oberon.Log, W.buf)
       ELSE ORS.Mark("identifier expected")
       END ;
-      Check(ORS.semicolon, "no ;"); level := 0; dc := 0; exno := 1; key := 0;
+      Check(ORS.semicolon, "no ;"); level := 0; exno := 1; key := 0;
       IF sym = ORS.import THEN
-        ORS.Get(sym);
-        WHILE sym = ORS.ident DO
-          ORS.CopyId(impid); ORS.Get(sym);
-          IF sym = ORS.becomes THEN
-            ORS.Get(sym);
-            IF sym = ORS.ident THEN ORS.CopyId(impid1); ORS.Get(sym)
-            ELSE ORS.Mark("id expected")
-            END
-          ELSE impid1 := impid
-          END ;
-          ORB.Import(impid, impid1);
-          IF sym = ORS.comma THEN ORS.Get(sym)
-          ELSIF sym = ORS.ident THEN ORS.Mark("comma missing")
-          END
-        END ;
-        Check(ORS.semicolon, "no ;")
+        ORS.Get(sym); Import;
+        WHILE sym = ORS.comma DO ORS.Get(sym); Import END ;
+        Check(ORS.semicolon, "; missing")
       END ;
       OIG.Open(version); Declarations(dc); OIG.SetDataSize((dc + 3) DIV 4 * 4);
       WHILE sym = ORS.procedure DO ProcedureDecl; Check(ORS.semicolon, "no ;") END ;
@@ -950,6 +1157,14 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END Module;
 
+(* begin-section-description
+## ---------- Command Invocation
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**Option** checks if a new symbol file may be generated.
+  end-procedure-description *)
   PROCEDURE Option(VAR S: Texts.Scanner);
   BEGIN newSF := FALSE;
     IF S.nextCh = "/" THEN
@@ -958,16 +1173,20 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     END
   END Option;
 
+  (* begin-procedure-description
+---
+**Compile** locates the source code to a module, initializes the scanner, and begins parsing at 'Module'.
+  end-procedure-description *)
   PROCEDURE Compile*;
     VAR beg, end, time: LONGINT;
       T: Texts.Text;
       S: Texts.Scanner;
   BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
     IF S.class = Texts.Char THEN
-      IF S.codepoint = ORD("@") THEN
+      IF S.c = "@" THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
         IF time >= 0 THEN ORS.Init(T, beg); Module END
-      ELSIF S.codepoint = ORD("^") THEN
+      ELSIF S.c = "^" THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
         IF time >= 0 THEN
           Texts.OpenScanner(S, T, beg); Texts.Scan(S);
@@ -990,7 +1209,11 @@ MODULE OIP; (*N. Wirth 1.7.97 / 17.9.2018  C. Perkins 2019  Oberon compiler for 
     Oberon.Collect(0)
   END Compile;
 
-BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OI Compiler 2019");
+  (* begin-procedure-description
+---
+**The initialzation code for this module** opens a writer to print marked errors and initializes the Oberon parser state.
+  end-procedure-description *)
+BEGIN ORB.Init(8); Texts.OpenWriter(W); Texts.WriteString(W, "OI Compiler 2020");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
   NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
   expression := expression0; Type := Type0; FormalType := FormalType0

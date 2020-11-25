@@ -1,23 +1,23 @@
 (* begin-module-use-description
-Module OIG generates the x86_64 processor-specific instructions for executing an Oberon program. 
+Module OAG generates the aarch-64 processor-specific instructions for executing an Oberon program. 
 
 end-module-use-description *)
 (* begin-module-develop-description
 
-(N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / CP 2020 adapted for x86_64)
+(N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / CP 2020 adapted to aarch64)
 
-**OIG** is called from OIP and generates machine code various Oberon language constructs for the Oberon x86_64 architeture.
+**OAG** is called from OAP and generates machine code various Oberon language constructs for the Oberon aarch64 architeture.
 
 end-module-develop-description *)
-MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / CP 2020 adapted for x86_64*)
+MODULE OAG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC / CP 2020 adapted to aarch64*)
   IMPORT SYSTEM, Files, ORS, ORB;
-  (*Code generator for Oberon compiler for x86_64 processor.
+  (*Code generator for Oberon compiler for aarch64 processor.
      Procedural interface to Parser OSAP; result in array "code".
      Procedure Close writes code-files*)
 
   CONST
     WordSize* = 8;
-    StkOrg0 = -64; VarOrg0 = 0;  (*for x86_64-0 only*)
+    StkOrg0 = -64; VarOrg0 = 0;  (*for aarch64-0 only*)
     MT = 12; SP = 14; LNK = 15;   (*dedicated registers*)
     maxCode = 8000; maxStrx = 2400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
@@ -49,7 +49,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     Cond  cond   Fchain  Tchain  *)
 
   VAR 
-    pc*, pcb*, varsize: LONGINT;   (*program counter, data index*)
+    pc*, varsize: LONGINT;   (*program counter, data index*)
     tdx, strx: LONGINT;
     entry: LONGINT;   (*main entry point*)
     RH: LONGINT;  (*available registers R[0] ... R[H-1]*)
@@ -58,7 +58,6 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     check: BOOLEAN;  (*emit run-time checks*)
     version: INTEGER;  (* 0 = RISC-0, 1 = RISC-5 *)
     relmap: ARRAY 6 OF INTEGER;  (*condition codes for relations*)
-    regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
     code: ARRAY maxCode OF LONGINT;
     data: ARRAY maxTD OF LONGINT;  (*type descriptors*)
     str: ARRAY maxStrx OF CHAR;
@@ -73,117 +72,17 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Put1Byte** places a byte in in the instruction stream which is expected to have 8 zero bits at that location.
-  end-procedure-description *)
-  PROCEDURE Put1Byte(a: INTEGER; VAR pc, pcb: INTEGER);
-    VAR b: ARRAY 4 OF INTEGER;
-  BEGIN 
-    b[0]:=code[pc] MOD 100H; b[1]:= code[pc] DIV 100H MOD 100H; b[2]:= code[pc] DIV 10000H MOD 100H; b[3]:= code[pc] DIV 1000000H MOD 100H;
-    b[pcb]:=ORD(a); code[pc]:=b[0]+b[1]*100H+b[2]*10000H+b[3]*1000000H;
-    INC(pcb); IF pcb > 3 THEN pcb :=0; INC(pc) END
-  END Put1Byte;
-
-  (* begin-procedure-description
----
-**Put2Bytes** places two bytes in in the instruction stream.
-  end-procedure-description *)
-  PROCEDURE Put2Bytes(a, b: INTEGER; VAR pc, pcb: INTEGER);
-  BEGIN
-    Put1Byte(a,pc,pcb); 
-    Put1Byte(b,pc,pcb); 
-  END Put2Bytes;
-
-  (* begin-procedure-description
----
-**Put3Bytes** places three bytes in in the instruction stream.
-  end-procedure-description *)
-  PROCEDURE Put3Bytes(a, b, c: INTEGER; VAR pc, pcb: INTEGER);
-  BEGIN 
-    Put1Byte(a,pc,pcb); 
-    Put1Byte(b,pc,pcb); 
-    Put1Byte(c,pc,pcb); 
-  END Put3Bytes;
-
-  (* begin-procedure-description
----
-**Put4Bytes** places four bytes in in the instruction stream.
-  end-procedure-description *)
-  PROCEDURE Put4Bytes(a, b, c, d: INTEGER; VAR pc, pcb: INTEGER);
-  BEGIN 
-    Put1Byte(a,pc,pcb); 
-    Put1Byte(b,pc,pcb); 
-    Put1Byte(c,pc,pcb); 
-    Put1Byte(d,pc,pcb); 
-  END Put4Bytes;
-
-  (* begin-procedure-description
----
-**Put4Integer** places an integer as 4 bytes in in the instruction stream.
-  end-procedure-description *)
-  PROCEDURE Put4Integer(i: INTEGER; VAR pc, pcb: INTEGER);
-  BEGIN 
-    Put1Byte(i MOD 100H,pc,pcb); 
-    Put1Byte(i DIV 100H MOD 100H,pc,pcb); 
-    Put1Byte(i DIV 10000H MOD 100H,pc,pcb); 
-    Put1Byte(i DIV 1000000H MOD 100H,pc,pcb); 
-  END Put4Integer;
-
-
-
-  (* begin-procedure-description
----
 **Put0** 
   end-procedure-description *)
-  PROCEDURE Put0(op, ai, bi, c: LONGINT);
-    VAR a,b,a0,a1:INTEGER;
+  PROCEDURE Put0(op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    a:=regmap[ai];b:=regmap[bi];
-    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
-    IF op = Mov THEN Put3Bytes( a0, 089H, 0C0H+a1, pc, pcb ) END; 
-    IF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H+a1, pc, pcb ) END;
-    IF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H+a1, pc, pcb ) END;
-    IF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H+a1, pc, pcb ) END;
-    IF op = And THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb ) END;
-    IF op = Ann THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb ) END; (* and not *)
-    IF op = Ior THEN Put3Bytes( a0, 009H, 0F8H+a1, pc, pcb ) END;
-    IF op = Xor THEN Put3Bytes( a0, 031H, 0F8H+a1, pc, pcb ) END;
-    IF op = Add THEN Put3Bytes( a0, 001H, 0F8H+a1, pc, pcb ) END;
-    IF op = Sub THEN Put3Bytes( a0, 029H, 0F8H+a1, pc, pcb ) END;
-    IF op = Cmp THEN Put3Bytes( a0, 039H, 0F8H+a1, pc, pcb ) END;
-    IF op = Mul THEN Put3Bytes( a0, 0F7H, 0E0H+a1, pc, pcb ) END; (* EAX mul by reg *)
-    IF op = Div THEN Put3Bytes( a0, 0F7H, 0F0H+a1, pc, pcb ) END; (* EAX div by reg *)
-    IF op = Fad THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
-    IF op = Fsb THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
-    IF op = Fml THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
-    IF op = Fdv THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
+    code[pc] := ((a*10H + b) * 10H + op) * 10000H + c; INC(pc)
   END Put0;
 
-  PROCEDURE Put1(op, ai, bi, im: LONGINT);
-    VAR a,b,a0,a1,b0,b1:INTEGER;
+  PROCEDURE Put1(op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
-(*
     IF im < 0 THEN INC(op, V) END ;
     code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H); INC(pc)
-*)
-    a:=regmap[ai];b:=regmap[bi];
-    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
-    IF op = Mov THEN Put3Bytes( a0, 0C7H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END; 
-    IF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;   
-    IF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;  
-    IF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;  
-    IF op = And THEN Put3Bytes( a0, 081H, 0E0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Ann THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Ior THEN Put3Bytes( a0, 081H, 0C8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Xor THEN Put3Bytes( a0, 081H, 0F0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Add THEN Put3Bytes( a0, 081H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Sub THEN Put3Bytes( a0, 081H, 0E8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Cmp THEN Put3Bytes( a0, 081H, 0F8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Mul THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Div THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Fad THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Fsb THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Fml THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
-    IF op = Fdv THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;  
   END Put1;
 
   PROCEDURE Put1a(op, a, b, im: LONGINT);
@@ -191,65 +90,18 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF (im >= -10000H) & (im <= 0FFFFH) THEN Put1(op, a, b, im)
     ELSE Put1(Mov+U, RH, 0, im DIV 10000H);
       IF im MOD 10000H # 0 THEN Put1(Ior, RH, RH, im MOD 10000H) END ;
-      Put0(op, regmap[a], regmap[b], RH)
+      Put0(op, a, b, RH)
     END
   END Put1a;
 
-  PROCEDURE Put2(op, ai, bi, off: LONGINT);
-    VAR a,b,a0,a1,b0,b1:INTEGER;
+  PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
-(*
     code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc)
-*)
-    a:=regmap[ai];b:=regmap[bi];
-    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
-    IF op = Ldr THEN
-      Put3Bytes( a0, 08BH, 080H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
-    ELSIF op = Str THEN
-      Put3Bytes( a0, 089H, 080H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
-    ELSE
-     Put3Bytes( 090H, 090H, 090H, pc, pcb )
-    END
   END Put2;
 
   PROCEDURE Put3(op, cond, off: LONGINT);
-    VAR opc,osz,disp: INTEGER;
   BEGIN (*emit branch instruction*)
-(*
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc)
-
-    BR = 0; BLR = 1; BC = 2; BL = 3;
-    MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
-*)
-    disp:=off;
-    IF    op = BR  THEN (*via register*)
-    ELSIF op = BLR THEN (*via register and depositing link*)
-    ELSIF op = BC  THEN (*via offset from pc*)
-    ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-    END;
-
-    IF (op = BC) & (cond = 7) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=0E9H; osz:=1  ELSE opc:= 090H; osz:=4 END;
-    ELSIF (op = BC) & (cond = EQ) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=074H; osz:=1  ELSE opc:= 084H; osz:=4 END;
-    ELSIF (op = BC) & (cond = NE) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=075H; osz:=1  ELSE opc:= 085H; osz:=4 END;
-    ELSIF (op = BC) & (cond = GT) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=07FH; osz:=1  ELSE opc:= 08FH; osz:=4 END;
-    ELSIF (op = BC) & (cond = GE) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=07DH; osz:=1  ELSE opc:= 08DH; osz:=4 END;
-    ELSIF (op = BC) & (cond = LT) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=06CH; osz:=1  ELSE opc:= 07CH; osz:=4 END;
-    ELSIF (op = BC) & (cond = LE) THEN
-      IF (disp < -127) OR (disp > 127) THEN opc:=07EH; osz:=1  ELSE opc:= 08EH; osz:=4 END;
-    ELSE opc:=90H; disp:=90H; osz:=1
-    END;
-
-    IF osz = 4 THEN
-        Put2Bytes( 0FH, opc, pc, pcb); Put4Integer( disp, pc, pcb)
-    ELSE
-        Put1Byte( opc, pc, pcb); Put1Byte( disp, pc, pcb)
-    END
   END Put3;
 
   PROCEDURE incR;
@@ -285,36 +137,26 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END negated;
 
   PROCEDURE fix(at, with: LONGINT);
-  BEGIN 
-(*
-    code[at] := code[at] DIV C24 * C24 + (with MOD C24)
-*)
+  BEGIN code[at] := code[at] DIV C24 * C24 + (with MOD C24)
   END fix;
 
   PROCEDURE FixOne*(at: LONGINT);
-  BEGIN 
-(*
-    fix(at, pc-at-1)
-*)
+  BEGIN fix(at, pc-at-1)
   END FixOne;
 
   PROCEDURE FixLink*(L: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-(*
     WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
-*)
   END FixLink;
 
   PROCEDURE FixLinkWith(L0, dst: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-(*
     WHILE L0 # 0 DO
       L1 := code[L0] MOD C24;
       code[L0] := code[L0] DIV C24 * C24 + ((dst - L0 - 1) MOD C24); L0 := L1
     END
-*)
   END FixLinkWith;
 
   PROCEDURE merged(L0, L1: LONGINT): LONGINT;
@@ -1585,8 +1427,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **Open** initializes the ORG module code generation engine.     
   end-procedure-description *)
   PROCEDURE Open*(v: INTEGER);
-  BEGIN pc := 0; pcb := 0; tdx := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; check := v # 0; version := v;
-    IF v = 0 THEN pc := 2;
+  BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; fixorgP := 0; fixorgD := 0; fixorgT := 0; check := v # 0; version := v;
+    IF v = 0 THEN pc := 1;
       REPEAT code[pc] := 0; INC(pc) UNTIL pc = 8
     END
   END Open;
@@ -1605,9 +1447,9 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE Header*;
   BEGIN entry := pc*4;
-    IF version = 0 THEN code[0]:=0E9H + (((pc*4)-5)*100H);  (*jmp <code> --  RISC-0*)
-      (* code[0] := 0E7000000H-1 + pc;  Put1a(Mov, SP, 0, StkOrg0) *)  (*RISC-0*) 
-    ELSE Put1(Sub, SP, SP, 4); Put2(Str, LNK, SP, 0)
+    IF version = 0 THEN code[0] := 0E7000000H-1 + pc;  Put1a(Mov, SP, 0, StkOrg0)  (*aarch_64-0*)
+    ELSE code[0] := 0E92D5000H; INC(pc); (* was Put1(Sub, SP, SP, 4);*) (* STM SP, {FP, LNK} prolog module M *)
+         code[1] := 0E1A0C00DH; INC(pc); (* was Put2(Str, LNK, SP, 0)*) (* MOV FP R0 SP  *)
     END
   END Header;
 
@@ -1655,8 +1497,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       name: ORS.Ident;
       F: Files.File; R: Files.Rider;
   BEGIN  (*exit code*)
-    IF version = 0 THEN Put1(Mov, 0, 0, 0); Put3(BR, 7, 0)  (*RISC-0 infinite loop*)
-    ELSE Put2(Ldr, LNK, SP, 0); Put1(Add, SP, SP, 4); Put3(BR, 7, LNK)  (*return from parameterless module init*)
+    IF version = 0 THEN Put1(Mov, 0, 0, 0); Put3(BR, 7, 0)  (*RISC-0*)
+    ELSE Put2(Ldr, LNK, SP, 0); Put1(Add, SP, SP, 4); Put3(BR, 7, LNK)
     END ;
     obj := ORB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
     WHILE obj # NIL DO
@@ -1671,7 +1513,7 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END ;
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
     
-    ORB.MakeFileName(name, modid, ".i64"); (*write code file*)
+    ORB.MakeFileName(name, modid, ".a64"); (*write code file*)
     F := Files.New(name); Files.Set(R, F, 0); Files.WriteString(R, modid); Files.WriteInt(R, key); Files.Write(R, CHR(version));
     Files.WriteInt(R, size);
     obj := ORB.topScope.next;
@@ -1726,10 +1568,8 @@ MODULE OIG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **The initialzation code for this module** merely sets the 6 values in the global relmap array.
 
-This module's global variables are initialized by OIP calling OIG.Open, once it has begun parsing the source code's Module
+This module's global variables are initialized by OAP calling OAG.Open, once it has begun parsing the source code's Module
 definition and determined that its module imports are available and of compatible object filetype.
   end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13;
-      regmap[0]:=8; regmap[1]:=9; regmap[2]:=10; regmap[3]:=11; regmap[4]:=12; regmap[5]:=13; regmap[6]:=14; regmap[7]:=15;
-      regmap[8]:=8; regmap[9]:=9; regmap[10]:=10; regmap[11]:=11; regmap[12]:=12; regmap[13]:=13; regmap[14]:=14; regmap[15]:=15;
-END OIG.
+END OAG.
