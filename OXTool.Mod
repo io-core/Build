@@ -17,7 +17,7 @@ Any change to O[RIAa]G is likely to require a matching change in OXTool.
 
 end-module-develop-description *)
 MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
-  IMPORT SYSTEM, Files, Modules, Input, Texts, Viewers, MenuViewers, TextFrames, Oberon, OXDis;
+  IMPORT SYSTEM, Files, Modules, Input, Fonts, Texts, Viewers, MenuViewers, TextFrames, Oberon, OXDis;
   CONST 
     BADARCH=0; RISC5=1; X8664=2; AARCH64=3; ARM32=4; RISCV=5;
     BYTEORIENTED=0; WORDORIENTED=1;
@@ -234,7 +234,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
     e := OXDis.originate(R,F,s,n*4,0,x);
     WHILE e # OXDis.FINISH DO
       e := OXDis.decode();
-      Texts.WriteInt(W, OXDis.at, 4); Texts.Write(W, 9X);
+      Texts.WriteInt(W, OXDis.at, 4); Texts.Write(W, 20X);
       IF OXDis.wo = BYTEORIENTED THEN
         i:=0;WHILE i < OXDis.isz DO
           Texts.Write(W, HighNib(OXDis.ibytes[i])); Texts.Write(W, LowNib(OXDis.ibytes[i])); Texts.Write(W, " ");
@@ -246,7 +246,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
           DEC(i);
         END;
       END;
-      Texts.Write(W, 9X); Texts.WriteString(W, OXDis.istr); Texts.WriteLn(W);
+      Texts.Write(W, 20X); Texts.WriteString(W, OXDis.istr); Texts.WriteLn(W);
     END
   END decodeSection;
 
@@ -293,7 +293,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
           Files.ReadInt(R, size); Texts.WriteInt(W, size, 6); Texts.WriteLn(W);
           Texts.WriteString(W, "imports:"); Texts.WriteLn(W); Files.ReadString(R, name);
           WHILE name[0] # 0X DO
-            Texts.Write(W, 9X); Texts.WriteString(W, name);
+            Texts.Write(W, 20X); Texts.WriteString(W, name);
             Files.ReadInt(R, key); Texts.WriteHex(W, key); Texts.WriteLn(W);
             Files.ReadString(R, name)
           END ;
@@ -317,7 +317,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
           Texts.WriteString(W, "commands:"); Texts.WriteLn(W);
           Files.ReadString(R, name);
           WHILE name[0] # 0X DO
-            Texts.Write(W, 9X); Texts.WriteString(W, name);
+            Texts.Write(W, 20X); Texts.WriteString(W, name);
             Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 5); Texts.WriteLn(W);
             Files.ReadString(R, name)
           END ;
