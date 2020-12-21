@@ -305,7 +305,12 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
           Texts.WriteString(W, "data"); Files.ReadInt(R, data); Texts.WriteInt(W, data, 6); Texts.WriteLn(W);
           Texts.WriteString(W, "strings"); Texts.WriteLn(W);
           Files.ReadInt(R, n); i := 0;
-          WHILE i < n DO Files.Read(R, ch); Texts.Write(W, ch); INC(i) END ;
+          WHILE i < n DO 
+            Files.Read(R, ch); 
+            IF (ch > 10X) & (ch < 080X) THEN Texts.Write(W, ch) ELSE Texts.Write(W, 0E2X); Texts.Write(W, 080X); Texts.Write(W, 0A2X) END;
+            IF i MOD 80 = 0 THEN Texts.Write(W, 0AX) END;
+            INC(i) 
+          END ;
           Texts.WriteLn(W);
           Texts.WriteString(W, "code"); Texts.WriteLn(W);
           Files.ReadInt(R, n); i := 0;

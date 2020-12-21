@@ -84,6 +84,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
     dc: LONGINT;    (*data counter*)
     level, exno, version: INTEGER;
     newSF: BOOLEAN;  (*option flag*)
+    ccARCH: INTEGER;  (*cross-compiling architecture from option flag*)
     expression: PROCEDURE (VAR x: ORG.Item);  (*to avoid forward reference*)
     Type: PROCEDURE (VAR type: ORB.Type);
     FormalType: PROCEDURE (VAR typ: ORB.Type; dim: INTEGER);
@@ -1161,6 +1162,12 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   PROCEDURE Module;
     VAR key: LONGINT;
   BEGIN Texts.WriteString(W, "  compiling "); ORS.Get(sym);
+    IF ORS.ccARCH = ORS.RISC5 THEN Texts.WriteString(W, " for RISC5 ") END; 
+    IF ORS.ccARCH = ORS.X8664 THEN Texts.WriteString(W, " for X8664 ") END; 
+    IF ORS.ccARCH = ORS.ARM64 THEN Texts.WriteString(W, " for ARM64 ") END; 
+    IF ORS.ccARCH = ORS.ARM32 THEN Texts.WriteString(W, " for ARM32 ") END; 
+    IF ORS.ccARCH = ORS.RISCV64 THEN Texts.WriteString(W, " for RISCV64 ") END; 
+    IF ORS.ccARCH = ORS.RISCV32 THEN Texts.WriteString(W, " for RISCV32 ") END; 
     IF sym = ORS.module THEN
       ORS.Get(sym);
       IF sym = ORS.times THEN version := 0; dc := 8; Texts.Write(W, "*"); ORS.Get(sym) ELSE dc := 0; version := 1 END ;
@@ -1208,13 +1215,23 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 
   (* begin-procedure-description
 ---
-**Option** checks if a new symbol file may be generated.
+**Option** checks if a new symbol file may be generated and which architecture to compile for.
   end-procedure-description *)
   PROCEDURE Option(VAR S: Texts.Scanner);
+    VAR i: INTEGER;
   BEGIN newSF := FALSE;
-    IF S.nextCh = "/" THEN
+    ccARCH := ORS.RISC5;
+    WHILE S.nextCh = "/" DO
       Texts.Scan(S); Texts.Scan(S); 
-      IF (S.class = Texts.Name) & (S.s[0] = "s") THEN newSF := TRUE END
+      IF (S.class = Texts.Name) THEN 
+          IF S.s[0] = "s" THEN newSF := TRUE END;
+          IF S.s[0] = "r" THEN ccARCH := ORS.RISC5 END;
+          IF S.s[0] = "I" THEN ccARCH := ORS.X8664 END;
+          IF S.s[0] = "A" THEN ccARCH := ORS.ARM64 END;
+          IF S.s[0] = "a" THEN ccARCH := ORS.ARM32 END;
+          IF S.s[0] = "V" THEN ccARCH := ORS.RISCV64 END;
+          IF S.s[0] = "v" THEN ccARCH := ORS.RISCV32 END;  
+      END
     END
   END Option;
 
@@ -1226,25 +1243,26 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     VAR beg, end, time: LONGINT;
       T: Texts.Text;
       S: Texts.Scanner;
-  BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
+  BEGIN 
+    Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
     IF S.class = Texts.Char THEN
       IF S.codepoint = ORD("@") THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
-        IF time >= 0 THEN ORS.Init(T, beg); Module END
+        IF time >= 0 THEN ORS.Init(T, beg, ccARCH); Module END
       ELSIF S.codepoint = ORD("^") THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
         IF time >= 0 THEN
           Texts.OpenScanner(S, T, beg); Texts.Scan(S);
           IF S.class = Texts.Name THEN
             Texts.WriteString(W, S.s); NEW(T); Texts.Open(T, S.s);
-            IF T.len > 0 THEN ORS.Init(T, 0); Module END
+            IF T.len > 0 THEN ORS.Init(T, 0, ccARCH); Module END
           END
         END
       END
     ELSE 
       WHILE S.class = Texts.Name DO
         NEW(T); Texts.Open(T, S.s);
-        IF T.len > 0 THEN Option(S); ORS.Init(T, 0); Module
+        IF T.len > 0 THEN Option(S); ORS.Init(T, 0, ccARCH); Module
         ELSE Texts.WriteString(W, S.s); Texts.WriteString(W, " not found");
           Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
         END ;

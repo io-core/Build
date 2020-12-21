@@ -53,6 +53,9 @@ MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     array* = 60; record* = 61; pointer* = 62; const* = 63; type* = 64;
     var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot = 70;
 
+    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6;
+    BYTEORIENTED* = 0; WORDORIENTED* = 1;
+
   TYPE 
     Ident* = ARRAY IdLen OF CHAR;
 
@@ -61,6 +64,7 @@ MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     id*: Ident;  (*for identifiers*)
     str*: ARRAY stringBufSize OF CHAR;
     errcnt*: INTEGER;
+    ccARCH*: INTEGER;
     ch: CHAR;  (*last character read*)
     errpos: LONGINT;
     R: Texts.Reader;
@@ -337,8 +341,8 @@ MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **Init** opens the source text for reading and gets the first character.
   end-procedure-description *)
-  PROCEDURE Init*(T: Texts.Text; pos: LONGINT);
-  BEGIN errpos := pos; errcnt := 0; Texts.OpenReader(R, T, pos); Texts.Read(R, ch)
+  PROCEDURE Init*(T: Texts.Text; pos: LONGINT; a: INTEGER);
+  BEGIN ccARCH := a; errpos := pos; errcnt := 0; Texts.OpenReader(R, T, pos); Texts.Read(R, ch)
   END Init;
 
   (* begin-procedure-description
