@@ -1382,6 +1382,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF ORS.ccARCH = ORS.ARM32 THEN xPut0 := OXG.aPut0; xPut1 := OXG.aPut1; xPut1a := OXG.aPut1a; xPut2 := OXG.aPut2; xPut3 := OXG.aPut3 END;
     IF ORS.ccARCH = ORS.RISCV64 THEN xPut0 := OXG.VPut0; xPut1 := OXG.VPut1; xPut1a := OXG.VPut1a; xPut2 := OXG.VPut2; xPut3 := OXG.VPut3 END;
     IF ORS.ccARCH = ORS.RISCV32 THEN xPut0 := OXG.vPut0; xPut1 := OXG.vPut1; xPut1a := OXG.vPut1a; xPut2 := OXG.vPut2; xPut3 := OXG.vPut3 END;
+    OXG.setRegMap;
   END Open;
 
   (* begin-procedure-description

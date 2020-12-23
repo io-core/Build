@@ -35,6 +35,7 @@ MODULE OXG; (* C.Perkis 2020*)
     str*: ARRAY maxStrx OF CHAR;
     fixorgP*, fixorgD*, fixorgT*: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     err: ARRAY 32 OF CHAR;
+    regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
 
 
 
@@ -70,7 +71,17 @@ MODULE OXG; (* C.Perkis 2020*)
     fixorgT := v
   END setFixOrgT;
 
-
+  (* begin-procedure-description
+---
+**setRegMap**
+  end-procedure-description *)
+  PROCEDURE setRegMap*;
+  BEGIN
+    IF ORS.ccARCH = ORS.X8664 THEN
+      regmap[0]:=8; regmap[1]:=9; regmap[2]:=10; regmap[3]:=11; regmap[4]:=12; regmap[5]:=13; regmap[6]:=14; regmap[7]:=15;
+      regmap[8]:=8; regmap[9]:=9; regmap[10]:=10; regmap[11]:=11; regmap[12]:=12; regmap[13]:=13; regmap[14]:=14; regmap[15]:=15;
+    END
+  END setRegMap;
 
 
   (* begin-section-description
@@ -121,6 +132,19 @@ MODULE OXG; (* C.Perkis 2020*)
     Put1Byte(c,pc,pcb);
     Put1Byte(d,pc,pcb);
   END Put4Bytes;
+
+  (* begin-procedure-description
+---
+**Put4Integer** places an integer as 4 bytes in in the instruction stream.
+  end-procedure-description *)
+  PROCEDURE Put4Integer(i: INTEGER; VAR pc, pcb: INTEGER);
+  BEGIN
+    Put1Byte(i MOD 100H,pc,pcb);
+    Put1Byte(i DIV 100H MOD 100H,pc,pcb);
+    Put1Byte(i DIV 10000H MOD 100H,pc,pcb);
+    Put1Byte(i DIV 1000000H MOD 100H,pc,pcb);
+  END Put4Integer;
+
 
 
 
@@ -199,31 +223,59 @@ MODULE OXG; (* C.Perkis 2020*)
 ---
 **IPut0** PutRegFromRegOpReg
   end-procedure-description *)
-  PROCEDURE IPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
+  PROCEDURE IPut0*(VAR pc, pcb: LONGINT; op, ai, bi, c: LONGINT);
+    VAR a,b,a0,a1:INTEGER;
   BEGIN (*emit format-0 instruction*)
-      code[pc] := ((a*10H + b) * 10H + op) * 10000H + c;
-    INC(pc);
+    a:=regmap[ai];b:=regmap[bi];
+    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
+    IF op = Mov THEN Put3Bytes( a0, 089H, 0C0H+a1, pc, pcb ) END;
+    IF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H+a1, pc, pcb ) END;
+    IF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H+a1, pc, pcb ) END;
+    IF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H+a1, pc, pcb ) END;
+    IF op = And THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb ) END;
+    IF op = Ann THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb ) END; (* and not *)
+    IF op = Ior THEN Put3Bytes( a0, 009H, 0F8H+a1, pc, pcb ) END;
+    IF op = Xor THEN Put3Bytes( a0, 031H, 0F8H+a1, pc, pcb ) END;
+    IF op = Add THEN Put3Bytes( a0, 001H, 0F8H+a1, pc, pcb ) END;
+    IF op = Sub THEN Put3Bytes( a0, 029H, 0F8H+a1, pc, pcb ) END;
+    IF op = Cmp THEN Put3Bytes( a0, 039H, 0F8H+a1, pc, pcb ) END;
+    IF op = Mul THEN Put3Bytes( a0, 0F7H, 0E0H+a1, pc, pcb ) END; (* EAX mul by reg *)
+    IF op = Div THEN Put3Bytes( a0, 0F7H, 0F0H+a1, pc, pcb ) END; (* EAX div by reg *)
+    IF op = Fad THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
+    IF op = Fsb THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
+    IF op = Fml THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
+    IF op = Fdv THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) END;
   END IPut0;
 
   (* begin-procedure-description
 ---
 **IPut1** PutRegFromRegOpImmSmall
   end-procedure-description *)
-  PROCEDURE IPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
+  PROCEDURE IPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, ai, bi, im: LONGINT);
+    VAR a,b,a0,a1,b0,b1:INTEGER;
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
-    IF op = MovU THEN   (*  U = 2000H; V = 1000H; *)
-      IF im < 0 THEN
-        code[pc] := (((a+70H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      ELSE
-        code[pc] := (((a+60H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      END;
-    ELSE
-      IF im < 0 THEN INC(op, V) END ;
-      code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H);
-    END;   
-    INC(pc);
- 
+    a:=regmap[ai];b:=regmap[bi];
+    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
+    IF op = Mov THEN Put3Bytes( a0, 0C7H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;
+    IF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;
+    IF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )END;
+    IF op = And THEN Put3Bytes( a0, 081H, 0E0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Ann THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Ior THEN Put3Bytes( a0, 081H, 0C8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Xor THEN Put3Bytes( a0, 081H, 0F0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Add THEN Put3Bytes( a0, 081H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Sub THEN Put3Bytes( a0, 081H, 0E8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Cmp THEN Put3Bytes( a0, 081H, 0F8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Mul THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Div THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Fad THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Fsb THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Fml THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
+    IF op = Fdv THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )END;
   END IPut1;
+
+
 
   (* begin-procedure-description
 ---
@@ -239,24 +291,69 @@ MODULE OXG; (* C.Perkis 2020*)
 
   END IPut1a;
 
+
+
   (* begin-procedure-description
 ---
 **IPut2** PutRegLdStRegOffset
   end-procedure-description *)
-  PROCEDURE IPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
+  PROCEDURE IPut2*(VAR pc, pcb: LONGINT; op, ai, bi, off: LONGINT);
+    VAR a,b,a0,a1,b0,b1:INTEGER;
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
+    a:=regmap[ai];b:=regmap[bi];
+    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
+    IF op = Ldr THEN
+      Put3Bytes( a0, 08BH, 080H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
+    ELSIF op = Str THEN
+      Put3Bytes( a0, 089H, 080H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
+    ELSE
+     Put3Bytes( 090H, 090H, 090H, pc, pcb )
+    END
   END IPut2;
+
+
 
   (* begin-procedure-description
 ---
 **IPut3** PutBrCondOffset
   end-procedure-description *)
   PROCEDURE IPut3*(VAR pc, pcb: LONGINT; op, cond, off: LONGINT);
+    VAR opc,osz,disp: INTEGER;
   BEGIN (*emit branch instruction*)
-    code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
-  END IPut3;
+(*
+    BR = 0; BLR = 1; BC = 2; BL = 3;
+    MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
+*)
+    disp:=off;
+    IF    op = BR  THEN (*via register*)
+    ELSIF op = BLR THEN (*via register and depositing link*)
+    ELSIF op = BC  THEN (*via offset from pc*)
+    ELSIF op = BL  THEN (*via offset from pc and depositing link*)
+    END;
 
+    IF (op = BC) & (cond = 7) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=0E9H; osz:=1  ELSE opc:= 090H; osz:=4 END;
+    ELSIF (op = BC) & (cond = EQ) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=074H; osz:=1  ELSE opc:= 084H; osz:=4 END;
+    ELSIF (op = BC) & (cond = NE) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=075H; osz:=1  ELSE opc:= 085H; osz:=4 END;
+    ELSIF (op = BC) & (cond = GT) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=07FH; osz:=1  ELSE opc:= 08FH; osz:=4 END;
+    ELSIF (op = BC) & (cond = GE) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=07DH; osz:=1  ELSE opc:= 08DH; osz:=4 END;
+    ELSIF (op = BC) & (cond = LT) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=06CH; osz:=1  ELSE opc:= 07CH; osz:=4 END;
+    ELSIF (op = BC) & (cond = LE) THEN
+      IF (disp < -127) OR (disp > 127) THEN opc:=07EH; osz:=1  ELSE opc:= 08EH; osz:=4 END;
+    ELSE opc:=90H; disp:=90H; osz:=1
+    END;
+
+    IF osz = 4 THEN
+        Put2Bytes( 0FH, opc, pc, pcb); Put4Integer( disp, pc, pcb)
+    ELSE
+        Put1Byte( opc, pc, pcb); Put1Byte( disp, pc, pcb)
+    END
+  END IPut3;
 
 
   (* begin-section-description
@@ -533,7 +630,10 @@ MODULE OXG; (* C.Perkis 2020*)
 
 
   PROCEDURE fix*(at, with: LONGINT);
-  BEGIN code[at] := code[at] DIV C24 * C24 + (with MOD C24);
+  BEGIN
+    IF ORS.ccARCH = ORS.RISC5 THEN
+       code[at] := code[at] DIV C24 * C24 + (with MOD C24);
+    END
   END fix;
 
   PROCEDURE FixOne*(pc,pcb,at: LONGINT);
@@ -543,24 +643,30 @@ MODULE OXG; (* C.Perkis 2020*)
   PROCEDURE FixLink*(pc,pcb,L: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-    WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
+    IF ORS.ccARCH = ORS.RISC5 THEN
+      WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
+    END
   END FixLink;
 
   PROCEDURE FixLinkWith*(L0, dst: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-    WHILE L0 # 0 DO
-      L1 := code[L0] MOD C24;
-      code[L0] := code[L0] DIV C24 * C24 + ((dst - L0 - 1) MOD C24); L0 := L1;
+    IF ORS.ccARCH = ORS.RISC5 THEN
+      WHILE L0 # 0 DO
+        L1 := code[L0] MOD C24;
+        code[L0] := code[L0] DIV C24 * C24 + ((dst - L0 - 1) MOD C24); L0 := L1;
+      END
     END
   END FixLinkWith;
 
   PROCEDURE merged*(L0, L1: LONGINT): LONGINT;
     VAR L2, L3: LONGINT;
   BEGIN
-    IF L0 # 0 THEN L3 := L0;
-      REPEAT L2 := L3; L3 := code[L2] MOD 40000H UNTIL L3 = 0;
-      code[L2] := code[L2] + L1; L1 := L0;
+    IF ORS.ccARCH = ORS.RISC5 THEN
+      IF L0 # 0 THEN L3 := L0;
+        REPEAT L2 := L3; L3 := code[L2] MOD 40000H UNTIL L3 = 0;
+        code[L2] := code[L2] + L1; L1 := L0;
+      END ;
     END ;
     RETURN L1
   END merged;
