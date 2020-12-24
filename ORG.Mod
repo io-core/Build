@@ -65,6 +65,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     xPut1a: PROCEDURE (o: INTEGER; VAR pc, pcb, RH: LONGINT; op, a, b, im: LONGINT);
     xPut2: PROCEDURE  (VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
     xPut3: PROCEDURE  (VAR pc, pcb: LONGINT; op, cond, off: LONGINT);
+    xHeader: PROCEDURE (VAR pc, pcb, RH, entry, version: LONGINT);
 
   (* begin-section-description
 ## ---------- Instruction assemblers according to formats
@@ -1376,12 +1377,12 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF v = 0 THEN pc := 1;
       REPEAT OXG.SetCode(pc, 0); INC(pc) UNTIL pc = 8
     END;
-    IF ORS.ccARCH = ORS.RISC5 THEN xPut0 := OXG.RPut0; xPut1 := OXG.RPut1; xPut1a := OXG.RPut1a; xPut2 := OXG.RPut2; xPut3 := OXG.RPut3 END;
-    IF ORS.ccARCH = ORS.X8664 THEN xPut0 := OXG.IPut0; xPut1 := OXG.IPut1; xPut1a := OXG.IPut1a; xPut2 := OXG.IPut2; xPut3 := OXG.IPut3 END;
-    IF ORS.ccARCH = ORS.ARM64 THEN xPut0 := OXG.APut0; xPut1 := OXG.APut1; xPut1a := OXG.APut1a; xPut2 := OXG.APut2; xPut3 := OXG.APut3 END;
-    IF ORS.ccARCH = ORS.ARM32 THEN xPut0 := OXG.aPut0; xPut1 := OXG.aPut1; xPut1a := OXG.aPut1a; xPut2 := OXG.aPut2; xPut3 := OXG.aPut3 END;
-    IF ORS.ccARCH = ORS.RISCV64 THEN xPut0 := OXG.VPut0; xPut1 := OXG.VPut1; xPut1a := OXG.VPut1a; xPut2 := OXG.VPut2; xPut3 := OXG.VPut3 END;
-    IF ORS.ccARCH = ORS.RISCV32 THEN xPut0 := OXG.vPut0; xPut1 := OXG.vPut1; xPut1a := OXG.vPut1a; xPut2 := OXG.vPut2; xPut3 := OXG.vPut3 END;
+    IF ORS.ccARCH = ORS.RISC5 THEN xPut0 := OXG.RPut0; xPut1 := OXG.RPut1; xPut1a := OXG.RPut1a; xPut2 := OXG.RPut2; xPut3 := OXG.RPut3; xHeader := OXG.RHeader END;
+    IF ORS.ccARCH = ORS.X8664 THEN xPut0 := OXG.IPut0; xPut1 := OXG.IPut1; xPut1a := OXG.IPut1a; xPut2 := OXG.IPut2; xPut3 := OXG.IPut3; xHeader := OXG.IHeader END;
+    IF ORS.ccARCH = ORS.ARM64 THEN xPut0 := OXG.APut0; xPut1 := OXG.APut1; xPut1a := OXG.APut1a; xPut2 := OXG.APut2; xPut3 := OXG.APut3; xHeader := OXG.AHeader END;
+    IF ORS.ccARCH = ORS.ARM32 THEN xPut0 := OXG.aPut0; xPut1 := OXG.aPut1; xPut1a := OXG.aPut1a; xPut2 := OXG.aPut2; xPut3 := OXG.aPut3; xHeader := OXG.aHeader END;
+    IF ORS.ccARCH = ORS.RISCV64 THEN xPut0 := OXG.VPut0; xPut1 := OXG.VPut1; xPut1a := OXG.VPut1a; xPut2 := OXG.VPut2; xPut3 := OXG.VPut3; xHeader := OXG.VHeader END;
+    IF ORS.ccARCH = ORS.RISCV32 THEN xPut0 := OXG.vPut0; xPut1 := OXG.vPut1; xPut1a := OXG.vPut1a; xPut2 := OXG.vPut2; xPut3 := OXG.vPut3; xHeader := OXG.vHeader END;
     OXG.setRegMap;
   END Open;
 
@@ -1398,10 +1399,11 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **Header** prepares the code introductory sequence for a compiled module     
   end-procedure-description *)
   PROCEDURE Header*;
-  BEGIN entry := pc*4;
+  BEGIN xHeader(pc,pcb,RH,entry,version)
+(*  entry := pc*4;
     IF version = 0 THEN OXG.SetCode(0, 0E7000000H-1 + pc);  xPut1a(113, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
     ELSE xPut1(69, pc, pcb, Sub, SP, SP, 4); xPut2(pc, pcb, Str, LNK, SP, 0)
-    END
+    END *)
   END Header;
 
   (* begin-procedure-description

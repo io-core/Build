@@ -359,6 +359,6 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
   END DecObj;
 
 BEGIN
-  Texts.OpenWriter(W); T := TextFrames.Text(""); OpenViewer(T, "OXTool.Text"); Texts.SetFont(W, Fonts.This("unifont.Scn.Fnt"));
+  Texts.OpenWriter(W); T := TextFrames.Text(""); OpenViewer(T, "OXTool.Text"); Texts.SetFont(W, Fonts.This("DVSansMono16.Scn.Fnt"));
   Texts.WriteString(W, "OXTool 2020"); Texts.WriteLn(W); Texts.Append(T, W.buf);
 END OXTool.

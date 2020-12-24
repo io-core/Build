@@ -214,6 +214,16 @@ MODULE OXG; (* C.Perkis 2020*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END RPut3;
 
+  (* begin-procedure-description
+---
+**RHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE RHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] := 0E7000000H-1 + pc;  RPut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE RPut1(121, pc, pcb, Sub, SP, SP, 4); RPut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END RHeader;
 
   (* begin-section-description
 ## ---------- X8664 instruction generation
@@ -356,6 +366,17 @@ MODULE OXG; (* C.Perkis 2020*)
   END IPut3;
 
 
+  (* begin-procedure-description
+---
+**IHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE IHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] := 0E7000000H-1 + pc;  IPut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE IPut1(121, pc, pcb, Sub, SP, SP, 4); IPut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END IHeader;
+
   (* begin-section-description
 ## ---------- ARM64 instruction generation
   end-section-description *)
@@ -421,6 +442,17 @@ MODULE OXG; (* C.Perkis 2020*)
   BEGIN (*emit branch instruction*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END APut3;
+
+  (* begin-procedure-description
+---
+**AHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE AHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] :=  0E7000000H-1 + pc;  APut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE APut1(121, pc, pcb, Sub, SP, SP, 4); APut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END AHeader;
 
 
   (* begin-section-description
@@ -488,6 +520,17 @@ MODULE OXG; (* C.Perkis 2020*)
   BEGIN (*emit branch instruction*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END aPut3;
+
+  (* begin-procedure-description
+---
+**aHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE aHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] :=  0E7000000H-1 + pc;  aPut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE aPut1(121, pc, pcb, Sub, SP, SP, 4); aPut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END aHeader;
 
 
 
@@ -557,6 +600,17 @@ MODULE OXG; (* C.Perkis 2020*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END VPut3;
 
+  (* begin-procedure-description
+---
+**VHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE VHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] :=  0E7000000H-1 + pc;  VPut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE VPut1(121, pc, pcb, Sub, SP, SP, 4); VPut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END VHeader;
+
 
 
 
@@ -625,6 +679,17 @@ MODULE OXG; (* C.Perkis 2020*)
   BEGIN (*emit branch instruction*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END vPut3;
+
+  (* begin-procedure-description
+---
+**vHeader** prepares the code introductory sequence for a compiled module
+  end-procedure-description *)
+  PROCEDURE vHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
+  BEGIN entry := pc*4;
+    IF version = 0 THEN code[0] :=  0E7000000H-1 + pc;  vPut1a(120, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    ELSE vPut1(121, pc, pcb, Sub, SP, SP, 4); vPut2(pc, pcb, Str, LNK, SP, 0)
+    END
+  END vHeader;
 
 
 
