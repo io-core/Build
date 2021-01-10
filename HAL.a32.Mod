@@ -6,7 +6,7 @@ end-module-use-description *)
 Module BareMetala exercises features of the compiler in bringing Oberon up from bare metal on 32-bit ARM..
 
 end-module-develop-description *)
-MODULE* BareMetala;
+MODULE* HAL;
   CONST
   TYPE
   VAR x, y, z: INTEGER;
@@ -19,4 +19,4 @@ BEGIN LED(1); z := 0;
      UNTIL x = 0;
      z := z+1
   UNTIL FALSE
-END BareMetala.
+END HAL.
