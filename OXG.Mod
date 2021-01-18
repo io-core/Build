@@ -1,18 +1,20 @@
-(* begin-module-use-description
+(* begin-module-use-description  vim:fdm=marker fmr=(*%,%*) fdl=0 fen 
 Module OXG generates the processor-specific instructions for executing an Oberon program.
 
 end-module-use-description *)
 (* begin-module-develop-description
+Module OXG implements the processor-specific backends used by ORG
 
 (C.Perkins 2020)
 
-**ORG** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
+**OXG** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
 
 end-module-develop-description *)
 MODULE OXG; (* C.Perkis 2020*)
   IMPORT SYSTEM, Files, ORS, ORB;
 
-  CONST
+  
+  CONST     (*% *)
     WordSize* = 4;
     RStkOrg0 = -64;
     IStkOrg0 = -64;
@@ -24,63 +26,61 @@ MODULE OXG; (* C.Perkis 2020*)
     maxCode = 8000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
 
-  (*frequently used opcodes*)  U = 2000H; V = 1000H;
+    (*frequently used opcodes*)  U = 2000H; V = 1000H;
     Mov = 0; Lsl = 1; Asr = 2; Ror= 3; And = 4; Ann = 5; Ior = 6; Xor = 7;
     Add = 8; Sub = 9; Cmp = 9; Mul = 10; Div = 11;
     Fad = 12; Fsb = 13; Fml = 14; Fdv = 15; MovU = 16;
     Ldr = 8; Str = 10;
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
+    (* %*)
 
-  TYPE
+  TYPE      (*% *)
+    (* %*)
 
-  VAR
+  VAR       (*% *)
     code*: ARRAY maxCode OF LONGINT;
     data*: ARRAY maxTD OF LONGINT;  (*type descriptors*)
     str*: ARRAY maxStrx OF CHAR;
     fixorgP*, fixorgD*, fixorgT*: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     err: ARRAY 32 OF CHAR;
     regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
+    (* %*)
 
+  (*%S ## --------- Fixup Chains Updating *)
 
-
-  (* begin-section-description
-## ---------- Fixup Chains Updating
-  end-section-description *)
-
-
+  PROCEDURE setFixOrgP*(v: LONGINT);  (*%P *)
   (* begin-procedure-description
 ---
 **setFixOrgP**
   end-procedure-description *)
-  PROCEDURE setFixOrgP*(v: LONGINT);
   BEGIN 
     fixorgP := v
-  END setFixOrgP;
+  END setFixOrgP;                     (* P%*)
 
+  PROCEDURE setFixOrgD*(v: LONGINT);  (*%P *)
   (* begin-procedure-description
 ---
 **setFixOrgD**
   end-procedure-description *)
-  PROCEDURE setFixOrgD*(v: LONGINT);
   BEGIN 
     fixorgD := v
-  END setFixOrgD;
+  END setFixOrgD;                     (* P%*)
 
+  PROCEDURE setFixOrgT*(v: LONGINT);  (*%P *)
   (* begin-procedure-description
 ---
 **setFixOrgT**
   end-procedure-description *)
-  PROCEDURE setFixOrgT*(v: LONGINT);
   BEGIN 
     fixorgT := v
-  END setFixOrgT;
+  END setFixOrgT;                     (* P%*)
 
+  PROCEDURE setRegMap*;               (*%P *)
   (* begin-procedure-description
 ---
 **setRegMap**
   end-procedure-description *)
-  PROCEDURE setRegMap*;
     VAR i : INTEGER;
   BEGIN
     FOR i:= 0 TO 15 DO regmap[i]:=i END;   (*   MT = 12; SP = 14; LNK = 15;   *)
@@ -94,8 +94,9 @@ MODULE OXG; (* C.Perkis 2020*)
     ELSIF ORS.ccARCH = ORS.RISCV64 THEN FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
     ELSIF ORS.ccARCH = ORS.RISCV32 THEN FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
     END
-  END setRegMap;
+  END setRegMap;                     (* P%*)
 
+  (* S%*)
 
   (* begin-section-description
 ## ---------- Utility Operations
