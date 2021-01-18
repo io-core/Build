@@ -1,6 +1,8 @@
 # Build
 io-core Build package containing the compiler and associated tools of Oberon
 
+Documentation can be found [here](https://github.com/io-core/doc/tree/main/core/Build)
+
 ### License of the Project Oberon files
 
 Project Oberon, Revised Edition 2013
