@@ -7,11 +7,17 @@ Module BareMetalV exercises features of the compiler in bringing Oberon up from 
 
 end-module-develop-description *)
 MODULE* HAL;
+  
   CONST
-  TYPE
-  VAR x, y, z: INTEGER;
 
-BEGIN LED(1); z := 0;
+  TYPE
+
+
+PROCEDURE Init;
+  VAR x, y, z: INTEGER;
+BEGIN
+(*
+  LED(1); z := 0;
   REPEAT LED(z); x := 1000;
      REPEAT y := 1000;
        REPEAT y := y-1 UNTIL y = 0;
@@ -19,4 +25,10 @@ BEGIN LED(1); z := 0;
      UNTIL x = 0;
      z := z+1
   UNTIL FALSE
+*)
+END Init;
+
+
+BEGIN Init;
+  WHILE TRUE DO END
 END HAL.
