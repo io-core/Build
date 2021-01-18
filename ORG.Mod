@@ -1399,11 +1399,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **Header** prepares the code introductory sequence for a compiled module     
   end-procedure-description *)
   PROCEDURE Header*;
-  BEGIN xHeader(pc,pcb,RH,entry,version)
-(*  entry := pc*4;
-    IF version = 0 THEN OXG.SetCode(0, 0E7000000H-1 + pc);  xPut1a(113, pc, pcb, RH, Mov, SP, 0, StkOrg0)  (*RISC-0*)
-    ELSE xPut1(69, pc, pcb, Sub, SP, SP, 4); xPut2(pc, pcb, Str, LNK, SP, 0)
-    END *)
+  BEGIN 
+    xHeader(pc,pcb,RH,entry,version)
   END Header;
 
   (* begin-procedure-description

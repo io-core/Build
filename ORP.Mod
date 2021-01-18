@@ -608,7 +608,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 
   (* begin-procedure-description
 ---
-**StandProc** sets the keyboard initial state and populates the scancode to ascii table.
+**StandProc** handles standard (predefined) procedures.
   end-procedure-description *)
   PROCEDURE StandProc(pno: LONGINT);
     VAR nap, npar: LONGINT; (*nof actual/formal parameters*)
