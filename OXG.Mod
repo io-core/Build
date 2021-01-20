@@ -45,6 +45,8 @@ MODULE OXG; (* C.Perkis 2020*)
     fixorgP*, fixorgD*, fixorgT*: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     err: ARRAY 32 OF CHAR;
     regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
+    it0: ARRAY 16 OF INTEGER;
+    it1: ARRAY 16 OF INTEGER;
     (* %*)
 
   (*%S ## --------- Fixup Chains Updating *)
@@ -75,26 +77,6 @@ MODULE OXG; (* C.Perkis 2020*)
   BEGIN 
     fixorgT := v
   END setFixOrgT;                     (* P%*)
-
-  PROCEDURE setRegMap*;               (*%P *)
-  (* begin-procedure-description
----
-**setRegMap**
-  end-procedure-description *)
-    VAR i : INTEGER;
-  BEGIN
-    FOR i:= 0 TO 15 DO regmap[i]:=i END;   (*   MT = 12; SP = 14; LNK = 15;   *)
-    IF ORS.ccARCH = ORS.X8664 THEN (* RSP = SP, RBP = MT, RBX = LNK *)
-
-      regmap[0]:=8; regmap[1]:=9; regmap[2]:=10; regmap[3]:=11; regmap[4]:=12; regmap[5]:=13; regmap[6]:=14; regmap[7]:=15;
-      regmap[8]:=1; regmap[9]:=2; regmap[10]:=6; regmap[11]:=7; regmap[MT]:=5; regmap[13]:=0; regmap[SP]:=4; regmap[LNK]:=3;
-
-    ELSIF ORS.ccARCH = ORS.ARM64 THEN regmap[MT]:=29; regmap[13]:=13; regmap[SP]:=31; regmap[LNK]:=30;
-    ELSIF ORS.ccARCH = ORS.ARM32 THEN regmap[MT]:=12; regmap[SP]:=13; regmap[LNK]:=14;
-    ELSIF ORS.ccARCH = ORS.RISCV64 THEN FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
-    ELSIF ORS.ccARCH = ORS.RISCV32 THEN FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
-    END
-  END setRegMap;                     (* P%*)
 
   (* S%*)
 
@@ -219,6 +201,7 @@ MODULE OXG; (* C.Perkis 2020*)
     code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
   END RPut2;
 
+
   (* begin-procedure-description
 ---
 **RPut3** PutBrCondOffset
@@ -227,6 +210,7 @@ MODULE OXG; (* C.Perkis 2020*)
   BEGIN (*emit branch instruction*)
     code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
   END RPut3;
+
 
   (* begin-procedure-description
 ---
@@ -240,65 +224,100 @@ MODULE OXG; (* C.Perkis 2020*)
   END RHeader;
 
   (* begin-section-description
-## ---------- X8664 instruction generation
+## ---------- i64 instruction generation
   end-section-description *)
+
+
+  (* begin-procedure-description
+---
+**ISetTables** configures opcode tables for x86_64.
+  end-procedure-description *)
+  PROCEDURE ISetTables;
+  BEGIN    (* RSP = SP, RBP = MT, RBX = LNK *)
+      regmap[0]:=8; regmap[1]:=9; regmap[2]:=10; regmap[3]:=11; regmap[4]:=12; regmap[5]:=13; regmap[6]:=14; regmap[7]:=15;
+      regmap[8]:=1; regmap[9]:=2; regmap[10]:=6; regmap[11]:=7; regmap[MT]:=5; regmap[13]:=0; regmap[SP]:=4; regmap[LNK]:=3;
+
+      it0[Mov]:= 089C0H;  it0[Lsl]:= 0C1E0H;  it0[Asr]:= 0C1E8H;  it0[Ror]:= 0C1C8H; 
+      it0[And]:= 021F8H;  it0[Ann]:= 021F8H;  it0[Ior]:= 009F8H;  it0[Xor]:= 031F8H;
+      it0[Add]:= 001F8H;  it0[Sub]:= 029F8H;  it0[Mul]:= 0F7E0H;  it0[Div]:= 0F7F0H;
+      it0[Fad]:= 0F7F0H;  it0[Fsb]:= 0F7F0H;  it0[Fml]:= 0F7F0H;  it0[Fdv]:= 0F7F0H;
+
+      it1[Mov]:= 4C7C0H;  it1[Lsl]:= 1C1E0H;  it1[Asr]:= 1C1E8H;  it1[Ror]:= 1C1C8H; 
+      it1[And]:= 481E0H;  it1[Ann]:= 40000H;  it1[Ior]:= 481C8H;  it1[Xor]:= 481F0H;
+      it1[Add]:= 481C0H;  it1[Sub]:= 481E8H;  it1[Mul]:= 40000H;  it1[Div]:= 40000H;
+      it1[Fad]:= 40000H;  it1[Fsb]:= 40000H;  it1[Fml]:= 40000H;  it1[Fdv]:= 40000H;
+  END ISetTables;
+
 
 (* begin-procedure-description
 ---
-**IPut0** PutRegFromRegOpReg
+**IPut0** places a register <= Register Operation Register instruction in the code array.
+
+When the destination register (ai) is not the same as the first operand register (bi) 
+the AX register is used as an intermediate register.
+
   end-procedure-description *)
-  PROCEDURE IPut0*(VAR pc, pcb: LONGINT; op, ai, bi, c: LONGINT);
-    VAR a,b,a0,a1:INTEGER;
+  PROCEDURE IPut0*(VAR pc, pcb: LONGINT; op, ai, bi, ci: LONGINT);
+    VAR a,b,a0,a1,b1,c,t:INTEGER;
   BEGIN (*emit format-0 instruction*)
-    a:=regmap[ai];b:=regmap[bi];
+    a:=regmap[ai]; b:=regmap[bi]; c:=regmap[ci];
+
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
-    IF    op = Mov THEN Put3Bytes( a0, 089H, 0C0H+a1, pc, pcb ) 
-    ELSIF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H+a1, pc, pcb ) 
-    ELSIF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H+a1, pc, pcb ) 
-    ELSIF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H+a1, pc, pcb ) 
-    ELSIF op = And THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb ) 
-    ELSIF op = Ann THEN Put3Bytes( a0, 021H, 0F8H+a1, pc, pcb )  (* and not *)
-    ELSIF op = Ior THEN Put3Bytes( a0, 009H, 0F8H+a1, pc, pcb ) 
-    ELSIF op = Xor THEN Put3Bytes( a0, 031H, 0F8H+a1, pc, pcb ) 
-    ELSIF op = Add THEN Put3Bytes( a0, 001H, 0F8H+a1, pc, pcb ) 
-    ELSIF op = Sub THEN Put3Bytes( a0, 029H, 0F8H+a1, pc, pcb ) 
-(*  ELSIF op = Cmp THEN Put3Bytes( a0, 039H, 0F8H+a1, pc, pcb )  *)
-    ELSIF op = Mul THEN Put3Bytes( a0, 0F7H, 0E0H+a1, pc, pcb )  (* EAX mul by reg *)
-    ELSIF op = Div THEN Put3Bytes( a0, 0F7H, 0F0H+a1, pc, pcb )  (* EAX div by reg *)
-    ELSIF op = Fad THEN Put3Bytes( 090H, 090H, 090H, pc, pcb )  
-    ELSIF op = Fsb THEN Put3Bytes( 090H, 090H, 090H, pc, pcb )  
-    ELSIF op = Fml THEN Put3Bytes( 090H, 090H, 090H, pc, pcb )  
-    ELSIF op = Fdv THEN Put3Bytes( 090H, 090H, 090H, pc, pcb ) 
+    IF a # b THEN
+      b1:=b MOD 8; IF b > 8 THEN a0 := a0 + 2 END;
+      Put3Bytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
+      a0:=48H; IF a > 8 THEN a0 := 49H END;
     END;
+
+    b1:=c MOD 8; IF c > 8 THEN a0 := a0 + 2 END;
+
+    IF op < 16 THEN
+      Put3Bytes( a0, it0[op] DIV 100H MOD 100H, (it0[op] MOD 100H) + (b1*8H)+a1, pc, pcb )
+    ELSE
+      Put1Byte( 90H, pc, pcb)
+    END
+
   END IPut0;
 
   (* begin-procedure-description
 ---
-**IPut1** PutRegFromRegOpImmSmall
+**IPut1** places a register <= Register Operation Immediate instruction in the code array.
+
+When the destination register (ai) is not the same as the first operand register (bi)
+the AX register is used as an intermediate register.
+
+The immediate value may be up to 32-bits in size.
+
+If the 'U' bit is set and the operation is a move, the value is shifted left 32-bits.
+
   end-procedure-description *)
   PROCEDURE IPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, ai, bi, im: LONGINT);
-    VAR a,b,a0,a1,b0,b1:INTEGER;
+    VAR a,b,a0,a1,b0,b1,osz:INTEGER;
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
     a:=regmap[ai];b:=regmap[bi];
+
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
-    IF    op = Mov THEN Put3Bytes( a0, 0C7H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Lsl THEN Put3Bytes( a0, 0C1H, 0E0H + a1, pc, pcb ); Put1Byte( im, pc, pcb )
-    ELSIF op = Asr THEN Put3Bytes( a0, 0C1H, 0E8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )
-    ELSIF op = Ror THEN Put3Bytes( a0, 0C1H, 0C8H + a1, pc, pcb ); Put1Byte( im, pc, pcb )
-    ELSIF op = And THEN Put3Bytes( a0, 081H, 0E0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Ann THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Ior THEN Put3Bytes( a0, 081H, 0C8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Xor THEN Put3Bytes( a0, 081H, 0F0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Add THEN Put3Bytes( a0, 081H, 0C0H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Sub THEN Put3Bytes( a0, 081H, 0E8H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-(*  ELSIF op = Cmp THEN Put3Bytes( a0, 081H, 0F8H + a1, pc, pcb ); Put4Integer( im, pc, pcb ) *)
-    ELSIF op = Mul THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Div THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Fad THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Fsb THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Fml THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
-    ELSIF op = Fdv THEN Put3Bytes( a0, 000H, 000H + a1, pc, pcb ); Put4Integer( im, pc, pcb )
+    IF a # b THEN
+      b1:=b MOD 8; IF b > 8 THEN a0 := a0 + 2 END;
+      Put3Bytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
+      a0:=48H; IF a > 8 THEN a0 := 49H END;
     END;
+
+    osz:=4;
+    a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
+
+    IF op < 16 THEN
+      Put3Bytes( a0, it1[op] DIV 100H MOD 100H, (it1[op] MOD 100H) + a1, pc, pcb ); osz := it1[op] DIV 10000H
+    ELSE
+      Put1Byte( 90H, pc, pcb)
+    END;
+
+    IF osz = 4 THEN
+      Put4Integer( im, pc, pcb )
+    ELSE
+      Put1Byte( im, pc, pcb )
+    END
+
   END IPut1;
 
 
@@ -350,7 +369,7 @@ MODULE OXG; (* C.Perkis 2020*)
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
 *)
-    disp:=(off * 4) - 1;
+    disp:=(off * 4) - 4;
     IF    op = BR  THEN (*via register*)
       IF (off = 15) THEN
         Put1Byte( 0C3H, pc, pcb); osz:=0
@@ -407,61 +426,58 @@ MODULE OXG; (* C.Perkis 2020*)
 ## ---------- ARM64 instruction generation
   end-section-description *)
 
+
+  (* begin-procedure-description
+---
+**ASetTables** configures opcode tables for aarch64.
+  end-procedure-description *)
+  PROCEDURE ASetTables;
+  BEGIN
+      regmap[MT]:=29; regmap[13]:=13; regmap[SP]:=31; regmap[LNK]:=30;
+
+      it0[Mov]:= 0AA000000H;  it0[Lsl]:=         0H;  it0[Asr]:=         0H;  it0[Ror]:=         0H; 
+      it0[And]:=         0H;  it0[Ann]:=         0H;  it0[Ior]:=         0H;  it0[Xor]:=         0H;
+      it0[Add]:= 0AB000000H;  it0[Sub]:= 0EB000000H;  it0[Mul]:=         0H;  it0[Div]:=         0H;
+      it0[Fad]:=         0H;  it0[Fsb]:=         0H;  it0[Fml]:=         0H;  it0[Fdv]:=         0H;
+
+      it1[Mov]:= 0D2000000H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
+      it1[And]:=         0H;  it1[Ann]:=         0H;  it1[Ior]:=         0H;  it1[Xor]:=         0H;
+      it1[Add]:= 091000000H;  it1[Sub]:= 0D1000000H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
+      it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
+
+  END ASetTables;
+
+
 (* begin-procedure-description
 ---
 **APut0** PutRegFromRegOpReg
   end-procedure-description *)
-  PROCEDURE APut0*(VAR pc, pcb: LONGINT; op, ai, bi, ci: LONGINT);
-    VAR a,b,c:INTEGER;
+  PROCEDURE APut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    a:=regmap[ai];b:=regmap[bi];c:=regmap[ci];
-    IF    op = Mov THEN code[pc]:= (0AAH * 1000000H) + (c * 10000H) + (1FH * 20H) + a; INC(pc)
-    ELSIF op = Lsl THEN  
-    ELSIF op = Asr THEN  
-    ELSIF op = Ror THEN  
-    ELSIF op = And THEN  
-    ELSIF op = Ann THEN   (* and not *)
-    ELSIF op = Ior THEN  
-    ELSIF op = Xor THEN  
-    ELSIF op = Add THEN code[pc]:= (0ABH * 1000000H) + (c * 10000H) + (b * 20H) + a; INC(pc)
-    ELSIF op = Sub THEN code[pc]:= (0EBH * 1000000H) + (c * 10000H) + (b * 20H) + a; INC(pc)  
-(*  ELSIF op = Cmp THEN   *)
-    ELSIF op = Mul THEN   (* EAX mul by reg *)
-    ELSIF op = Div THEN   (* EAX div by reg *)
-    ELSIF op = Fad THEN  
-    ELSIF op = Fsb THEN  
-    ELSIF op = Fml THEN  
-    ELSIF op = Fdv THEN  
+    IF   op = Mov THEN 
+      code[pc] := it0[op] + (regmap[c] * 10000H) + (1FH * 20H) + regmap[a]
+    ELSIF op < 16 THEN
+      code[pc] := it0[op] + (regmap[c] * 10000H) + (regmap[b] * 20H) + regmap[a]
+    ELSE
+      code[pc] := -1
     END;
+    INC(pc)
   END APut0;
 
   (* begin-procedure-description
 ---
 **APut1** PutRegFromRegOpImmSmall
   end-procedure-description *)
-  PROCEDURE APut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, ai, bi, im: LONGINT);
-    VAR a,b:INTEGER;
+  PROCEDURE APut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
-    a:=regmap[ai];b:=regmap[bi];
-   
-    IF    op = Mov THEN code[pc]:= (1A5H * 800000H) + (im * 20H) + a; INC(pc)
-    ELSIF op = Lsl THEN 
-    ELSIF op = Asr THEN 
-    ELSIF op = Ror THEN 
-    ELSIF op = And THEN 
-    ELSIF op = Ann THEN 
-    ELSIF op = Ior THEN 
-    ELSIF op = Xor THEN 
-    ELSIF op = Add THEN code[pc]:= (0B1H * 1000000H) + (im * 400H) + (b * 20H) + a; INC(pc)
-    ELSIF op = Sub THEN code[pc]:= (0F1H * 1000000H) + (im * 400H) + (b * 20H) + a; INC(pc)
-    ELSIF op = Cmp THEN 
-    ELSIF op = Mul THEN 
-    ELSIF op = Div THEN 
-    ELSIF op = Fad THEN 
-    ELSIF op = Fsb THEN 
-    ELSIF op = Fml THEN 
-    ELSIF op = Fdv THEN 
+    IF   op = Mov THEN 
+      code[pc] := (1A5H * 800000H) + (im * 20H) + regmap[a]
+    ELSIF op < 16 THEN
+      code[pc] := it1[op] + (im * 400H) + (regmap[b] * 20H) + regmap[a]
+    ELSE
+      code[pc] := -1
     END;
+    INC(pc)
   END APut1;
 
   (* begin-procedure-description
@@ -482,9 +498,18 @@ MODULE OXG; (* C.Perkis 2020*)
 ---
 **APut2** PutRegLdStRegOffset
   end-procedure-description *)
-  PROCEDURE APut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
+  PROCEDURE APut2*(VAR pc, pcb: LONGINT; op, ai, bi, off: LONGINT);
+    VAR a,b:INTEGER;
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
+    a:=regmap[ai];b:=regmap[bi];
+    IF op = Ldr THEN
+      code[pc]:= 0F8400000H + ((off MOD 200H) * 1000H) + (b * 20H) + a
+    ELSIF op = Str THEN
+      code[pc]:= 0F8000000H + ((off MOD 200H) * 1000H) + (b * 20H) + a
+    ELSE
+      code[pc]:=0
+    END;
+    INC(pc)
   END APut2;
 
   (* begin-procedure-description
@@ -500,13 +525,18 @@ MODULE OXG; (* C.Perkis 2020*)
 *)
     disp:=off;
     IF    op = BR  THEN (*via register*)
-      code[pc]:= 0D61FH * 10000H + (regmap[off] * 20H); INC(pc)
+      IF off = 15 THEN
+        code[pc]:= 0D65F03C0H; INC(pc) (* substitute ret *)
+      ELSE
+        code[pc]:= 0D61FH * 10000H + (regmap[off] * 20H); INC(pc)
+      END
     ELSIF op = BLR THEN (*via register and depositing link*)
       code[pc]:= 0D63FH * 10000H + (regmap[off] * 20H); INC(pc)
+
     ELSIF op = BC  THEN (*via offset from pc*)
-      INC(pc)
+      code[pc]:=14000000H + ((off+1 ) MOD 4000000H); INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      INC(pc)
+      code[pc]:=94000000H + ((off+1 ) MOD 4000000H); INC(pc)
     END;
 END APut3;
 
@@ -529,81 +559,51 @@ END APut3;
 ## ---------- ARM32 instruction generation
   end-section-description *)
 
+
+  (* begin-procedure-description
+---
+**aSetTables** configures opcode tables for arm 32-bit.
+  end-procedure-description *)
+  PROCEDURE aSetTables;
+  BEGIN
+      regmap[MT]:=12; regmap[SP]:=13; regmap[LNK]:=14;
+
+      it0[Mov]:= 0E1A00000H;  it0[Lsl]:= 0E1A00100H;  it0[Asr]:= 0E1A00000H;  it0[Ror]:= 0E1A00000H; 
+      it0[And]:= 0E0000000H;  it0[Ann]:=         0H;  it0[Ior]:=         0H;  it0[Xor]:= 0E0200000H;
+      it0[Add]:= 0E0800000H;  it0[Sub]:= 0E0400000H;  it0[Mul]:=         0H;  it0[Div]:=         0H;
+      it0[Fad]:=         0H;  it0[Fsb]:=         0H;  it0[Fml]:=         0H;  it0[Fdv]:=         0H;
+
+      it1[Mov]:= 0E3000000H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
+      it1[And]:= 0E2000000H;  it1[Ann]:=         0H;  it1[Ior]:= 0E3800000H;  it1[Xor]:= 0E2200000H;
+      it1[Add]:= 0E2800000H;  it1[Sub]:= 0E2400000H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
+      it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
+  END aSetTables;
+
+
 (* begin-procedure-description
 ---
 **aPut0** PutRegFromRegOpReg
   end-procedure-description *)
-  PROCEDURE aPut0*(VAR pc, pcb: LONGINT; op, ai, bi, ci: LONGINT);
-    VAR a,b,c:INTEGER;
+  PROCEDURE aPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    a:=regmap[ai];b:=regmap[bi];c:=regmap[ci];
-    IF    op = Mov THEN code[pc]:= (0E18H * 100000H) + (a * 10000H) + (b * 1000H) + b ; INC(pc)
-    ELSIF op = Lsl THEN  
-    ELSIF op = Asr THEN  
-    ELSIF op = Ror THEN  
-    ELSIF op = And THEN code[pc]:= (0E00H * 100000H) + (a * 10000H) + (b * 1000H) + c ; INC(pc) 
-    ELSIF op = Ann THEN   (* and not *)
-    ELSIF op = Ior THEN code[pc]:= (0E18H * 100000H) + (a * 10000H) + (b * 1000H) + c ; INC(pc)  
-    ELSIF op = Xor THEN code[pc]:= (0E02H * 100000H) + (a * 10000H) + (b * 1000H) + c ; INC(pc)  
-    ELSIF op = Add THEN code[pc]:= (0E08H * 100000H) + (a * 10000H) + (b * 1000H) + c ; INC(pc) 
-    ELSIF op = Sub THEN code[pc]:= (0E04H * 100000H) + (a * 10000H) + (b * 1000H) + c ; INC(pc)  
-(*  ELSIF op = Cmp THEN   *)
-    ELSIF op = Mul THEN   
-    ELSIF op = Div THEN   
-    ELSIF op = Fad THEN  
-    ELSIF op = Fsb THEN  
-    ELSIF op = Fml THEN  
-    ELSIF op = Fdv THEN  
+    IF op < 16 THEN code[pc]:= it0[op] + (regmap[a] * 10000H) + (regmap[b] * 1000H) + regmap[c] ; INC(pc) 
+    ELSE code[pc]:=-1; INC(pc)
     END;
-(*
-  BEGIN (*emit format-0 instruction*)
-      code[pc] := ((a*10H + b) * 10H + op) * 10000H + c;
-    INC(pc);
-*)
   END aPut0;
+
 
   (* begin-procedure-description
 ---
 **aPut1** PutRegFromRegOpImmSmall
   end-procedure-description *)
-  PROCEDURE aPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, ai, bi, im: LONGINT);
-    VAR a,b,s:INTEGER;
+  PROCEDURE aPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -100H <= im < 100H*)
-    s:=0;
-    a:=regmap[ai];b:=regmap[bi];
-   
-    IF    op = Mov THEN code[pc]:= (0E30H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Lsl THEN 
-    ELSIF op = Asr THEN 
-    ELSIF op = Ror THEN 
-    ELSIF op = And THEN code[pc]:= (0E20H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Ann THEN   (* and not *)
-    ELSIF op = Ior THEN code[pc]:= (0E38H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Xor THEN code[pc]:= (0E22H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Add THEN code[pc]:= (0E28H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Sub THEN code[pc]:= (0E24H * 100000H) + (a * 10000H) + (b * 1000H) + (s * 100H) + (im MOD 100H) ; INC(pc)
-    ELSIF op = Cmp THEN 
-    ELSIF op = Mul THEN 
-    ELSIF op = Div THEN 
-    ELSIF op = Fad THEN 
-    ELSIF op = Fsb THEN 
-    ELSIF op = Fml THEN 
-    ELSIF op = Fdv THEN 
+    IF op < 16 THEN 
+      code[pc]:= it1[op] + (regmap[a] * 10000H) + (regmap[b] * 1000H) (* + (s * 100H) *) + (im MOD 100H)
+    ELSE 
+      code[pc]:=-1
     END;
-(*
-  BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
-    IF op = MovU THEN   (*  U = 2000H; V = 1000H; *)
-      IF im < 0 THEN
-        code[pc] := (((a+70H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      ELSE
-        code[pc] := (((a+60H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      END;
-    ELSE
-      IF im < 0 THEN INC(op, V) END ;
-      code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H);
-    END;   
     INC(pc);
-*) 
   END aPut1;
 
   (* begin-procedure-description
@@ -624,9 +624,18 @@ END APut3;
 ---
 **aPut2** PutRegLdStRegOffset
   end-procedure-description *)
-  PROCEDURE aPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
+  PROCEDURE aPut2*(VAR pc, pcb: LONGINT; op, ai, bi, off: LONGINT);
+    VAR a,b:INTEGER;
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
+    a:=regmap[ai];b:=regmap[bi];
+    IF op = Ldr THEN
+      code[pc]:= 0E5900000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H)
+    ELSIF op = Str THEN
+      code[pc]:= 0E5800000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H)
+    ELSE
+      code[pc]:=0
+    END;
+    INC(pc)
   END aPut2;
 
   (* begin-procedure-description
@@ -674,6 +683,27 @@ END aPut3;
 
 
 
+  (* begin-procedure-description
+---
+**VSetTables** configures opcode tables for riscv64.
+  end-procedure-description *)
+  PROCEDURE VSetTables;
+    VAR i: INTEGER;
+  BEGIN
+      FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
+
+      it0[Mov]:=         0H;  it0[Lsl]:=         0H;  it0[Asr]:=         0H;  it0[Ror]:=         0H; 
+      it0[And]:=      7033H;  it0[Ann]:=         0H;  it0[Ior]:=      6033H;  it0[Xor]:=      4033H;
+      it0[Add]:=      0033H;  it0[Sub]:=  40000033H;  it0[Mul]:=         0H;  it0[Div]:=         0H;
+      it0[Fad]:=         0H;  it0[Fsb]:=         0H;  it0[Fml]:=         0H;  it0[Fdv]:=         0H;
+
+      it1[Mov]:=         0H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
+      it1[And]:=      7013H;  it1[Ann]:=         0H;  it1[Ior]:=      6013H;  it1[Xor]:=      4013H;
+      it1[Add]:=      0013H;  it1[Sub]:=      0013H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
+      it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
+
+  END VSetTables;
+
 
 (* begin-procedure-description
 ---
@@ -693,76 +723,32 @@ END aPut3;
 ---
 **VPut0** PutRegFromRegOpReg
   end-procedure-description *)
-  PROCEDURE VPut0*(VAR pc, pcb: LONGINT; op, ai, bi, ci: LONGINT);
-    VAR a,b,c:INTEGER;
+  PROCEDURE VPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    a:=regmap[ai];b:=regmap[bi];c:=regmap[ci];
-    IF    op = Mov THEN
-    ELSIF op = Lsl THEN  
-    ELSIF op = Asr THEN  
-    ELSIF op = Ror THEN  
-    ELSIF op = And THEN code[pc]:= 33H + (a * 80H) + (7 * 1000H) + (b * 8000H) + (c * 10000H) ; INC(pc) 
-    ELSIF op = Ann THEN   (* and not *)
-    ELSIF op = Ior THEN code[pc]:= 33H + (a * 80H) + (6 * 1000H) + (b * 8000H) + (c * 10000H) ; INC(pc)  
-    ELSIF op = Xor THEN code[pc]:= 33H + (a * 80H) + (4 * 1000H) + (b * 8000H) + (c * 10000H) ; INC(pc)  
-    ELSIF op = Add THEN code[pc]:= 33H + (a * 80H) + (0 * 1000H) + (b * 8000H) + (c * 10000H) ; INC(pc) 
-    ELSIF op = Sub THEN code[pc]:= 33H + (a * 80H) + (1 * 40000000H) + (b * 8000H) + (c * 10000H) ; INC(pc)  
-(*  ELSIF op = Cmp THEN   *)
-    ELSIF op = Mul THEN   
-    ELSIF op = Div THEN   
-    ELSIF op = Fad THEN  
-    ELSIF op = Fsb THEN  
-    ELSIF op = Fml THEN  
-    ELSIF op = Fdv THEN  
+    IF op < 16 THEN
+      code[pc]:= it0[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (regmap[c] * 10000H) 
+    ELSE 
+      code[pc]:=0
     END;
-(*
-  BEGIN (*emit format-0 instruction*)
-      code[pc] := ((a*10H + b) * 10H + op) * 10000H + c;
-    INC(pc);
-*)
+    INC(pc)
   END VPut0;
 
   (* begin-procedure-description
 ---
 **VPut1** PutRegFromRegOpImmSmall
   end-procedure-description *)
-  PROCEDURE VPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, ai, bi, im: LONGINT);
-    VAR a,b:INTEGER;
+  PROCEDURE VPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -1000H <= im < 1000H*) (* smaller than RISC5! *)
-    a:=regmap[ai];b:=regmap[bi];
-   
-    IF    op = Mov THEN code[pc]:= 37H + (a * 80H) + (im * 1000H) ; INC(pc)
-    ELSIF op = Lsl THEN 
-    ELSIF op = Asr THEN 
-    ELSIF op = Ror THEN 
-    ELSIF op = And THEN code[pc]:= 13H + (a * 80H) + (7 * 1000H) + (b * 8000H) + (im * 100000H) ; INC(pc) 
-    ELSIF op = Ann THEN   (* and not *)
-    ELSIF op = Ior THEN code[pc]:= 13H + (a * 80H) + (6 * 1000H) + (b * 8000H) + (im * 100000H) ; INC(pc)  
-    ELSIF op = Xor THEN code[pc]:= 13H + (a * 80H) + (4 * 1000H) + (b * 8000H) + (im * 100000H) ; INC(pc)  
-    ELSIF op = Add THEN code[pc]:= 13H + (a * 80H) + (0 * 1000H) + (b * 8000H) + (im * 100000H) ; INC(pc) 
-    ELSIF op = Sub THEN code[pc]:= 13H + (a * 80H) + (0 * 1000H) + (b * 8000H) + ((0-im) * 100000H) ; INC(pc)
-    ELSIF op = Cmp THEN 
-    ELSIF op = Mul THEN 
-    ELSIF op = Div THEN 
-    ELSIF op = Fad THEN 
-    ELSIF op = Fsb THEN 
-    ELSIF op = Fml THEN 
-    ELSIF op = Fdv THEN 
-    END;
-(*
-  BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
-    IF op = MovU THEN   (*  U = 2000H; V = 1000H; *)
-      IF im < 0 THEN
-        code[pc] := (((a+70H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      ELSE
-        code[pc] := (((a+60H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
-      END;
+    IF    op = Mov THEN
+      code[pc]:= 37H + (a * 80H) + (im * 1000H) 
+    ELSIF op = Sub THEN
+      code[pc]:= it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + ((0-im) * 100000H)
+    ELSIF op < 16  THEN
+      code[pc]:= it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (im * 100000H)
     ELSE
-      IF im < 0 THEN INC(op, V) END ;
-      code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H);
-    END;   
-    INC(pc);
-*) 
+      code[pc]:=0
+    END;
+    INC(pc)
   END VPut1;
 
   (* begin-procedure-description
@@ -832,6 +818,17 @@ END aPut3;
 ## ---------- RISCV32 instruction generation
   end-section-description *)
 
+  (* begin-procedure-description
+---
+**vSetTables** configures opcode tables for riscv32.
+  end-procedure-description *)
+  PROCEDURE vSetTables;
+    VAR i: INTEGER;
+  BEGIN
+      FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
+  END vSetTables;                   
+
+
 (* begin-procedure-description
 ---
 **vPut0** PutRegFromRegOpReg
@@ -887,6 +884,22 @@ END aPut3;
   END vHeader;
 
 
+
+  (* begin-procedure-description
+---
+**setRegMap**
+  end-procedure-description *)
+  PROCEDURE setRegMap*;               
+    VAR i : INTEGER;
+  BEGIN
+    FOR i:= 0 TO 15 DO regmap[i]:=i END;  
+    IF ORS.ccARCH = ORS.X8664 THEN ISetTables;
+    ELSIF ORS.ccARCH = ORS.ARM64 THEN ASetTables;
+    ELSIF ORS.ccARCH = ORS.ARM32 THEN aSetTables;
+    ELSIF ORS.ccARCH = ORS.RISCV64 THEN VSetTables;
+    ELSIF ORS.ccARCH = ORS.RISCV32 THEN vSetTables
+    END
+  END setRegMap;                     
 
 
   PROCEDURE fix*(at, with: LONGINT);
