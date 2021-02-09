@@ -670,9 +670,9 @@ END APut3;
     IF (im >= -100H) & (im <= 0FFH) THEN aPut1(o, pc, pcb, op, a, b, im);
     ELSE 
       (* aPut1(o, pc, pcb, Mov, RH, a, im MOD 10000H); *)
-      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im DIV 1000H MOD 10) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
+      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im DIV 1000H MOD 10H) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
       (* aPut1(o, pc, pcb, Mov+U, RH, a, im DIV 10000H); *)
-      code[pc]:= 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 10) * 10000H + (im DIV 10000H MOD 1000H) ; INC(pc);    (* movt opcode *)
+      code[pc]:= 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 10H) * 10000H + (im DIV 10000H MOD 1000H) ; INC(pc);    (* movt opcode *)
       IF op MOD 16 # 0 THEN
         aPut0(pc, pcb, op, a, b, a)
       END
