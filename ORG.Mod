@@ -150,8 +150,9 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
           ELSE GetSB(x.r); xPut1(6, pc, pcb, Add, RH, RH, x.a + 100H) (*mark as progbase-relative*)
           END
         ELSIF (x.a <= 0FFFFH) & (x.a >= -10000H) THEN xPut1(7, pc, pcb, Mov, RH, 0, x.a)
-        ELSE xPut1(8, pc, pcb, MovU, RH, 0, x.a DIV 10000H MOD 10000H);
-          IF x.a MOD 10000H # 0 THEN xPut1(9, pc, pcb, Ior, RH, RH, x.a MOD 10000H) END;
+        ELSE xPut1a(8, pc, pcb, RH, Mov, RH, 0, x.a)
+          (* xPut1(8, pc, pcb, MovU, RH, 0, x.a DIV 10000H MOD 10000H);
+             IF x.a MOD 10000H # 0 THEN xPut1(9, pc, pcb, Ior, RH, RH, x.a MOD 10000H) END;  *)
         END ;
         x.r := RH; incR
       ELSIF x.mode = ORB.Var THEN

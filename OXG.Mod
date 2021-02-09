@@ -30,10 +30,16 @@ MODULE OXG; (* C.Perkis 2020*)
     Mov = 0; Lsl = 1; Asr = 2; Ror= 3; And = 4; Ann = 5; Ior = 6; Xor = 7;
     Add = 8; Sub = 9; Cmp = 9; Mul = 10; Div = 11;
     Fad = 12; Fsb = 13; Fml = 14; Fdv = 15; MovU = 16;
-    Ldr = 8; Str = 10;
+    Ldr = 8; Ldb = 9; Str = 10; Stb = 11;
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
+    BMI =  0; BEQ =  1; BCS =  2; BVS =  3; 
+    BLS =  4; BLT =  5; BLE =  6; B   =  7;
+    BPL =  8; BNE =  9; BVC = 10; BCC = 11;
+    BHI = 12; BGE = 13; BGT = 14; BNO = 15;
     (* %*)
+
+
 
   TYPE      (*% *)
     (* %*)
@@ -47,6 +53,8 @@ MODULE OXG; (* C.Perkis 2020*)
     regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
     it0: ARRAY 16 OF INTEGER;
     it1: ARRAY 16 OF INTEGER;
+    it2: ARRAY 4 OF INTEGER;
+    it3: ARRAY 16 OF INTEGER;
     (* %*)
 
   (*%S ## --------- Fixup Chains Updating *)
@@ -230,7 +238,7 @@ MODULE OXG; (* C.Perkis 2020*)
 
   (* begin-procedure-description
 ---
-**ISetTables** configures opcode tables for x86_64.
+**ISetTables** maps registers between the RISC5 model machine and the x86_64 actual machine and prepares opcode tables for x86_64.
   end-procedure-description *)
   PROCEDURE ISetTables;
   BEGIN    (* RSP = SP, RBP = MT, RBX = LNK *)
@@ -246,6 +254,14 @@ MODULE OXG; (* C.Perkis 2020*)
       it1[And]:= 481E0H;  it1[Ann]:= 40000H;  it1[Ior]:= 481C8H;  it1[Xor]:= 481F0H;
       it1[Add]:= 481C0H;  it1[Sub]:= 481E8H;  it1[Mul]:= 40000H;  it1[Div]:= 40000H;
       it1[Fad]:= 40000H;  it1[Fsb]:= 40000H;  it1[Fml]:= 40000H;  it1[Fdv]:= 40000H;
+
+      it2[Ldr-8]:= 00000H;  it2[Ldb-8]:= 00000H;  it2[Str-8]:= 00000H;  it2[Stb-8]:= 00000H; 
+
+      it3[BMI]:= 40000H;  it3[BEQ]:= 40000H;  it3[BCS]:= 40000H;  it3[BVS]:= 40000H; 
+      it3[BLS]:= 40000H;  it3[BLT]:= 40000H;  it3[BLE]:= 40000H;  it3[B  ]:= 40000H;
+      it3[BPL]:= 40000H;  it3[BNE]:= 40000H;  it3[BVC]:= 40000H;  it3[BCC]:= 40000H;
+      it3[BHI]:= 40000H;  it3[BGE]:= 40000H;  it3[BGT]:= 40000H;  it3[BNO]:= 40000H;
+
   END ISetTables;
 
 
@@ -429,7 +445,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
 
   (* begin-procedure-description
 ---
-**ASetTables** configures opcode tables for aarch64.
+**ASetTables** maps registers between the RISC5 model machine and the aarch64 actual machine and prepares opcode tables for aarch64.
   end-procedure-description *)
   PROCEDURE ASetTables;
   BEGIN
@@ -444,6 +460,13 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
       it1[And]:=         0H;  it1[Ann]:=         0H;  it1[Ior]:=         0H;  it1[Xor]:=         0H;
       it1[Add]:= 091000000H;  it1[Sub]:= 0D1000000H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
       it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
+
+      it2[Ldr-8]:=     00000H;  it2[Ldb-8]:=     00000H;  it2[Str-8]:=     00000H;  it2[Stb-8]:=     00000H; 
+
+      it3[BMI]:=     40000H;  it3[BEQ]:=     40000H;  it3[BCS]:=     40000H;      it3[BVS]:= 40000H; 
+      it3[BLS]:=     40000H;  it3[BLT]:=     40000H;  it3[BLE]:=     40000H;      it3[B  ]:= 40000H;
+      it3[BPL]:=     40000H;  it3[BNE]:=     40000H;  it3[BVC]:=     40000H;      it3[BCC]:= 40000H;
+      it3[BHI]:=     40000H;  it3[BGE]:=     40000H;  it3[BGT]:=     40000H;      it3[BNO]:= 40000H;
 
   END ASetTables;
 
@@ -562,7 +585,7 @@ END APut3;
 
   (* begin-procedure-description
 ---
-**aSetTables** configures opcode tables for arm 32-bit.
+**aSetTables** maps registers between the RISC5 model machine and the arm actual machine and prepares opcode tables for arm 32-bit.
   end-procedure-description *)
   PROCEDURE aSetTables;
   BEGIN
@@ -573,12 +596,31 @@ END APut3;
       it0[Add]:= 0E0800000H;  it0[Sub]:= 0E0400000H;  it0[Mul]:=         0H;  it0[Div]:=         0H;
       it0[Fad]:=         0H;  it0[Fsb]:=         0H;  it0[Fml]:=         0H;  it0[Fdv]:=         0H;
 
-      it1[Mov]:= 0E3000000H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
+      it1[Mov]:= 0E3A00000H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
       it1[And]:= 0E2000000H;  it1[Ann]:=         0H;  it1[Ior]:= 0E3800000H;  it1[Xor]:= 0E2200000H;
       it1[Add]:= 0E2800000H;  it1[Sub]:= 0E2400000H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
       it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
-  END aSetTables;
 
+      it2[Ldr-8]:=     00000H;  it2[Ldb-8]:=     00000H;  it2[Str-8]:=     00000H;  it2[Stb-8]:=     00000H; 
+
+      it3[BMI]:=     40000H;  it3[BEQ]:=     40000H;  it3[BCS]:=     40000H;  it3[BVS]:=     40000H; 
+      it3[BLS]:=     40000H;  it3[BLT]:=     40000H;  it3[BLE]:=     40000H;  it3[B  ]:= 0EA000000H;
+      it3[BPL]:=     40000H;  it3[BNE]:=     40000H;  it3[BVC]:=     40000H;  it3[BCC]:=     40000H;
+      it3[BHI]:=     40000H;  it3[BGE]:=     40000H;  it3[BGT]:=     40000H;  it3[BNO]:=     40000H;
+  END aSetTables;
+(*
+(* begin-procedure-description
+---
+**aUMT** convert an integer to mov m/t immediate format
+  end-procedure-description *)
+  PROCEDURE aUMT( i : LONGINT ): LONGINT;
+    VAR c,d:LONGINT;
+  BEGIN
+        c := (i DIV 1000H MOD 8) * 10000H;
+        d := (i MOD 1000H);
+  RETURN c + d
+  END aUMT;
+*)
 
 (* begin-procedure-description
 ---
@@ -598,12 +640,25 @@ END APut3;
   end-procedure-description *)
   PROCEDURE aPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -100H <= im < 100H*)
-    IF op < 16 THEN 
-      code[pc]:= it1[op] + (regmap[a] * 10000H) + (regmap[b] * 1000H) (* + (s * 100H) *) + (im MOD 100H)
-    ELSE 
-      code[pc]:=-1
+    IF op = 0 THEN
+      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im  DIV 1000H MOD 8) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
+    ELSIF op < 16 THEN
+      IF im < 0 THEN (* mvn then reg op *)
+        code[pc]:= 0E3E00000H + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + ((0-im) MOD 100H); INC(pc);
+        IF op # Mov THEN
+          aPut0(pc, pcb, op, a, b, a)
+        END
+      ELSE 
+        code[pc]:= it1[op] + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + (im MOD 100H); INC(pc)
+      END
+    ELSE (* op modifier bit set *)
+      IF op MOD 16 = 0 THEN (* move to top 16 bits *)
+        code[pc]:= 0E3400000H + (im DIV 1000H MOD 10H * 10000H) + (regmap[a] * 1000H) + (im MOD 1000H); INC(pc);    (* movt opcode *)
+      ELSE 
+        code[pc]:=-1; INC(pc)
+      END
     END;
-    INC(pc);
+    
   END aPut1;
 
   (* begin-procedure-description
@@ -612,10 +667,15 @@ END APut3;
   end-procedure-description *)
   PROCEDURE aPut1a*(o: INTEGER; VAR pc, pcb, RH: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*same as RPut1, but with range test  -10000H <= im < 10000H*)
-    IF (im >= -10000H) & (im <= 0FFFFH) THEN aPut1(o, pc, pcb, op, a, b, im);
-    ELSE aPut1(o, pc, pcb, Mov+U, RH, 0, im DIV 10000H);
-      IF im MOD 10000H # 0 THEN aPut1(o, pc, pcb, Ior, RH, RH, im MOD 10000H) END ;
-      aPut0(pc, pcb, op, a, b, RH);
+    IF (im >= -100H) & (im <= 0FFH) THEN aPut1(o, pc, pcb, op, a, b, im);
+    ELSE 
+      (* aPut1(o, pc, pcb, Mov, RH, a, im MOD 10000H); *)
+      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im  DIV 1000H MOD 8) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
+      (* aPut1(o, pc, pcb, Mov+U, RH, a, im DIV 10000H); *)
+      code[pc]:= 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 8) * 10000H + (im DIV 10000H MOD 1000H) ; INC(pc);    (* movt opcode *)
+      IF op MOD 16 # 0 THEN
+        aPut0(pc, pcb, op, a, b, a)
+      END
     END
 
   END aPut1a;
@@ -650,14 +710,15 @@ END APut3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
 *)
     disp:=off;
+    IF disp < 0 THEN INC(disp,-1) END;
     IF    op = BR  THEN (*via register*)
       code[pc]:= 0E12FFF10H + regmap[off] ; INC(pc)
     ELSIF op = BLR THEN (*via register and depositing link*)
       code[pc]:= 0E12FFF30H + regmap[off] ; INC(pc)
     ELSIF op = BC  THEN (*via offset from pc*)
-      INC(pc)
+      code[pc]:= it3[cond] + (disp MOD 1000000H); INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      INC(pc)
+      code[pc]:= it3[cond] + 1000000H + (disp MOD 1000000H); INC(pc)
     END;
 END aPut3;
 
@@ -669,7 +730,7 @@ END aPut3;
   BEGIN entry := pc*4;
     IF version = 0 THEN 
       code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 ; (* 24-bit pc-relative jump *)
-      aPut1(121, pc, pcb, Sub, SP, SP, 4); aPut2(pc, pcb, Str, LNK, SP, 0)
+      aPut1(121, pc, pcb, Mov+U, SP, SP, 07FFFH)
     ELSE 
       aPut1(121, pc, pcb, Sub, SP, SP, 4); aPut2(pc, pcb, Str, LNK, SP, 0)
     END
@@ -685,22 +746,29 @@ END aPut3;
 
   (* begin-procedure-description
 ---
-**VSetTables** configures opcode tables for riscv64.
+**VSetTables** maps registers between the RISC5 model machine and the rv64 actual machine and prepares opcode tables for riscv64.
   end-procedure-description *)
   PROCEDURE VSetTables;
     VAR i: INTEGER;
   BEGIN
       FOR i:= 0 TO 15 DO regmap[i]:=10+i END; regmap[MT]:=3; regmap[SP]:=2; regmap[LNK]:=1;
 
-      it0[Mov]:=         0H;  it0[Lsl]:=         0H;  it0[Asr]:=         0H;  it0[Ror]:=         0H; 
+      it0[Mov]:=         0H;  it0[Lsl]:=      1033H;  it0[Asr]:=         0H;  it0[Ror]:=         0H; 
       it0[And]:=      7033H;  it0[Ann]:=         0H;  it0[Ior]:=      6033H;  it0[Xor]:=      4033H;
       it0[Add]:=      0033H;  it0[Sub]:=  40000033H;  it0[Mul]:=         0H;  it0[Div]:=         0H;
       it0[Fad]:=         0H;  it0[Fsb]:=         0H;  it0[Fml]:=         0H;  it0[Fdv]:=         0H;
 
-      it1[Mov]:=         0H;  it1[Lsl]:=         0H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
+      it1[Mov]:=         0H;  it1[Lsl]:=      1013H;  it1[Asr]:=         0H;  it1[Ror]:=         0H; 
       it1[And]:=      7013H;  it1[Ann]:=         0H;  it1[Ior]:=      6013H;  it1[Xor]:=      4013H;
       it1[Add]:=      0013H;  it1[Sub]:=      0013H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
       it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
+
+      it2[Ldr-8]:=     00003H;  it2[Ldb-8]:=     00003H;  it2[Str-8]:=     00023H;  it2[Stb-8]:=     00023H; 
+
+      it3[BMI]:=     40000H;  it3[BEQ]:=     40000H;  it3[BCS]:=     40000H;      it3[BVS]:= 40000H; 
+      it3[BLS]:=     40000H;  it3[BLT]:=     40000H;  it3[BLE]:=     40000H;      it3[B  ]:= 40000H;
+      it3[BPL]:=     40000H;  it3[BNE]:=     40000H;  it3[BVC]:=     40000H;      it3[BCC]:= 40000H;
+      it3[BHI]:=     40000H;  it3[BGE]:=     40000H;  it3[BGT]:=     40000H;      it3[BNO]:= 40000H;
 
   END VSetTables;
 
@@ -771,7 +839,11 @@ END aPut3;
   end-procedure-description *)
   PROCEDURE VPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
+    IF op < Str THEN
+      code[pc] := it2[op-8] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (off MOD 1000H * 100000); INC(pc);
+    ELSE
+      code[pc] := it2[op-8] + ((off MOD 20H) * 80H) + (regmap[a] * 8000H) + (regmap[b] * 800000H) + (off MOD 1000H * 100000); INC(pc);
+    END
   END VPut2;
 
   (* begin-procedure-description
