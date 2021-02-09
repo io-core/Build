@@ -395,6 +395,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     ELSIF op = BLR THEN (*via register and depositing link*)
         Put1Byte( 090H, pc, pcb); osz:=0
     ELSIF op = BC  THEN (*via offset from pc*)
+(*
       IF    (cond = 7)  THEN
                        IF (disp < -127) OR (disp > 127) THEN opc:=0E9H; osz:=4  ELSE opc:= 090H; osz:=1 END;
       ELSIF (cond = EQ) THEN
@@ -411,6 +412,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
                         IF (disp < -127) OR (disp > 127) THEN opc:=07EH; osz:=4  ELSE opc:= 08EH; osz:=1 END;
       ELSE opc:=90H; disp:=90H; osz:=1
       END;
+*)
     ELSIF op = BL  THEN (*via offset from pc and depositing link -- convert to jsr *)
       opc:=0E8H; osz:=4
     END;
@@ -808,7 +810,7 @@ END aPut3;
   PROCEDURE VPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -1000H <= im < 1000H*) (* smaller than RISC5! *)
     IF    op = Mov THEN
-      code[pc]:= 37H + (a * 80H) + (im * 1000H) 
+      code[pc]:= it1[Ior] + (regmap[a] * 80H) + (im * 100000H)
     ELSIF op = Sub THEN
       code[pc]:= it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + ((0-im) * 100000H)
     ELSIF op < 16  THEN
@@ -825,10 +827,13 @@ END aPut3;
   end-procedure-description *)
   PROCEDURE VPut1a*(o: INTEGER; VAR pc, pcb, RH: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*same as RPut1, but with range test  -10000H <= im < 10000H*)
-    IF (im >= -10000H) & (im <= 0FFFFH) THEN VPut1(o, pc, pcb, op, a, b, im);
-    ELSE VPut1(o, pc, pcb, Mov+U, RH, 0, im DIV 10000H);
-      IF im MOD 10000H # 0 THEN VPut1(o, pc, pcb, Ior, RH, RH, im MOD 10000H) END ;
-      VPut0(pc, pcb, op, a, b, RH);
+    IF (im >= -1000H) & (im <= 0FFFH) THEN VPut1(o, pc, pcb, op, a, b, im);
+    ELSE 
+      code[pc]:= 00000037H + (regmap[a] * 80H) + (im DIV 1000H * 1000H) ; INC(pc);    (* lui opcode *)
+      IF (im MOD 1000H) # 0 THEN VPut1(o,pc,pcb,Ior,a,a,im MOD 1000H) END;
+      IF op MOD 16 # 0 THEN
+        VPut0(pc, pcb, op, a, b, a)
+      END
     END
 
   END VPut1a;
@@ -877,7 +882,7 @@ END aPut3;
   BEGIN entry := pc*4;
     IF version = 0 THEN 
       code[0] := 6FH + (vUJ(entry) * 1000H);
-      VPut1(121, pc, pcb, Sub, SP, SP, 8); VPut2(pc, pcb, Str, LNK, SP, 0)
+      VPut1(121, pc, pcb, Sub, SP, SP, 8); (* VPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE 
       VPut1(121, pc, pcb, Sub, SP, SP, 8); VPut2(pc, pcb, Str, LNK, SP, 0)
     END
@@ -949,7 +954,7 @@ END aPut3;
   BEGIN entry := pc*4;
     IF version = 0 THEN
       code[0] := 6FH + (vUJ(entry) * 1000H) ;
-      vPut1(121, pc, pcb, Sub, SP, SP, 4); vPut2(pc, pcb, Str, LNK, SP, 0)
+      vPut1(121, pc, pcb, Sub, SP, SP, 4); (* vPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE
       vPut1(121, pc, pcb, Sub, SP, SP, 4); vPut2(pc, pcb, Str, LNK, SP, 0)
     END
