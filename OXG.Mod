@@ -573,7 +573,7 @@ END APut3;
   BEGIN entry := pc*4;
     IF version = 0 THEN 
       code[0] := (14H * 1000000H) + (entry DIV 4); (* 24-bit pc-relative jump *)
-      APut1(121, pc, pcb, Sub, SP, SP, 16); APut2(pc, pcb, Str, LNK, SP, 0) 
+(*      APut1(121, pc, pcb, Sub, SP, SP, 16); APut2(pc, pcb, Str, LNK, SP, 0)  *)
     ELSE 
       APut1(121, pc, pcb, Sub, SP, SP, 16); APut2(pc, pcb, Str, LNK, SP, 0)
     END
