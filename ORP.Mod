@@ -1250,7 +1250,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF S.class = Texts.Char THEN
       IF S.codepoint = ORD("@") THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
-        IF time >= 0 THEN ORS.Init(T, beg, ccARCH); Module END
+        IF time >= 0 THEN 
+          ORB.Init(ccWordsize);
+          NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+          expression := expression0; Type := Type0; FormalType := FormalType0;
+          ORS.Init(T, beg, ccARCH); 
+          Module 
+        END
       ELSIF S.codepoint = ORD("^") THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
         IF time >= 0 THEN
@@ -1258,10 +1264,10 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           IF S.class = Texts.Name THEN
             Texts.WriteString(W, S.s); NEW(T); Texts.Open(T, S.s);
             IF T.len > 0 THEN 
-              ORS.Init(T, 0, ccARCH); 
               ORB.Init(ccWordsize);
               NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
               expression := expression0; Type := Type0; FormalType := FormalType0;
+              ORS.Init(T, 0, ccARCH); 
               Module
             END
           END
@@ -1270,7 +1276,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     ELSE 
       WHILE S.class = Texts.Name DO
         NEW(T); Texts.Open(T, S.s);
-        IF T.len > 0 THEN Option(S); ORS.Init(T, 0, ccARCH); Module
+        IF T.len > 0 THEN 
+          Option(S); 
+          ORB.Init(ccWordsize);
+          NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+          expression := expression0; Type := Type0; FormalType := FormalType0;
+          ORS.Init(T, 0, ccARCH); 
+          Module
         ELSE Texts.WriteString(W, S.s); Texts.WriteString(W, " not found");
           Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
         END ;
