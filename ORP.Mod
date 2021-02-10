@@ -137,7 +137,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckInt(VAR x: ORG.Item);
   BEGIN
-    IF x.type.form # ORB.Int THEN ORS.Mark("not Integer"); x.type := ORB.intType END
+    IF x.type.form # ORB.Int THEN ORS.Mark("not Integer"); x.type := ORB.medType END
   END CheckInt;
 
   (* begin-procedure-description
@@ -422,7 +422,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
         END
       ELSIF fct = 17 THEN (*ADR*) ORG.Adr(x)
       ELSIF fct = 18 THEN (*SIZE*)
-        IF x.mode = ORB.Typ THEN ORG.MakeConstItem(x, ORB.intType, x.type.size)
+        IF x.mode = ORB.Typ THEN ORG.MakeConstItem(x, ORB.medType, x.type.size)
         ELSE ORS.Mark("must be a type")
         END
       ELSIF fct = 19 THEN (*COND*) CheckConst(x); CheckInt(x); ORG.Condition(x)
@@ -488,7 +488,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
           END
         END
       END
-    ELSIF sym = ORS.int THEN ORG.MakeConstItem(x, ORB.intType, ORS.ival); ORS.Get(sym)
+    ELSIF sym = ORS.int THEN ORG.MakeConstItem(x, ORB.medType, ORS.ival); ORS.Get(sym)
     ELSIF sym = ORS.real THEN ORG.MakeRealItem(x, ORS.rval); ORS.Get(sym)
     ELSIF sym = ORS.char THEN ORG.MakeConstItem(x, ORB.charType, ORS.ival); ORS.Get(sym)
     ELSIF sym = ORS.nil THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.nilType, 0)
@@ -498,7 +498,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     ELSIF sym = ORS.not THEN ORS.Get(sym); factor(x); CheckBool(x); ORG.Not(x)
     ELSIF sym = ORS.false THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.boolType, 0)
     ELSIF sym = ORS.true THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.boolType, 1)
-    ELSE ORS.Mark("not a factor"); ORG.MakeConstItem(x, ORB.intType, 0)
+    ELSE ORS.Mark("not a factor"); ORG.MakeConstItem(x, ORB.medType, 0)
     END
   END factor;
 
@@ -754,7 +754,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
             ORS.Get(sym); expression(y); CheckInt(y); ORG.For0(x, y); L0 := ORG.Here();
             Check(ORS.to, "no TO"); expression(z); CheckInt(z); obj.rdo := TRUE;
             IF sym = ORS.by THEN ORS.Get(sym); expression(w); CheckConst(w); CheckInt(w)
-            ELSE ORG.MakeConstItem(w, ORB.intType, 1)
+            ELSE ORG.MakeConstItem(w, ORB.medType, 1)
             END ;
             Check(ORS.do, "no DO"); ORG.For1(x, y, z, w, L1);
             StatSequence; Check(ORS.end, "no END");
@@ -828,7 +828,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF sym = ORS.of THEN ORS.Get(sym); Type(typ.base);
       IF (typ.base.form = ORB.Array) & (typ.base.len < 0) THEN ORS.Mark("dyn array not allowed") END
     ELSIF sym = ORS.comma THEN ORS.Get(sym); ArrayType(typ.base)
-    ELSE ORS.Mark("missing OF"); typ.base := ORB.intType
+    ELSE ORS.Mark("missing OF"); typ.base := ORB.medType
     END ;
     typ.size := (len * typ.base.size + 3) DIV 4 * 4;
     typ.form := ORB.Array; typ.len := len; type := typ
@@ -850,7 +850,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         qualident(base);
         IF base.class = ORB.Typ THEN
           IF base.type.form = ORB.Record THEN typ.base := base.type
-          ELSE typ.base := ORB.intType; ORS.Mark("invalid extension")
+          ELSE typ.base := ORB.medType; ORS.Mark("invalid extension")
           END ;
           typ.nofpar := typ.base.nofpar + 1; (*"nofpar" here abused for extension level*)
           bot := typ.base.dsc; offset := typ.base.size
@@ -943,7 +943,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   BEGIN
     IF sym = ORS.ident THEN
       qualident(obj);
-      IF obj.class = ORB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := ORB.intType END
+      IF obj.class = ORB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := ORB.medType END
     ELSIF sym = ORS.array THEN
       ORS.Get(sym); Check(ORS.of, "OF ?");
       IF dim >= 1 THEN ORS.Mark("multi-dimensional open arrays not implemented") END ;
@@ -972,7 +972,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   end-procedure-description *)
   PROCEDURE Type0(VAR type: ORB.Type);
     VAR dmy: LONGINT; obj: ORB.Object; ptbase: PtrBase;
-  BEGIN type := ORB.intType; (*sync*)
+  BEGIN type := ORB.medType; (*sync*)
     IF (sym # ORS.ident) & (sym < ORS.array) THEN ORS.Mark("not a type");
       REPEAT ORS.Get(sym) UNTIL (sym = ORS.ident) OR (sym >= ORS.array)
     END ;
@@ -987,7 +987,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ORS.Get(sym); RecordType(type); Check(ORS.end, "no END")
     ELSIF sym = ORS.pointer THEN
       ORS.Get(sym); Check(ORS.to, "no TO");
-      NEW(type);  type.form := ORB.Pointer; type.size := ORG.WordSize; type.base := ORB.intType;
+      NEW(type);  type.form := ORB.Pointer; type.size := ORG.WordSize; type.base := ORB.medType;
       IF sym = ORS.ident THEN
         obj := ORB.thisObj();
         IF obj # NIL THEN
@@ -1033,7 +1033,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         IF (x.type.form = ORB.String) & (x.b = 2) THEN ORG.StrToChar(x) END ;
         ORB.NewObj(obj, id, ORB.Const); obj.expo := expo;
         IF x.mode = ORB.Const THEN obj.val := x.a; obj.lev := x.b; obj.type := x.type
-        ELSE ORS.Mark("expression not constant"); obj.type := ORB.intType
+        ELSE ORS.Mark("expression not constant"); obj.type := ORB.medType
         END;
         Check(ORS.semicolon, "; missing")
       END
@@ -1278,6 +1278,6 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   end-procedure-description *)
 BEGIN ORB.Init(4); Texts.OpenWriter(W); Texts.WriteString(W, "OR Compiler  8.3.2020");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
-  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.medType;
   expression := expression0; Type := Type0; FormalType := FormalType0
 END ORP.

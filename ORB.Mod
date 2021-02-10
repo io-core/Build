@@ -81,7 +81,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     topScope*, universe, system*: Object;
     byteType*, boolType*, charType*: Type;
     shortType*, longType*, doubleType*: Type; 
-    intType*, realType*, setType*, nilType*, noType*, strType*: Type;
+    medType*, realType*, setType*, nilType*, noType*, strType*: Type;
     nofmod, Ref: INTEGER;
     typtab: ARRAY maxTypTab OF Type;
 
@@ -464,7 +464,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     boolType := type(Bool, Bool, 1);
     charType := type(Char, Char,1);
     shortType := type(Short, Short, 2); 
-    intType := type(Int, Int, 4);
+    medType := type(Int, Int, 4);
     longType := type(Long, Long, 8);   
     realType := type(Real, Real, 4);
     doubleType := type(Double, Double, 8);   
@@ -477,19 +477,19 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
       LONGINT is synonym to INTEGER, LONGREAL to REAL in 32-bit systems.
       LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
     system := NIL;  (*n = procno*10 + nofpar*)
-    enter("UML", SFunc, intType, 132);  (*functions*)
-    enter("SBC", SFunc, intType, 122);
-    enter("ADC", SFunc, intType, 112);
-    enter("ROR", SFunc, intType, 92);
-    enter("ASR", SFunc, intType, 82);
-    enter("LSL", SFunc, intType, 72);
-    enter("LEN", SFunc, intType, 61);
+    enter("UML", SFunc, medType, 132);  (*functions*)
+    enter("SBC", SFunc, medType, 122);
+    enter("ADC", SFunc, medType, 112);
+    enter("ROR", SFunc, medType, 92);
+    enter("ASR", SFunc, medType, 82);
+    enter("LSL", SFunc, medType, 72);
+    enter("LEN", SFunc, medType, 61);
     enter("CHR", SFunc, charType, 51);
-    enter("ORD", SFunc, intType, 41);
+    enter("ORD", SFunc, medType, 41);
     enter("FLT", SFunc, realType, 31);
-    enter("FLOOR", SFunc, intType, 21);
+    enter("FLOOR", SFunc, medType, 21);
     enter("ODD", SFunc, boolType, 11);
-    enter("ABS", SFunc, intType, 1);
+    enter("ABS", SFunc, medType, 1);
     enter("LED", SProc, noType, 81);  (*procedures*)
     enter("UNPK", SProc, noType, 72);
     enter("PACK", SProc, noType, 62);
@@ -506,19 +506,19 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     IF wordsize = 4 THEN enter("LONGREAL", Typ, realType, 0) END;
     IF wordsize = 8 THEN enter("LONGREAL", Typ, doubleType, 0) END;
     enter("REAL", Typ, realType, 0);
-    IF wordsize = 4 THEN enter("LONGINT", Typ, intType, 0) END;
+    IF wordsize = 4 THEN enter("LONGINT", Typ, medType, 0) END;
     IF wordsize = 8 THEN enter("LONGINT", Typ, longType, 0) END;
-    enter("INTEGER", Typ, intType, 0);
+    enter("INTEGER", Typ, medType, 0);
     IF wordsize = 8 THEN enter("SHORTINT", Typ, shortType, 0) END;
     topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
     
     system := NIL;  (* initialize "unsafe" pseudo-module SYSTEM*)
-    enter("H", SFunc, intType, 201);     (*functions*)
+    enter("H", SFunc, medType, 201);     (*functions*)
     enter("COND", SFunc, boolType, 191);
-    enter("SIZE", SFunc, intType, 181);
-    enter("ADR", SFunc, intType, 171);
-    enter("VAL", SFunc, intType, 162);
-    enter("REG", SFunc, intType, 151);
+    enter("SIZE", SFunc, medType, 181);
+    enter("ADR", SFunc, medType, 171);
+    enter("VAL", SFunc, medType, 162);
+    enter("REG", SFunc, medType, 151);
     enter("BIT", SFunc, boolType, 142);
     enter("LDREG", SProc, noType, 142);  (*procedures*)
     enter("LDPSR", SProc, noType, 131);
