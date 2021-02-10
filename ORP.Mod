@@ -85,6 +85,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
     level, exno, version: INTEGER;
     newSF: BOOLEAN;  (*option flag*)
     ccARCH: INTEGER;  (*cross-compiling architecture from option flag*)
+    ccWordsize: INTEGER;
     expression: PROCEDURE (VAR x: ORG.Item);  (*to avoid forward reference*)
     Type: PROCEDURE (VAR type: ORB.Type);
     FormalType: PROCEDURE (VAR typ: ORB.Type; dim: INTEGER);
@@ -1221,15 +1222,16 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     VAR i: INTEGER;
   BEGIN newSF := FALSE;
     ccARCH := ORS.RISC5;
+    ccWordsize := 4;
     WHILE S.nextCh = "/" DO
       Texts.Scan(S); Texts.Scan(S); 
       IF (S.class = Texts.Name) THEN 
           IF S.s[0] = "s" THEN newSF := TRUE END;
           IF S.s[0] = "r" THEN ccARCH := ORS.RISC5 END;
-          IF S.s[0] = "I" THEN ccARCH := ORS.X8664 END;
-          IF S.s[0] = "A" THEN ccARCH := ORS.ARM64 END;
+          IF S.s[0] = "I" THEN ccARCH := ORS.X8664; ccWordsize := 8 END;
+          IF S.s[0] = "A" THEN ccARCH := ORS.ARM64; ccWordsize := 8 END;
           IF S.s[0] = "a" THEN ccARCH := ORS.ARM32 END;
-          IF S.s[0] = "V" THEN ccARCH := ORS.RISCV64 END;
+          IF S.s[0] = "V" THEN ccARCH := ORS.RISCV64; ccWordsize := 8 END;
           IF S.s[0] = "v" THEN ccARCH := ORS.RISCV32 END;  
       END
     END
@@ -1255,7 +1257,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           Texts.OpenScanner(S, T, beg); Texts.Scan(S);
           IF S.class = Texts.Name THEN
             Texts.WriteString(W, S.s); NEW(T); Texts.Open(T, S.s);
-            IF T.len > 0 THEN ORS.Init(T, 0, ccARCH); Module END
+            IF T.len > 0 THEN 
+              ORS.Init(T, 0, ccARCH); 
+              ORB.Init(ccWordsize);
+              NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+              expression := expression0; Type := Type0; FormalType := FormalType0;
+              Module
+            END
           END
         END
       END
@@ -1276,8 +1284,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **The initialzation code for this module** opens a writer to print marked errors and initializes the Oberon parser state.
   end-procedure-description *)
-BEGIN ORB.Init(4); Texts.OpenWriter(W); Texts.WriteString(W, "OR Compiler  8.3.2020");
+BEGIN (* ORB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OR Compiler  8.3.2020");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
-  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
-  expression := expression0; Type := Type0; FormalType := FormalType0
+(*  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+    expression := expression0; Type := Type0; FormalType := FormalType0 *)
 END ORP.
