@@ -26,7 +26,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
       SProc* = 6; SFunc* = 7; Mod* = 8;
 
     (* form values*)  (* BYTE <= SHORTINT <= INTEGER <= LONGINT , FLOAT <= DOUBLE *)
-      Byte* = 1; Bool* = 2; Char* = 3; Short* = 4; Med* = 5; Long* = 6; Real* = 7; Double* = 8; Set* = 9;
+      Byte* = 1; Bool* = 2; Char* = 3; Short* = 4; Med* = 5; Long* = 6; Single* = 7; Double* = 8; Set* = 9;
       Pointer* = 10; Interface* = 11; NilTyp* = 12; NoTyp* = 13; Proc* = 14;
       String* = 15; Array* = 16; Record* = 17; (*TProc*)
       Ptrs* = {Pointer, Interface, NilTyp}; Procs* = {Proc, NoTyp};
@@ -281,7 +281,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
             WHILE k # 0 DO typtab[k].base := t; Read(R, k) END
           ELSE
             IF class = Const THEN
-              IF obj.type.form = Real THEN Files.ReadInt(R, obj.val) ELSE Files.ReadNum(R, obj.val) END
+              IF obj.type.form = Single THEN Files.ReadInt(R, obj.val) ELSE Files.ReadNum(R, obj.val) END
             ELSIF class = Var THEN Files.ReadNum(R, obj.val); obj.rdo := TRUE
             END
           END ;
@@ -398,7 +398,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
           Write(R, 0)
         ELSIF obj.class = Const THEN
           IF obj.type.form = Proc THEN Files.WriteNum(R, obj.exno)
-          ELSIF obj.type.form = Real THEN Files.WriteInt(R, obj.val)
+          ELSIF obj.type.form = Single THEN Files.WriteInt(R, obj.val)
           ELSE Files.WriteNum(R, obj.val)
           END
         ELSIF obj.class = Var THEN Files.WriteNum(R, obj.exno)
@@ -466,7 +466,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     shortType := type(Short, Short, 2); 
     medType := type(Med, Med, 4);
     longType := type(Long, Long, 8);   
-    singleType := type(Real, Real, 4);
+    singleType := type(Single, Single, 4);
     doubleType := type(Double, Double, 8);   
     setType := type(Set, Set,4);
     nilType := type(NilTyp, NilTyp, 4);

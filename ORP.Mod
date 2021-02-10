@@ -146,7 +146,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckReal(VAR x: ORG.Item);
   BEGIN
-    IF x.type.form # ORB.Real THEN ORS.Mark("not Real"); x.type := ORB.singleType END
+    IF x.type.form # ORB.Single THEN ORS.Mark("not Real"); x.type := ORB.singleType END
   END CheckReal;
 
   (* begin-procedure-description
@@ -397,7 +397,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     Check(ORS.rparen, "no )");
     IF n = npar THEN
       IF fct = 0 THEN (*ABS*)
-        IF x.type.form IN {ORB.Med, ORB.Real} THEN ORG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
+        IF x.type.form IN {ORB.Med, ORB.Single} THEN ORG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
       ELSIF fct = 1 THEN (*ODD*) CheckInt(x); ORG.Odd(x)
       ELSIF fct = 2 THEN (*FLOOR*) CheckReal(x); ORG.Floor(x)
       ELSIF fct = 3 THEN (*FLT*) CheckInt(x); ORG.Float(x)
@@ -513,14 +513,14 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
       op := sym; ORS.Get(sym);
       IF op = ORS.times THEN
         IF f = ORB.Med THEN factor(y); CheckInt(y); ORG.MulOp(x, y)
-        ELSIF f = ORB.Real THEN factor(y); CheckReal(y); ORG.RealOp(op, x, y)
+        ELSIF f = ORB.Single THEN factor(y); CheckReal(y); ORG.RealOp(op, x, y)
         ELSIF f = ORB.Set THEN factor(y); CheckSet(y); ORG.SetOp(op, x, y)
         ELSE ORS.Mark("bad type")
         END
       ELSIF (op = ORS.div) OR (op = ORS.mod) THEN
         CheckInt(x); factor(y); CheckInt(y); ORG.DivOp(op, x, y)
       ELSIF op = ORS.rdiv THEN
-        IF f = ORB.Real THEN factor(y); CheckReal(y); ORG.RealOp(op, x, y)
+        IF f = ORB.Single THEN factor(y); CheckReal(y); ORG.RealOp(op, x, y)
         ELSIF f = ORB.Set THEN factor(y); CheckSet(y); ORG.SetOp(op, x, y)
         ELSE ORS.Mark("bad type")
         END
@@ -537,7 +537,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     VAR y: ORG.Item; op: INTEGER;
   BEGIN
     IF sym = ORS.minus THEN ORS.Get(sym); term(x);
-      IF x.type.form IN {ORB.Med, ORB.Real, ORB.Set} THEN ORG.Neg(x) ELSE CheckInt(x) END
+      IF x.type.form IN {ORB.Med, ORB.Single, ORB.Set} THEN ORG.Neg(x) ELSE CheckInt(x) END
     ELSIF sym = ORS.plus THEN ORS.Get(sym); term(x);
     ELSE term(x)
     END ;
@@ -545,7 +545,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
       op := sym; ORS.Get(sym);
       IF op = ORS.or THEN ORG.Or1(x); CheckBool(x); term(y); CheckBool(y); ORG.Or2(x, y)
       ELSIF x.type.form = ORB.Med THEN term(y); CheckInt(y); ORG.AddOp(op, x, y)
-      ELSIF x.type.form = ORB.Real THEN term(y); CheckReal(y); ORG.RealOp(op, x, y)
+      ELSIF x.type.form = ORB.Single THEN term(y); CheckReal(y); ORG.RealOp(op, x, y)
       ELSE CheckSet(x); term(y); CheckSet(y); ORG.SetOp(op, x, y)
       END
     END
@@ -565,7 +565,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       rel := sym; ORS.Get(sym); SimpleExpression(y); xf := x.type.form; yf := y.type.form;
       IF x.type = y.type THEN
         IF (xf IN {ORB.Char, ORB.Med}) THEN ORG.IntRelation(rel, x, y)
-        ELSIF xf = ORB.Real THEN ORG.RealRelation(rel, x, y)
+        ELSIF xf = ORB.Single THEN ORG.RealRelation(rel, x, y)
         ELSIF (xf IN {ORB.Set, ORB.Pointer, ORB.Proc, ORB.NilTyp, ORB.Bool}) THEN
           IF rel <= ORS.neq THEN ORG.IntRelation(rel, x, y) ELSE ORS.Mark("only = or #") END
         ELSIF (xf = ORB.Array) & (x.type.base.form = ORB.Char) OR (xf = ORB.String) THEN
