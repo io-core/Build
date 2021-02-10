@@ -81,7 +81,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     topScope*, universe, system*: Object;
     byteType*, boolType*, charType*: Type;
     shortType*, longType*, doubleType*: Type; 
-    medType*, realType*, setType*, nilType*, noType*, strType*: Type;
+    medType*, singleType*, setType*, nilType*, noType*, strType*: Type;
     nofmod, Ref: INTEGER;
     typtab: ARRAY maxTypTab OF Type;
 
@@ -466,7 +466,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     shortType := type(Short, Short, 2); 
     medType := type(Int, Int, 4);
     longType := type(Long, Long, 8);   
-    realType := type(Real, Real, 4);
+    singleType := type(Real, Real, 4);
     doubleType := type(Double, Double, 8);   
     setType := type(Set, Set,4);
     nilType := type(NilTyp, NilTyp, 4);
@@ -486,7 +486,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     enter("LEN", SFunc, medType, 61);
     enter("CHR", SFunc, charType, 51);
     enter("ORD", SFunc, medType, 41);
-    enter("FLT", SFunc, realType, 31);
+    enter("FLT", SFunc, singleType, 31);
     enter("FLOOR", SFunc, medType, 21);
     enter("ODD", SFunc, boolType, 11);
     enter("ABS", SFunc, medType, 1);
@@ -503,9 +503,9 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     enter("BOOLEAN", Typ, boolType, 0);
     enter("BYTE", Typ, byteType, 0);
     enter("CHAR", Typ, charType, 0);
-    IF wordsize = 4 THEN enter("LONGREAL", Typ, realType, 0) END;
+    IF wordsize = 4 THEN enter("LONGREAL", Typ, singleType, 0) END;
     IF wordsize = 8 THEN enter("LONGREAL", Typ, doubleType, 0) END;
-    enter("REAL", Typ, realType, 0);
+    enter("REAL", Typ, singleType, 0);
     IF wordsize = 4 THEN enter("LONGINT", Typ, medType, 0) END;
     IF wordsize = 8 THEN enter("LONGINT", Typ, longType, 0) END;
     enter("INTEGER", Typ, medType, 0);

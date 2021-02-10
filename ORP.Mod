@@ -146,7 +146,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckReal(VAR x: ORG.Item);
   BEGIN
-    IF x.type.form # ORB.Real THEN ORS.Mark("not Real"); x.type := ORB.realType END
+    IF x.type.form # ORB.Real THEN ORS.Mark("not Real"); x.type := ORB.singleType END
   END CheckReal;
 
   (* begin-procedure-description

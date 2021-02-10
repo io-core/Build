@@ -246,7 +246,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **MakeRealItem** prepares
   end-procedure-description *)
   PROCEDURE MakeRealItem*(VAR x: Item; val: REAL);
-  BEGIN x.mode := ORB.Const; x.type := ORB.realType; x.a := SYSTEM.VAL(LONGINT, val)
+  BEGIN x.mode := ORB.Const; x.type := ORB.singleType; x.a := SYSTEM.VAL(LONGINT, val)
   END MakeRealItem;
 
 
