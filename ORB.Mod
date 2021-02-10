@@ -26,7 +26,7 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
       SProc* = 6; SFunc* = 7; Mod* = 8;
 
     (* form values*)  (* BYTE <= SHORTINT <= INTEGER <= LONGINT , FLOAT <= DOUBLE *)
-      Byte* = 1; Bool* = 2; Char* = 3; Short* = 4; Int* = 5; Long* = 6; Real* = 7; Double* = 8; Set* = 9;
+      Byte* = 1; Bool* = 2; Char* = 3; Short* = 4; Med* = 5; Long* = 6; Real* = 7; Double* = 8; Set* = 9;
       Pointer* = 10; Interface* = 11; NilTyp* = 12; NoTyp* = 13; Proc* = 14;
       String* = 15; Array* = 16; Record* = 17; (*TProc*)
       Ptrs* = {Pointer, Interface, NilTyp}; Procs* = {Proc, NoTyp};
@@ -460,11 +460,11 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
   end-procedure-description *)
   PROCEDURE Init*(wordsize: INTEGER); 
   BEGIN
-    byteType := type(Byte, Int, 1);
+    byteType := type(Byte, Med, 1);
     boolType := type(Bool, Bool, 1);
     charType := type(Char, Char,1);
     shortType := type(Short, Short, 2); 
-    medType := type(Int, Int, 4);
+    medType := type(Med, Med, 4);
     longType := type(Long, Long, 8);   
     singleType := type(Real, Real, 4);
     doubleType := type(Double, Double, 8);   
@@ -474,7 +474,8 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     strType := type(String, String, 8);
       
     (*initialize universe with data types and in-line procedures;
-      LONGINT is synonym to INTEGER, LONGREAL to REAL in 32-bit systems.
+      INTEGER and LONGINT are register size in 32 and 64 bit systems.
+      REAL and LONGREAL resgister size in 32 and 64 bit systems.
       LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
     system := NIL;  (*n = procno*10 + nofpar*)
     enter("UML", SFunc, medType, 132);  (*functions*)

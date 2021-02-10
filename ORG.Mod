@@ -500,7 +500,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   PROCEDURE Neg*(VAR x: Item);   (* x := -x *)
   BEGIN
-    IF x.type.form = ORB.Int THEN
+    IF x.type.form = ORB.Med THEN
       IF x.mode = ORB.Const THEN x.a := -x.a
       ELSE load(x); xPut1(14, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Sub, x.r, RH, x.r)
       END
