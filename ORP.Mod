@@ -701,7 +701,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
               ORG.StoreStruct(x, y)
             ELSIF (x.type.form = ORB.Array) & (x.type.base.form = ORB.Char) & (y.type.form = ORB.String) THEN
               ORG.CopyString(x, y)
-            ELSIF (x.type.form = ORB.Med) & (y.type.form = ORB.MEd) THEN ORG.Store(x, y)  (*BYTE*)
+            ELSIF (x.type.form = ORB.Med) & (y.type.form = ORB.Med) THEN ORG.Store(x, y)  (*BYTE*)
             ELSIF (x.type.form = ORB.Char) & (y.type.form = ORB.String) & (y.b = 2) THEN
               ORG.StrToChar(y); ORG.Store(x, y)
             ELSE ORS.Mark("illegal assignment")
