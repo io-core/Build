@@ -500,7 +500,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   PROCEDURE Neg*(VAR x: Item);   (* x := -x *)
   BEGIN
-    IF x.type.form = ORB.Med THEN
+    IF x.type.form = ORB.Int THEN
       IF x.mode = ORB.Const THEN x.a := -x.a
       ELSE load(x); xPut1(14, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Sub, x.r, RH, x.r)
       END
@@ -1150,7 +1150,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE Unpk*(VAR x, y: Item);
     VAR z, e0: Item;
-  BEGIN  z := x; load(x); e0.mode := Reg; e0.r := RH; e0.type := ORB.medType;
+  BEGIN  z := x; load(x); e0.mode := Reg; e0.r := RH; e0.type := ORB.intType;
     xPut1(52, pc, pcb, Asr, RH, x.r, 23); xPut1(53, pc, pcb, Sub, RH, RH, 127); Store(y, e0); incR;
     xPut1(54, pc, pcb, Lsl, RH, RH, 23); xPut0( pc, pcb, Sub, x.r, x.r, RH); Store(z, x)
   END Unpk;

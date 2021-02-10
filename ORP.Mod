@@ -137,7 +137,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckInt(VAR x: ORG.Item);
   BEGIN
-    IF x.type.form # ORB.Med THEN ORS.Mark("not Integer"); x.type := ORB.medType END
+    IF x.type.form # ORB.Int THEN ORS.Mark("not Integer"); x.type := ORB.intType END
   END CheckInt;
 
   (* begin-procedure-description
@@ -164,7 +164,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckSetVal(VAR x: ORG.Item);
   BEGIN
-    IF x.type.form # ORB.Med THEN ORS.Mark("not Int"); x.type := ORB.setType
+    IF x.type.form # ORB.Int THEN ORS.Mark("not Int"); x.type := ORB.setType
     ELSIF x.mode = ORB.Const THEN
       IF (x.a < 0) OR (x.a >= 32) THEN ORS.Mark("invalid set") END
     END 
@@ -350,7 +350,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
         ORG.OpenArrayParam(x)
       ELSIF (x.type.form = ORB.String) & varpar & par.rdo & (par.type.form = ORB.Array) & 
           (par.type.base.form = ORB.Char) & (par.type.len < 0) THEN ORG.StringParam(x)
-      ELSIF ~varpar & (par.type.form = ORB.Med) & (x.type.form = ORB.Med) THEN ORG.ValueParam(x)  (*BYTE*)
+      ELSIF ~varpar & (par.type.form = ORB.Int) & (x.type.form = ORB.Int) THEN ORG.ValueParam(x)  (*BYTE*)
       ELSIF (x.type.form = ORB.String) & (x.b = 2) & (par.class = ORB.Var) & (par.type.form = ORB.Char) THEN
         ORG.StrToChar(x); ORG.ValueParam(x)
       ELSIF (par.type.form = ORB.Array) & (par.type.base = ORB.byteType) & 
@@ -397,7 +397,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     Check(ORS.rparen, "no )");
     IF n = npar THEN
       IF fct = 0 THEN (*ABS*)
-        IF x.type.form IN {ORB.Med, ORB.Single} THEN ORG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
+        IF x.type.form IN {ORB.Int, ORB.Single} THEN ORG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
       ELSIF fct = 1 THEN (*ODD*) CheckInt(x); ORG.Odd(x)
       ELSIF fct = 2 THEN (*FLOOR*) CheckReal(x); ORG.Floor(x)
       ELSIF fct = 3 THEN (*FLT*) CheckInt(x); ORG.Float(x)
@@ -410,7 +410,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
       ELSIF fct = 6 THEN (*LEN*)
           IF x.type.form = ORB.Array THEN ORG.Len(x) ELSE ORS.Mark("not an array") END
       ELSIF fct IN {7, 8, 9} THEN (*LSL, ASR, ROR*) CheckInt(y);
-        IF x.type.form IN {ORB.Med, ORB.Set} THEN ORG.Shift(fct-7, x, y); restyp := x.type ELSE ORS.Mark("bad type") END
+        IF x.type.form IN {ORB.Int, ORB.Set} THEN ORG.Shift(fct-7, x, y); restyp := x.type ELSE ORS.Mark("bad type") END
       ELSIF fct = 11 THEN (*ADC*) ORG.ADC(x, y)
       ELSIF fct = 12 THEN (*SBC*) ORG.SBC(x, y)
       ELSIF fct = 13 THEN (*UML*) ORG.UML(x, y)
@@ -422,7 +422,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
         END
       ELSIF fct = 17 THEN (*ADR*) ORG.Adr(x)
       ELSIF fct = 18 THEN (*SIZE*)
-        IF x.mode = ORB.Typ THEN ORG.MakeConstItem(x, ORB.medType, x.type.size)
+        IF x.mode = ORB.Typ THEN ORG.MakeConstItem(x, ORB.intType, x.type.size)
         ELSE ORS.Mark("must be a type")
         END
       ELSIF fct = 19 THEN (*COND*) CheckConst(x); CheckInt(x); ORG.Condition(x)
@@ -488,7 +488,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
           END
         END
       END
-    ELSIF sym = ORS.int THEN ORG.MakeConstItem(x, ORB.medType, ORS.ival); ORS.Get(sym)
+    ELSIF sym = ORS.int THEN ORG.MakeConstItem(x, ORB.intType, ORS.ival); ORS.Get(sym)
     ELSIF sym = ORS.real THEN ORG.MakeRealItem(x, ORS.rval); ORS.Get(sym)
     ELSIF sym = ORS.char THEN ORG.MakeConstItem(x, ORB.charType, ORS.ival); ORS.Get(sym)
     ELSIF sym = ORS.nil THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.nilType, 0)
@@ -498,7 +498,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     ELSIF sym = ORS.not THEN ORS.Get(sym); factor(x); CheckBool(x); ORG.Not(x)
     ELSIF sym = ORS.false THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.boolType, 0)
     ELSIF sym = ORS.true THEN ORS.Get(sym); ORG.MakeConstItem(x, ORB.boolType, 1)
-    ELSE ORS.Mark("not a factor"); ORG.MakeConstItem(x, ORB.medType, 0)
+    ELSE ORS.Mark("not a factor"); ORG.MakeConstItem(x, ORB.intType, 0)
     END
   END factor;
 
@@ -512,7 +512,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     WHILE (sym >= ORS.times) & (sym <= ORS.and) DO
       op := sym; ORS.Get(sym);
       IF op = ORS.times THEN
-        IF f = ORB.Med THEN factor(y); CheckInt(y); ORG.MulOp(x, y)
+        IF f = ORB.Int THEN factor(y); CheckInt(y); ORG.MulOp(x, y)
         ELSIF f = ORB.Single THEN factor(y); CheckReal(y); ORG.RealOp(op, x, y)
         ELSIF f = ORB.Set THEN factor(y); CheckSet(y); ORG.SetOp(op, x, y)
         ELSE ORS.Mark("bad type")
@@ -537,14 +537,14 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     VAR y: ORG.Item; op: INTEGER;
   BEGIN
     IF sym = ORS.minus THEN ORS.Get(sym); term(x);
-      IF x.type.form IN {ORB.Med, ORB.Single, ORB.Set} THEN ORG.Neg(x) ELSE CheckInt(x) END
+      IF x.type.form IN {ORB.Int, ORB.Single, ORB.Set} THEN ORG.Neg(x) ELSE CheckInt(x) END
     ELSIF sym = ORS.plus THEN ORS.Get(sym); term(x);
     ELSE term(x)
     END ;
     WHILE (sym >= ORS.plus) & (sym <= ORS.or) DO
       op := sym; ORS.Get(sym);
       IF op = ORS.or THEN ORG.Or1(x); CheckBool(x); term(y); CheckBool(y); ORG.Or2(x, y)
-      ELSIF x.type.form = ORB.Med THEN term(y); CheckInt(y); ORG.AddOp(op, x, y)
+      ELSIF x.type.form = ORB.Int THEN term(y); CheckInt(y); ORG.AddOp(op, x, y)
       ELSIF x.type.form = ORB.Single THEN term(y); CheckReal(y); ORG.RealOp(op, x, y)
       ELSE CheckSet(x); term(y); CheckSet(y); ORG.SetOp(op, x, y)
       END
@@ -564,7 +564,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF (sym >= ORS.eql) & (sym <= ORS.geq) THEN
       rel := sym; ORS.Get(sym); SimpleExpression(y); xf := x.type.form; yf := y.type.form;
       IF x.type = y.type THEN
-        IF (xf IN {ORB.Char, ORB.Med}) THEN ORG.IntRelation(rel, x, y)
+        IF (xf IN {ORB.Char, ORB.Int}) THEN ORG.IntRelation(rel, x, y)
         ELSIF xf = ORB.Single THEN ORG.RealRelation(rel, x, y)
         ELSIF (xf IN {ORB.Set, ORB.Pointer, ORB.Proc, ORB.NilTyp, ORB.Bool}) THEN
           IF rel <= ORS.neq THEN ORG.IntRelation(rel, x, y) ELSE ORS.Mark("only = or #") END
@@ -587,7 +587,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         ORG.StrToChar(y); ORG.IntRelation(rel, x, y)
       ELSIF (yf = ORB.Char) & (xf = ORB.String) & (x.b = 2) THEN
         ORG.StrToChar(x); ORG.IntRelation(rel, x, y)
-      ELSIF (xf = ORB.Med) & (yf = ORB.Med) THEN ORG.IntRelation(rel,  x, y)  (*BYTE*)
+      ELSIF (xf = ORB.Int) & (yf = ORB.Int) THEN ORG.IntRelation(rel,  x, y)  (*BYTE*)
       ELSE ORS.Mark("illegal comparison")
       END ;
       x.type := ORB.boolType
@@ -701,7 +701,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
               ORG.StoreStruct(x, y)
             ELSIF (x.type.form = ORB.Array) & (x.type.base.form = ORB.Char) & (y.type.form = ORB.String) THEN
               ORG.CopyString(x, y)
-            ELSIF (x.type.form = ORB.Med) & (y.type.form = ORB.Med) THEN ORG.Store(x, y)  (*BYTE*)
+            ELSIF (x.type.form = ORB.Int) & (y.type.form = ORB.Int) THEN ORG.Store(x, y)  (*BYTE*)
             ELSIF (x.type.form = ORB.Char) & (y.type.form = ORB.String) & (y.b = 2) THEN
               ORG.StrToChar(y); ORG.Store(x, y)
             ELSE ORS.Mark("illegal assignment")
@@ -754,7 +754,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
             ORS.Get(sym); expression(y); CheckInt(y); ORG.For0(x, y); L0 := ORG.Here();
             Check(ORS.to, "no TO"); expression(z); CheckInt(z); obj.rdo := TRUE;
             IF sym = ORS.by THEN ORS.Get(sym); expression(w); CheckConst(w); CheckInt(w)
-            ELSE ORG.MakeConstItem(w, ORB.medType, 1)
+            ELSE ORG.MakeConstItem(w, ORB.intType, 1)
             END ;
             Check(ORS.do, "no DO"); ORG.For1(x, y, z, w, L1);
             StatSequence; Check(ORS.end, "no END");
@@ -822,13 +822,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     VAR x: ORG.Item; typ: ORB.Type; len: LONGINT;
   BEGIN NEW(typ); typ.form := ORB.NoTyp;
     expression(x);
-    IF (x.mode = ORB.Const) & (x.type.form = ORB.Med) & (x.a >= 0) THEN len := x.a
+    IF (x.mode = ORB.Const) & (x.type.form = ORB.Int) & (x.a >= 0) THEN len := x.a
     ELSE len := 1; ORS.Mark("not a valid length")
     END ;
     IF sym = ORS.of THEN ORS.Get(sym); Type(typ.base);
       IF (typ.base.form = ORB.Array) & (typ.base.len < 0) THEN ORS.Mark("dyn array not allowed") END
     ELSIF sym = ORS.comma THEN ORS.Get(sym); ArrayType(typ.base)
-    ELSE ORS.Mark("missing OF"); typ.base := ORB.medType
+    ELSE ORS.Mark("missing OF"); typ.base := ORB.intType
     END ;
     typ.size := (len * typ.base.size + 3) DIV 4 * 4;
     typ.form := ORB.Array; typ.len := len; type := typ
@@ -850,7 +850,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         qualident(base);
         IF base.class = ORB.Typ THEN
           IF base.type.form = ORB.Record THEN typ.base := base.type
-          ELSE typ.base := ORB.medType; ORS.Mark("invalid extension")
+          ELSE typ.base := ORB.intType; ORS.Mark("invalid extension")
           END ;
           typ.nofpar := typ.base.nofpar + 1; (*"nofpar" here abused for extension level*)
           bot := typ.base.dsc; offset := typ.base.size
@@ -943,7 +943,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   BEGIN
     IF sym = ORS.ident THEN
       qualident(obj);
-      IF obj.class = ORB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := ORB.medType END
+      IF obj.class = ORB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := ORB.intType END
     ELSIF sym = ORS.array THEN
       ORS.Get(sym); Check(ORS.of, "OF ?");
       IF dim >= 1 THEN ORS.Mark("multi-dimensional open arrays not implemented") END ;
@@ -972,7 +972,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   end-procedure-description *)
   PROCEDURE Type0(VAR type: ORB.Type);
     VAR dmy: LONGINT; obj: ORB.Object; ptbase: PtrBase;
-  BEGIN type := ORB.medType; (*sync*)
+  BEGIN type := ORB.intType; (*sync*)
     IF (sym # ORS.ident) & (sym < ORS.array) THEN ORS.Mark("not a type");
       REPEAT ORS.Get(sym) UNTIL (sym = ORS.ident) OR (sym >= ORS.array)
     END ;
@@ -987,7 +987,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ORS.Get(sym); RecordType(type); Check(ORS.end, "no END")
     ELSIF sym = ORS.pointer THEN
       ORS.Get(sym); Check(ORS.to, "no TO");
-      NEW(type);  type.form := ORB.Pointer; type.size := ORG.WordSize; type.base := ORB.medType;
+      NEW(type);  type.form := ORB.Pointer; type.size := ORG.WordSize; type.base := ORB.intType;
       IF sym = ORS.ident THEN
         obj := ORB.thisObj();
         IF obj # NIL THEN
@@ -1033,7 +1033,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         IF (x.type.form = ORB.String) & (x.b = 2) THEN ORG.StrToChar(x) END ;
         ORB.NewObj(obj, id, ORB.Const); obj.expo := expo;
         IF x.mode = ORB.Const THEN obj.val := x.a; obj.lev := x.b; obj.type := x.type
-        ELSE ORS.Mark("expression not constant"); obj.type := ORB.medType
+        ELSE ORS.Mark("expression not constant"); obj.type := ORB.intType
         END;
         Check(ORS.semicolon, "; missing")
       END
@@ -1076,7 +1076,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     varsize := (varsize + 3) DIV 4 * 4;
     ptbase := pbsList;
     WHILE ptbase # NIL DO
-      IF ptbase.type.base.form = ORB.Med THEN ORS.Mark("undefined pointer base of") END ;
+      IF ptbase.type.base.form = ORB.Int THEN ORS.Mark("undefined pointer base of") END ;
       ptbase := ptbase.next
     END ;
     IF (sym >= ORS.const) & (sym <= ORS.var) THEN ORS.Mark("declaration in bad order") END
@@ -1278,6 +1278,6 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   end-procedure-description *)
 BEGIN ORB.Init(4); Texts.OpenWriter(W); Texts.WriteString(W, "OR Compiler  8.3.2020");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
-  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.medType;
+  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
   expression := expression0; Type := Type0; FormalType := FormalType0
 END ORP.
