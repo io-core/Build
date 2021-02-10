@@ -246,7 +246,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **MakeRealItem** prepares
   end-procedure-description *)
   PROCEDURE MakeRealItem*(VAR x: Item; val: REAL);
-  BEGIN x.mode := ORB.Const; x.type := ORB.singleType; x.a := SYSTEM.VAL(LONGINT, val)
+  BEGIN x.mode := ORB.Const; x.type := ORB.realType; x.a := SYSTEM.VAL(LONGINT, val)
   END MakeRealItem;
 
 
@@ -504,7 +504,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       IF x.mode = ORB.Const THEN x.a := -x.a
       ELSE load(x); xPut1(14, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Sub, x.r, RH, x.r)
       END
-    ELSIF x.type.form = ORB.Single THEN
+    ELSIF x.type.form = ORB.Real THEN
       IF x.mode = ORB.Const THEN x.a := x.a + 7FFFFFFFH + 1
       ELSE load(x); xPut1(15, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Fsb, x.r, RH, x.r)
       END
@@ -1229,7 +1229,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN
     IF x.mode = ORB.Const THEN x.a := ABS(x.a)
     ELSE load(x);
-      IF x.type.form = ORB.Single THEN xPut1(59, pc, pcb, Lsl, x.r, x.r, 1); xPut1(60, pc, pcb, Ror, x.r, x.r, 1)
+      IF x.type.form = ORB.Real THEN xPut1(59, pc, pcb, Lsl, x.r, x.r, 1); xPut1(60, pc, pcb, Ror, x.r, x.r, 1)
       ELSE xPut1(61, pc, pcb, Cmp, x.r, x.r, 0); xPut3(pc, pcb, BC, GE, 2); xPut1(62, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Sub, x.r, RH, x.r)
       END
     END
