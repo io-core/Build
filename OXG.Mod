@@ -765,12 +765,12 @@ END aPut3;
       it1[Add]:=      0013H;  it1[Sub]:=      0013H;  it1[Mul]:=         0H;  it1[Div]:=         0H;
       it1[Fad]:=         0H;  it1[Fsb]:=         0H;  it1[Fml]:=         0H;  it1[Fdv]:=         0H;
 
-      it2[Ldr-8]:=     00003H;  it2[Ldb-8]:=     00003H;  it2[Str-8]:=     00023H;  it2[Stb-8]:=     00023H; 
+      it2[Ldr-8]:=    2003H;  it2[Ldb-8]:=    0003H;  it2[Str-8]:=    2023H;  it2[Stb-8]:=    0023H; 
 
-      it3[BMI]:=     40000H;  it3[BEQ]:=     40000H;  it3[BCS]:=     40000H;      it3[BVS]:= 40000H; 
-      it3[BLS]:=     40000H;  it3[BLT]:=     40000H;  it3[BLE]:=     40000H;      it3[B  ]:= 40000H;
-      it3[BPL]:=     40000H;  it3[BNE]:=     40000H;  it3[BVC]:=     40000H;      it3[BCC]:= 40000H;
-      it3[BHI]:=     40000H;  it3[BGE]:=     40000H;  it3[BGT]:=     40000H;      it3[BNO]:= 40000H;
+      it3[BMI]:=     00063H;  it3[BEQ]:=     00063H;  it3[BCS]:=     00063H;      it3[BVS]:= 00063H; 
+      it3[BLS]:=     00063H;  it3[BLT]:=     00063H;  it3[BLE]:=     00063H;      it3[B  ]:= 00063H;
+      it3[BPL]:=     00063H;  it3[BNE]:=     00063H;  it3[BVC]:=     00063H;      it3[BCC]:= 00063H;
+      it3[BHI]:=     00063H;  it3[BGE]:=     00063H;  it3[BGT]:=     00063H;      it3[BNO]:= 00063H;
 
   END VSetTables;
 
@@ -782,11 +782,11 @@ END aPut3;
   PROCEDURE vUJ( i : LONGINT ): LONGINT;
     VAR a,b,c,d:LONGINT;
   BEGIN
-	a := (i DIV 100000H MOD 2) * 40000H;
+	a := (i DIV 100000H) * 40000H;
 	b := (i DIV 2 MOD 200H) * 200H;
 	c := (i DIV 800H MOD 2) * 100H;
 	d := (i DIV 1000H MOD 100H);
-  RETURN a + b + c + d
+  RETURN (a + b + c + d) * 1000H
   END vUJ;
 
 (* begin-procedure-description
@@ -845,10 +845,10 @@ END aPut3;
   PROCEDURE VPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
     IF op < Str THEN
-      code[pc] := it2[op-8] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (off MOD 1000H * 100000); INC(pc);
-    ELSE
-      code[pc] := it2[op-8] + ((off MOD 20H) * 80H) + (regmap[a] * 8000H) + (regmap[b] * 800000H) + (off MOD 1000H * 100000); INC(pc);
-    END
+      code[pc] := it2[op-8] + ((regmap[a] MOD 20H) * 80H) + (regmap[b] * 8000H) + (off MOD 1000H * 100000H); INC(pc);
+    ELSE 
+      code[pc] := it2[op-8] + ((off MOD 20H) * 80H) + (regmap[b] * 8000H) + (regmap[a] * 100000H) + (off DIV 20H MOD 80H * 2000000H); INC(pc);
+    END 
   END VPut2;
 
   (* begin-procedure-description
@@ -868,9 +868,9 @@ END aPut3;
     ELSIF op = BLR THEN (*via register and depositing link*)
       code[pc]:= 67H + (regmap[off] * 8000H) + (regmap[LNK] * 80H) ; INC(pc)
     ELSIF op = BC  THEN (*via offset from pc*)
-      code[pc]:= 6FH + (vUJ(off) * 1000H) ; INC(pc)
+      code[pc]:= 6FH + vUJ(off * 4 + 4)  ; INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      INC(pc)
+      code[pc]:= 6FH + vUJ(off * 4 + 4) + (regmap[LNK]*80H) ; INC(pc)
     END;
   END VPut3;
 
@@ -881,8 +881,8 @@ END aPut3;
   PROCEDURE VHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN 
-      code[0] := 6FH + (vUJ(entry) * 1000H);
-      VPut1(121, pc, pcb, Sub, SP, SP, 8); (* VPut2(pc, pcb, Str, LNK, SP, 0) *)
+      code[0] := 6FH + vUJ(entry);
+      (* VPut1(121, pc, pcb, Sub, SP, SP, 8);  VPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE 
       VPut1(121, pc, pcb, Sub, SP, SP, 8); VPut2(pc, pcb, Str, LNK, SP, 0)
     END
@@ -953,8 +953,8 @@ END aPut3;
   PROCEDURE vHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN
-      code[0] := 6FH + (vUJ(entry) * 1000H) ;
-      vPut1(121, pc, pcb, Sub, SP, SP, 4); (* vPut2(pc, pcb, Str, LNK, SP, 0) *)
+      code[0] := 6FH + vUJ(entry)  ;
+      (* vPut1(121, pc, pcb, Sub, SP, SP, 4);  vPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE
       vPut1(121, pc, pcb, Sub, SP, SP, 4); vPut2(pc, pcb, Str, LNK, SP, 0)
     END
