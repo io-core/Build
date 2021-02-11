@@ -385,6 +385,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
 *)
+(*
     disp:=(off * 4) - 4;
     IF    op = BR  THEN (*via register*)
       IF (off = 15) THEN
@@ -395,7 +396,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     ELSIF op = BLR THEN (*via register and depositing link*)
         Put1Byte( 090H, pc, pcb); osz:=0
     ELSIF op = BC  THEN (*via offset from pc*)
-(*
+
       IF    (cond = 7)  THEN
                        IF (disp < -127) OR (disp > 127) THEN opc:=0E9H; osz:=4  ELSE opc:= 090H; osz:=1 END;
       ELSIF (cond = EQ) THEN
@@ -412,7 +413,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
                         IF (disp < -127) OR (disp > 127) THEN opc:=07EH; osz:=4  ELSE opc:= 08EH; osz:=1 END;
       ELSE opc:=90H; disp:=90H; osz:=1
       END;
-*)
+
     ELSIF op = BL  THEN (*via offset from pc and depositing link -- convert to jsr *)
       opc:=0E8H; osz:=4
     END;
@@ -423,6 +424,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     ELSIF osz = 1 THEN
         Put1Byte( opc, pc, pcb); Put1Byte( disp, pc, pcb)
     END
+*)
   END IPut3;
 
 

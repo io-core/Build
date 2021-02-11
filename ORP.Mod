@@ -1268,7 +1268,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
               ORB.Init(ccWordsize);
               NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
               expression := expression0; Type := Type0; FormalType := FormalType0;
-              ORS.Init(T, 0, ccARCH); 
+              ORS.Init(T, 0, ccARCH, ccWordsize, ccStackalign); 
               Module
             END
           END
@@ -1282,7 +1282,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           ORB.Init(ccWordsize);
           NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
           expression := expression0; Type := Type0; FormalType := FormalType0;
-          ORS.Init(T, 0, ccARCH); 
+          ORS.Init(T, 0, ccARCH, ccWordsize, ccStackalign); 
           Module
         ELSE Texts.WriteString(W, S.s); Texts.WriteString(W, " not found");
           Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
