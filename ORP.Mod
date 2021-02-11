@@ -1255,7 +1255,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           ORB.Init(ccWordsize);
           NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
           expression := expression0; Type := Type0; FormalType := FormalType0;
-          ORS.Init(T, beg, ccARCH); 
+          ORS.Init(T, beg, ccARCH, ccWordsize, ccStackalign); 
           Module 
         END
       ELSIF S.codepoint = ORD("^") THEN

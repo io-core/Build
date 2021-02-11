@@ -450,7 +450,9 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
 **ASetTables** maps registers between the RISC5 model machine and the aarch64 actual machine and prepares opcode tables for aarch64.
   end-procedure-description *)
   PROCEDURE ASetTables;
+    VAR i: INTEGER;
   BEGIN
+
       regmap[MT]:=29; regmap[13]:=13; regmap[SP]:=31; regmap[LNK]:=30;
 
       it0[Mov]:= 0AA000000H;  it0[Lsl]:=         0H;  it0[Asr]:=         0H;  it0[Ror]:=         0H; 
@@ -480,7 +482,13 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   PROCEDURE APut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
     IF   op = Mov THEN 
-      code[pc] := it0[op] + (regmap[c] * 10000H) + (1FH * 20H) + regmap[a]
+      IF a = SP THEN
+        code[pc] := 9100001FH + (regmap[c] * 20H)
+      ELSIF c = SP THEN
+        code[pc] := 910003E0H + regmap[a] 
+      ELSE
+        code[pc] := it0[op] + (regmap[c] * 10000H) + (1FH * 20H) + regmap[a]
+      END
     ELSIF op < 16 THEN
       code[pc] := it0[op] + (regmap[c] * 10000H) + (regmap[b] * 20H) + regmap[a]
     ELSE
@@ -510,13 +518,19 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
 **APut1a** PutRegFromRegOpImmLargeViaRH
   end-procedure-description *)
   PROCEDURE APut1a*(o: INTEGER; VAR pc, pcb, RH: LONGINT; op, a, b, im: LONGINT);
-  BEGIN (*same as RPut1, but with range test  -10000H <= im < 10000H*)
-    IF (im >= -10000H) & (im <= 0FFFFH) THEN APut1(o, pc, pcb, op, a, b, im);
-    ELSE APut1(o, pc, pcb, Mov+U, RH, 0, im DIV 10000H);
-      IF im MOD 10000H # 0 THEN APut1(o, pc, pcb, Ior, RH, RH, im MOD 10000H) END ;
-      APut0(pc, pcb, op, a, b, RH);
+  BEGIN (*same as RPut1, but with range test  -100H <= im < 100H*)
+    IF (im >= -100H) & (im <= 0FFH) THEN APut1(o, pc, pcb, op, a, b, im);
+    ELSE 
+      code[pc]:= 0D2800000H + regmap[a]  +  (im MOD 10000H * 20H) ; INC(pc);     (* movw opcode *)
+      code[pc]:= 0F2A00000H + regmap[a]  +  (im DIV 10000H MOD 10000H * 20H) ; INC(pc);    (* movt opcode *)
+(* need to handle 64-bit and negative values.
+      code[pc]:= 0F2C00000H + regmap[a]  +  (im DIV 100000000H MOD 10000H) ; INC(pc);    (* movt opcode *)
+      code[pc]:= 0F2E00000H + regmap[a]  +  (im DIV 1000000000000H MOD 10000H) ; INC(pc);    (* movt opcode *)
+*)
+      IF op MOD 16 # 0 THEN
+        APut0(pc, pcb, op, a, b, a)
+      END
     END
-
   END APut1a;
 
   (* begin-procedure-description
@@ -668,12 +682,10 @@ END APut3;
 **aPut1a** PutRegFromRegOpImmLargeViaRH
   end-procedure-description *)
   PROCEDURE aPut1a*(o: INTEGER; VAR pc, pcb, RH: LONGINT; op, a, b, im: LONGINT);
-  BEGIN (*same as RPut1, but with range test  -10000H <= im < 10000H*)
+  BEGIN (*same as RPut1, but with range test  -100H <= im < 100H*)
     IF (im >= -100H) & (im <= 0FFH) THEN aPut1(o, pc, pcb, op, a, b, im);
     ELSE 
-      (* aPut1(o, pc, pcb, Mov, RH, a, im MOD 10000H); *)
       code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im DIV 1000H MOD 10H) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
-      (* aPut1(o, pc, pcb, Mov+U, RH, a, im DIV 10000H); *)
       code[pc]:= 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 10H) * 10000H + (im DIV 10000H MOD 1000H) ; INC(pc);    (* movt opcode *)
       IF op MOD 16 # 0 THEN
         aPut0(pc, pcb, op, a, b, a)

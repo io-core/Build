@@ -64,7 +64,7 @@ MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     id*: Ident;  (*for identifiers*)
     str*: ARRAY stringBufSize OF CHAR;
     errcnt*: INTEGER;
-    ccARCH*: INTEGER;
+    ccARCH*, ccWordsize, ccStackalign: INTEGER;
     ch: CHAR;  (*last character read*)
     errpos: LONGINT;
     R: Texts.Reader;
@@ -341,8 +341,11 @@ MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **Init** opens the source text for reading and gets the first character.
   end-procedure-description *)
-  PROCEDURE Init*(T: Texts.Text; pos: LONGINT; a: INTEGER);
-  BEGIN ccARCH := a; errpos := pos; errcnt := 0; Texts.OpenReader(R, T, pos); Texts.Read(R, ch)
+  PROCEDURE Init*(T: Texts.Text; pos: LONGINT; a,b,c: INTEGER);
+  BEGIN ccARCH := a; ccWordsize := b; ccStackalign := c; 
+        errpos := pos; errcnt := 0; 
+        Texts.OpenReader(R, T, pos); 
+        Texts.Read(R, ch)
   END Init;
 
   (* begin-procedure-description
