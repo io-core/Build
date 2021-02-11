@@ -643,6 +643,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ELSIF pno = 12 THEN CheckInt(x); CheckInt(y); CheckInt(z); ORG.Copy(x, y, z)
       ELSIF pno = 13 THEN CheckConst(x); CheckInt(x); ORG.LDPSR(x)
       ELSIF pno = 14 THEN CheckInt(x); ORG.LDREG(x, y)
+      ELSIF pno = 21 THEN CheckInt(x); CheckInt(y); ORG.REGREG(x, y)
       END
     ELSE ORS.Mark("wrong nof parameters")
     END
@@ -896,8 +897,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IdentList(cl, first); FormalType(tp, 0); rdo := FALSE;
     IF (cl = ORB.Var) & (tp.form >= ORB.Array) THEN cl := ORB.Par; rdo := TRUE END ;
     IF (tp.form = ORB.Array) & (tp.len < 0) OR (tp.form = ORB.Record) THEN
-      parsize := 2*ORG.WordSize  (*open array or record, needs second word for length or type tag*)
-    ELSE parsize := ORG.WordSize
+      parsize := 2*ccWordsize  (*open array or record, needs second word for length or type tag*)
+    ELSE parsize := ccWordsize
     END ;
     obj := first;
     WHILE obj # NIL DO
@@ -948,11 +949,11 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     ELSIF sym = ORS.array THEN
       ORS.Get(sym); Check(ORS.of, "OF ?");
       IF dim >= 1 THEN ORS.Mark("multi-dimensional open arrays not implemented") END ;
-      NEW(typ); typ.form := ORB.Array; typ.len := -1; typ.size := 2*ORG.WordSize; 
+      NEW(typ); typ.form := ORB.Array; typ.len := -1; typ.size := 2*ccWordsize; 
       FormalType(typ.base, dim+1)
     ELSIF sym = ORS.procedure THEN
       ORS.Get(sym); ORB.OpenScope;
-      NEW(typ); typ.form := ORB.Proc; typ.size := ORG.WordSize; dmy := 0; ProcedureType(typ, dmy);
+      NEW(typ); typ.form := ORB.Proc; typ.size := ccWordsize; dmy := 0; ProcedureType(typ, dmy);
       typ.dsc := ORB.topScope.next; ORB.CloseScope
     ELSE ORS.Mark("identifier expected"); typ := ORB.noType
     END
@@ -988,7 +989,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ORS.Get(sym); RecordType(type); Check(ORS.end, "no END")
     ELSIF sym = ORS.pointer THEN
       ORS.Get(sym); Check(ORS.to, "no TO");
-      NEW(type);  type.form := ORB.Pointer; type.size := ORG.WordSize; type.base := ORB.intType;
+      NEW(type);  type.form := ORB.Pointer; type.size := ccWordsize; type.base := ORB.intType;
       IF sym = ORS.ident THEN
         obj := ORB.thisObj();
         IF obj # NIL THEN
@@ -1007,7 +1008,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       END
     ELSIF sym = ORS.procedure THEN
       ORS.Get(sym); ORB.OpenScope;
-      NEW(type); type.form := ORB.Proc; type.size := ORG.WordSize; dmy := 0;
+      NEW(type); type.form := ORB.Proc; type.size := ccWordsize; dmy := 0;
       ProcedureType(type, dmy); type.dsc := ORB.topScope.next; ORB.CloseScope
     ELSE ORS.Mark("illegal type")
     END
@@ -1099,8 +1100,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF sym = ORS.ident THEN
       ORS.CopyId(procid); ORS.Get(sym);
       ORB.NewObj(proc, ORS.id, ORB.Const);
-      IF int THEN parblksize := 12 ELSE parblksize := 4 END ;
-      NEW(type); type.form := ORB.Proc; type.size := ORG.WordSize;
+      IF int THEN parblksize := 3 * ccWordsize ELSE parblksize := ccWordsize END ;
+      NEW(type); type.form := ORB.Proc; type.size := ccWordsize;
       proc.type := type; proc.val := -1; proc.lev := level; 
       CheckExport(proc.expo);
       IF proc.expo THEN proc.exno := exno; INC(exno) END ;
