@@ -1074,7 +1074,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         Check(ORS.semicolon, "; missing")
       END
     END ;
-    varsize := (varsize + 3) DIV 4 * 4;
+    varsize := (varsize + ccStackalign - 1) DIV ccStackalign * ccStackalign;
+(*    varsize := (varsize + 3) DIV 4 * 4; *)
     ptbase := pbsList;
     WHILE ptbase # NIL DO
       IF ptbase.type.base.form = ORB.Int THEN ORS.Mark("undefined pointer base of") END ;
