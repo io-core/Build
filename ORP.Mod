@@ -84,8 +84,7 @@ MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
     dc: LONGINT;    (*data counter*)
     level, exno, version: INTEGER;
     newSF: BOOLEAN;  (*option flag*)
-    ccARCH: INTEGER;  (*cross-compiling architecture from option flag*)
-    ccWordsize: INTEGER;
+    ccArch, ccWordsize, ccStackalign: INTEGER;
     expression: PROCEDURE (VAR x: ORG.Item);  (*to avoid forward reference*)
     Type: PROCEDURE (VAR type: ORB.Type);
     FormalType: PROCEDURE (VAR typ: ORB.Type; dim: INTEGER);
@@ -1224,15 +1223,16 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   BEGIN newSF := FALSE;
     ccARCH := ORS.RISC5;
     ccWordsize := 4;
+    ccStackalign := 4;
     WHILE S.nextCh = "/" DO
       Texts.Scan(S); Texts.Scan(S); 
       IF (S.class = Texts.Name) THEN 
           IF S.s[0] = "s" THEN newSF := TRUE END;
           IF S.s[0] = "r" THEN ccARCH := ORS.RISC5 END;
-          IF S.s[0] = "I" THEN ccARCH := ORS.X8664; ccWordsize := 8 END;
-          IF S.s[0] = "A" THEN ccARCH := ORS.ARM64; ccWordsize := 8 END;
+          IF S.s[0] = "I" THEN ccARCH := ORS.X8664; ccWordsize := 8; ccStackalign := 8; END;
+          IF S.s[0] = "A" THEN ccARCH := ORS.ARM64; ccWordsize := 8; ccStackalign := 16; END;
           IF S.s[0] = "a" THEN ccARCH := ORS.ARM32 END;
-          IF S.s[0] = "V" THEN ccARCH := ORS.RISCV64; ccWordsize := 8 END;
+          IF S.s[0] = "V" THEN ccARCH := ORS.RISCV64; ccWordsize := 8; ccStackalign := 8; END;
           IF S.s[0] = "v" THEN ccARCH := ORS.RISCV32 END;  
       END
     END
