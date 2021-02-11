@@ -530,7 +530,8 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     enter("VAL", SFunc, intType, 162);
     enter("REG", SFunc, intType, 151);
     enter("BIT", SFunc, boolType, 142);
-    enter("LDREG", SProc, noType, 142);  (*procedures*)
+    enter("REGREG", SProc, noType, 212);  (*procedures*)
+    enter("LDREG", SProc, noType, 142); 
     enter("LDPSR", SProc, noType, 131);
     enter("COPY", SProc, noType, 123);
     enter("PUT", SProc, noType, 112);
