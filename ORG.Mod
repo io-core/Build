@@ -19,7 +19,6 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
      Procedure Close writes code-files*)
 
   CONST
-    WordSize* = 4;
     StkOrg0 = -64; VarOrg0 = 0;  (*for RISC-0 only*)
     MT = 12; SP = 14; LNK = 15;   (*dedicated registers*)
     maxCode = 8000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
@@ -1206,6 +1205,15 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
+**REGREG** loads a register with the contents of another register     
+  end-procedure-description *)
+  PROCEDURE REGREG*(VAR x, y: Item);
+  BEGIN
+    xPut0( pc, pcb, Mov, x.a, 0, y.a)
+  END REGREG;
+
+  (* begin-procedure-description
+---
 **LDREG** places a register value in a variable     
   end-procedure-description *)
   PROCEDURE LDREG*(VAR x, y: Item);
@@ -1312,7 +1320,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**UML** generates an inline function ??     
+**UML** generates an unsigned multiply 
   end-procedure-description *)
   PROCEDURE UML*(VAR x, y: Item);
   BEGIN load(x); load(y); xPut0( pc, pcb, Mul+2000H, x.r, x.r, y.r); DEC(RH)
