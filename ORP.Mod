@@ -1115,7 +1115,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         REPEAT ProcedureDecl; Check(ORS.semicolon, "no ;") UNTIL sym # ORS.procedure;
         ORG.FixOne(L); proc.val := ORG.Here() * 4; proc.type.dsc := ORB.topScope.next
       END ;
-      ORG.Enter(parblksize, locblksize, int);
+      ORG.Enter(parblksize, locblksize, ccWordsize, int);
       IF sym = ORS.begin THEN ORS.Get(sym); StatSequence END ;
       IF sym = ORS.return THEN
         ORS.Get(sym); expression(x);

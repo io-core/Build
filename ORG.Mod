@@ -1041,14 +1041,14 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **Enter** generates the procedure entry sequence.
   end-procedure-description *)
-  PROCEDURE Enter*(parblksize, locblksize: LONGINT; int: BOOLEAN);
+  PROCEDURE Enter*(parblksize, locblksize, wordsize: LONGINT; int: BOOLEAN);
     VAR a, r: LONGINT;
   BEGIN frame := 0;
     IF ~int THEN (*procedure prolog*)
       IF locblksize >= 10000H THEN ORS.Mark("too many locals") END ;
-      a := 4; r := 0;
+      a := wordsize; r := 0;
       xPut1(46, pc, pcb, Sub, SP, SP, locblksize); xPut2(pc, pcb, Str, LNK, SP, 0);
-      WHILE a < parblksize DO xPut2(pc, pcb, Str, r, SP, a); INC(r); INC(a, 4) END
+      WHILE a < parblksize DO xPut2(pc, pcb, Str, r, SP, a); INC(r); INC(a, wordsize) END
     ELSE (*interrupt procedure*)
       xPut1(47, pc, pcb, Sub, SP, SP, locblksize); xPut2(pc, pcb, Str, 0, SP, 0); xPut2(pc, pcb, Str, 1, SP, 4); xPut2(pc, pcb, Str, 2, SP, 8)
       (*R0, R1, R2 saved on stack*)
