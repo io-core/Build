@@ -48,7 +48,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
           Read(R, class)
         END ;
         Texts.Write(W, "}")
-      ELSIF form IN {ORB.Proc, ORB.TProc} THEN
+      ELSIF form IN {ORB.Proc} THEN
         ReadType(R); Texts.Write(W, "("); Read(R, class);
         WHILE class # 0 DO  (*parameters*)
           Texts.WriteString(W, " class = "); Texts.WriteInt(W, class, 1); Read(R, readonly);
@@ -189,7 +189,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Files.ReadInt(R, size); Texts.WriteInt(W, size, 6); Texts.WriteLn(W);
         Texts.WriteString(W, "imports:"); Texts.WriteLn(W); Files.ReadString(R, name);
         WHILE name[0] # 0X DO
-          Texts.Write(W, SPACE); Texts.WriteString(W, name);
+          Texts.Write(W, CHR(SPACE)); Texts.WriteString(W, name);
           Files.ReadInt(R, key); Texts.WriteHex(W, key); Texts.WriteLn(W);
           Files.ReadString(R, name)
         END ;
@@ -232,8 +232,8 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Texts.WriteString(W, "code"); Texts.WriteLn(W);
         Files.ReadInt(R, n); i := 0; DEC(nofP); DEC(nofD);
         WHILE i < n DO
-          Files.ReadInt(R, data); Texts.WriteInt(W, i, 4); Texts.Write(W, SPACE); Texts.WriteHex(W, data);
-          Texts.Write(W, SPACE);
+          Files.ReadInt(R, data); Texts.WriteInt(W, i, 4); Texts.Write(W, CHR(SPACE)); Texts.WriteHex(W, data);
+          Texts.Write(W, CHR(SPACE));
           IF (nofP >= 0) & (i = fixP[nofP]) THEN opcode(data, TRUE, FALSE); DEC(nofP)
           ELSIF (nofD >= 0) & (i = fixD[nofD]) THEN opcode(data, FALSE, TRUE); DEC(nofD)
           ELSE opcode(data, FALSE, FALSE)
@@ -243,7 +243,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Texts.WriteString(W, "commands:"); Texts.WriteLn(W);
         Files.ReadString(R, name);
         WHILE name[0] # 0X DO
-          Texts.Write(W, SPACE); Texts.WriteString(W, name);
+          Texts.Write(W, CHR(SPACE)); Texts.WriteString(W, name);
           Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 5); Texts.WriteLn(W);
           Files.ReadString(R, name)
         END ;
@@ -283,8 +283,8 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
          Texts.WriteLn(W); adr := mod.code;
          Texts.WriteString(W, "code"); Texts.WriteInt(W, (mod.imp - adr) DIV 4, 6); Texts.WriteLn(W);
          WHILE adr # mod.imp DO
-           SYSTEM.GET(adr, data); Texts.WriteInt(W, adr, 4); Texts.Write(W, SPACE); Texts.WriteHex(W, data);
-           Texts.Write(W, SPACE); opcode(data, FALSE, FALSE); Texts.WriteLn(W); INC(adr, 4)
+           SYSTEM.GET(adr, data); Texts.WriteInt(W, adr, 4); Texts.Write(W, CHR(SPACE)); Texts.WriteHex(W, data);
+           Texts.Write(W, CHR(SPACE)); opcode(data, FALSE, FALSE); Texts.WriteLn(W); INC(adr, 4)
          END ;
        ELSE Texts.WriteString(W, " not loaded"); Texts.WriteLn(W)
        END ;
