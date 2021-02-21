@@ -43,6 +43,10 @@ ORTool.DecObj Sierpinski.rsc
 ### _Modules in this package:_
 end-package-description *)
 
+(* begin-module-short-description
+implements a recursive-descent parser for the Oberon language.
+end-module-short-description *)
+
 (* begin-module-use-description
 
 Module ORP reads the source code of an Oberon program and produces a RISC5 executable binary module.

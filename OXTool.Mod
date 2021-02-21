@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides for module binary inspection.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OXTool provides symbol file, module file, and loaded module reporting tools.
 

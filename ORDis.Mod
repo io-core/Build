@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides for RISC5 disassembly.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module ORDis disassembles RISC5 opcodes.
 

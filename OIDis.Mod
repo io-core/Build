@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides for x86_64 dissasembly.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OIDis disassembles x86_64 opcodes.
 

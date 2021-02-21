@@ -1,3 +1,7 @@
+(* begin-module-short-description
+manages architecture agnostic disassembly of module binaries.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OXDis provides an interface for disassembling opcodes.
 

@@ -1,3 +1,7 @@
+(* begin-module-short-description
+tracks objects and types while compiling the Oberon language.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module ORB manages the symbol table for the Oberon compiler and reads and writes 'smb' files
 

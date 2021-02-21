@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides 32-bit arm dissasembly.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OaDis disassembles 32-bit ARM opcodes.
 

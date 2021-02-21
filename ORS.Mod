@@ -1,3 +1,7 @@
+(* begin-module-short-description
+implements lexical analysis for the Oberon language.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module ORS does lexical analysis of the Oberon source code and defines symbols and operations
 

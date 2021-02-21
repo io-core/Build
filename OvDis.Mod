@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides RISCV dissasembly.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OvDis disassembles 32-bit RISCV opcodes.
 

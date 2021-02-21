@@ -1,3 +1,7 @@
+(* begin-module-short-description
+a simple test program.
+end-module-short-description *)
+
 MODULE M;
  VAR a, b: INTEGER;
  PROCEDURE F(x, y: INTEGER): INTEGER;

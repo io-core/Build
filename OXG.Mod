@@ -1,3 +1,7 @@
+(* begin-module-short-description
+implements processor-specific code generation.
+end-module-short-description *)
+
 (* begin-module-use-description  vim:fdm=marker fmr=(*%,%*) fdl=0 fen 
 Module OXG generates the processor-specific instructions for executing an Oberon program.
 
@@ -14,7 +18,7 @@ MODULE OXG; (* C.Perkis 2020*)
   IMPORT SYSTEM, Files, ORS, ORB;
 
   
-  CONST     (*% *)
+  CONST     
     WordSize* = 4;
     RStkOrg0 = -64;
     IStkOrg0 = -64;
@@ -37,14 +41,14 @@ MODULE OXG; (* C.Perkis 2020*)
     BLS =  4; BLT =  5; BLE =  6; B   =  7;
     BPL =  8; BNE =  9; BVC = 10; BCC = 11;
     BHI = 12; BGE = 13; BGT = 14; BNO = 15;
-    (* %*)
+    
 
 
 
-  TYPE      (*% *)
-    (* %*)
+  TYPE      
+    
 
-  VAR       (*% *)
+  VAR       
     code*: ARRAY maxCode OF LONGINT;
     data*: ARRAY maxTD OF LONGINT;  (*type descriptors*)
     str*: ARRAY maxStrx OF CHAR;
@@ -55,38 +59,41 @@ MODULE OXG; (* C.Perkis 2020*)
     it1: ARRAY 16 OF INTEGER;
     it2: ARRAY 4 OF INTEGER;
     it3: ARRAY 16 OF INTEGER;
-    (* %*)
+    
+  (* begin-section-description
+## ---------- Fixup Chains Updating
+  end-section-description *)
 
-  (*%S ## --------- Fixup Chains Updating *)
+  
 
-  PROCEDURE setFixOrgP*(v: LONGINT);  (*%P *)
+  PROCEDURE setFixOrgP*(v: LONGINT);  
   (* begin-procedure-description
 ---
 **setFixOrgP**
   end-procedure-description *)
   BEGIN 
     fixorgP := v
-  END setFixOrgP;                     (* P%*)
+  END setFixOrgP;                     
 
-  PROCEDURE setFixOrgD*(v: LONGINT);  (*%P *)
+  PROCEDURE setFixOrgD*(v: LONGINT);  
   (* begin-procedure-description
 ---
 **setFixOrgD**
   end-procedure-description *)
   BEGIN 
     fixorgD := v
-  END setFixOrgD;                     (* P%*)
+  END setFixOrgD;                     
 
-  PROCEDURE setFixOrgT*(v: LONGINT);  (*%P *)
+  PROCEDURE setFixOrgT*(v: LONGINT);  
   (* begin-procedure-description
 ---
 **setFixOrgT**
   end-procedure-description *)
   BEGIN 
     fixorgT := v
-  END setFixOrgT;                     (* P%*)
+  END setFixOrgT;                     
 
-  (* S%*)
+  
 
   (* begin-section-description
 ## ---------- Utility Operations

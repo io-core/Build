@@ -1,3 +1,7 @@
+(* begin-module-short-description
+implements processor-specific code generation.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module ORX is a boot converter for RISC 
 

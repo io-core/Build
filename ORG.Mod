@@ -1,3 +1,7 @@
+(* begin-module-short-description
+implements processor-agnostic code generation.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module ORG generates the processor-specific instructions for executing an Oberon program. 
 

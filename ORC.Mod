@@ -1,3 +1,7 @@
+(* begin-module-short-description
+implements serial command of an Oberon system.
+end-module-short-description *)
+
 MODULE  ORC;  (*Connection to RISC; NW 11.11.2013*)
   IMPORT SYSTEM, Files, Texts, Oberon, V24;
   CONST portno = 1; (*RS-232*)

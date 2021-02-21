@@ -1,3 +1,7 @@
+(* begin-module-short-description
+provides aarch64 dissasembly.
+end-module-short-description *)
+
 (* begin-module-use-description
 Module OADis disassembles aarch64 opcodes.
 
