@@ -4,10 +4,13 @@ end-module-short-description *)
 
 MODULE  ORC;  (*Connection to RISC; NW 11.11.2013*)
   IMPORT SYSTEM, Files, Texts, Oberon, V24;
+
   CONST portno = 1; (*RS-232*)
     BlkLen = 255; pno = 1;
     REQ = 20X; REC = 21X; SND = 22X; CLS = 23X; ACK = 10X;
     Tout = 1000;
+
+  TYPE
 
   VAR res: LONGINT;
     W: Texts.Writer;
