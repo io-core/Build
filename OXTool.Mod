@@ -21,7 +21,9 @@ Any change to O[RIAa]G is likely to require a matching change in OXTool.
 
 end-module-develop-description *)
 MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
+
   IMPORT SYSTEM, Files, Modules, Input, Fonts, Texts, Viewers, MenuViewers, TextFrames, Oberon, OXDis;
+
   CONST 
     BADARCH=0; RISC5=1; X8664=2; AARCH64=3; ARM32=4; RISCV=5;
     BYTEORIENTED=0; WORDORIENTED=1;
@@ -33,6 +35,8 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
       Byte* = 1; Bool* = 2; Char* = 3; Int* = 4; Real* = 5; Set* = 6;
       Pointer* = 7; NilTyp* = 8; NoTyp* = 9; Proc* = 10;
       String* = 11; Array* = 12; Record* = 13;
+
+  TYPE
 
   VAR 
     T: Texts.Text; V: MenuViewers.Viewer; W: Texts.Writer;
