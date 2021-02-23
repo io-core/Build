@@ -1,5 +1,7 @@
 (* begin-package-description
-### _Package Overview:_
+
+**Package Overview**
+
 Oberon uses a one-pass compiler with four parts, each depending on the next for functionaltiy:
 
  * A recursive-descent parser of the Oberon language, ORP
@@ -13,34 +15,32 @@ In addition, several tools link and examine the binary modules produced by the c
  * A linker and loader, Linker
  * A tool for examining modules, OXTool
 
-### _Package Use:_
+**Package Usage**
 
-To compile the inner core:
-```
-ORP.Compile Kernel.Mod/s, Filedir.Mod/s, Files.Mod/s, Modules.Mod/s ~
-```
-To link the inner core modules into a bootable binary:
-```
-Linker.Link Modules ~
-```
-To Install the binary into the boot region of the current disk image:
-```
-Linker.Load Modules.bin ~
-```
-To compile an example module:
-```
-ORP.Compile Sierpinski.Mod ~
-```
-To examine the symbol file of the compiled example:
-```
-ORTool.DecSym Sierpinski.smb
-```
-To Examine the binary of the compiled example:
-```
-ORTool.DecObj Sierpinski.rsc
-```
+To compile the inner core::
 
-### _Modules in this package:_
+   ORP.Compile Kernel.Mod/s, Filedir.Mod/s, Files.Mod/s, Modules.Mod/s ~
+
+To link the inner core modules into a bootable binary::
+
+   Linker.Link Modules ~
+
+To Install the binary into the boot region of the current disk image::
+
+   Linker.Load Modules.bin ~
+
+To compile an example module::
+
+   ORP.Compile Sierpinski.Mod ~
+
+To examine the symbol file of the compiled example::
+
+   ORTool.DecSym Sierpinski.smb
+
+To Examine the binary of the compiled example::
+
+   ORTool.DecObj Sierpinski.rsc
+
 end-package-description *)
 
 (* begin-module-short-description
