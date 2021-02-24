@@ -7,7 +7,7 @@ Integrated Oberon uses a one-pass compiler with four parts, each depending on th
  * A recursive-descent parser of the Oberon language, OXP
  * A generator of target-generic opcodes (RISC5), OXG
  * A generator of target-specific opcodes (RISC5, x86_64, aarch64, arm, riscv64, riscv32), OXX
- * A symbol table and frame tracker, ORB
+ * A symbol table and frame tracker, OXB
  * A scanner and tokenizer, ORS
 
 In addition, several tools link and examine the binary modules produced by the compiler:
@@ -63,15 +63,15 @@ The structure of the parser is derived from the structure of the language, with 
 encompassing construct. Each procedure consumes and validates a part of the program source text while populating the 
 symbol table and execution context and also generating machine code faithfully representing that language construct.
 
-This module (OXP) relies on module OXG for code generation, ORB for the symbol table, execution context tracking and reserved words, and ORS
+This module (OXP) relies on module OXG for code generation, OXB for the symbol table, execution context tracking and reserved words, and ORS
 for lexical parsing and built-in type identification.
 
 end-module-develop-description *)
 MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*)
-  IMPORT Texts, Oberon, ORS, ORB, OXG;
+  IMPORT Texts, Oberon, ORS, OXB, OXG;
   (*Author: Niklaus Wirth, 2014.
     Parser of Oberon-RISC compiler. Uses Scanner ORS to obtain symbols (tokens),
-    ORB for definition of data structures and for handling import and export, and
+    OXB for definition of data structures and for handling import and export, and
     OXG to produce binary code. ORP performs type checking and data allocation.
     Parser is target-independent, except for part of the handling of allocations.*)
 
@@ -80,7 +80,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   TYPE 
     PtrBase = POINTER TO PtrBaseDesc;
     PtrBaseDesc = RECORD  (*list of names of pointer base types*)
-      name: ORS.Ident; type: ORB.Type; next: PtrBase
+      name: ORS.Ident; type: OXB.Type; next: PtrBase
     END ;
   
   VAR 
@@ -90,11 +90,11 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
     newSF: BOOLEAN;  (*option flag*)
     ccARCH, ccWordsize, ccStackalign: INTEGER;
     expression: PROCEDURE (VAR x: OXG.Item);  (*to avoid forward reference*)
-    Type: PROCEDURE (VAR type: ORB.Type);
-    FormalType: PROCEDURE (VAR typ: ORB.Type; dim: INTEGER);
+    Type: PROCEDURE (VAR type: OXB.Type);
+    FormalType: PROCEDURE (VAR typ: OXB.Type; dim: INTEGER);
     modid: ORS.Ident;
     pbsList: PtrBase;   (*list of names of pointer base types*)
-    dummy: ORB.Object;
+    dummy: OXB.Object;
     W: Texts.Writer;
 
 (* begin-section-description
@@ -114,12 +114,12 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **Qualident** generates a reference to a previously defined item if possible otherwise an error is marked.
   end-procedure-description *)
-  PROCEDURE qualident(VAR obj: ORB.Object);
-  BEGIN obj := ORB.thisObj(); ORS.Get(sym);
+  PROCEDURE qualident(VAR obj: OXB.Object);
+  BEGIN obj := OXB.thisObj(); ORS.Get(sym);
     IF obj = NIL THEN ORS.Mark("undef"); obj := dummy END ;
-    IF (sym = ORS.period) & (obj.class = ORB.Mod) THEN
+    IF (sym = ORS.period) & (obj.class = OXB.Mod) THEN
       ORS.Get(sym);
-      IF sym = ORS.ident THEN obj := ORB.thisimport(obj); ORS.Get(sym);
+      IF sym = ORS.ident THEN obj := OXB.thisimport(obj); ORS.Get(sym);
         IF obj = NIL THEN ORS.Mark("undef"); obj := dummy END
       ELSE ORS.Mark("identifier expected"); obj := dummy
       END
@@ -132,7 +132,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckBool(VAR x: OXG.Item);
   BEGIN
-    IF x.type.form # ORB.Bool THEN ORS.Mark("not Boolean"); x.type := ORB.boolType END
+    IF x.type.form # OXB.Bool THEN ORS.Mark("not Boolean"); x.type := OXB.boolType END
   END CheckBool;
 
   (* begin-procedure-description
@@ -141,7 +141,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckInt(VAR x: OXG.Item);
   BEGIN
-    IF x.type.form # ORB.Int THEN ORS.Mark("not Integer"); x.type := ORB.intType END
+    IF x.type.form # OXB.Int THEN ORS.Mark("not Integer"); x.type := OXB.intType END
   END CheckInt;
 
   (* begin-procedure-description
@@ -150,7 +150,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckReal(VAR x: OXG.Item);
   BEGIN
-    IF x.type.form # ORB.Real THEN ORS.Mark("not Real"); x.type := ORB.realType END
+    IF x.type.form # OXB.Real THEN ORS.Mark("not Real"); x.type := OXB.realType END
   END CheckReal;
 
   (* begin-procedure-description
@@ -159,7 +159,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckSet(VAR x: OXG.Item);
   BEGIN
-    IF x.type.form # ORB.Set THEN ORS.Mark("not Set"); x.type := ORB.setType END 
+    IF x.type.form # OXB.Set THEN ORS.Mark("not Set"); x.type := OXB.setType END 
   END CheckSet;
 
   (* begin-procedure-description
@@ -168,8 +168,8 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckSetVal(VAR x: OXG.Item);
   BEGIN
-    IF x.type.form # ORB.Int THEN ORS.Mark("not Int"); x.type := ORB.setType
-    ELSIF x.mode = ORB.Const THEN
+    IF x.type.form # OXB.Int THEN ORS.Mark("not Int"); x.type := OXB.setType
+    ELSIF x.mode = OXB.Const THEN
       IF (x.a < 0) OR (x.a >= 32) THEN ORS.Mark("invalid set") END
     END 
   END CheckSetVal;
@@ -180,7 +180,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
   end-procedure-description *)
   PROCEDURE CheckConst(VAR x: OXG.Item);
   BEGIN
-    IF x.mode # ORB.Const THEN ORS.Mark("not a constant"); x.mode := ORB.Const END
+    IF x.mode # OXB.Const THEN ORS.Mark("not a constant"); x.mode := OXB.Const END
   END CheckConst;
 
   (* begin-procedure-description
@@ -209,7 +209,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **IsExtension** determines if type t1 is an extension of t0.
   end-procedure-description *)
-  PROCEDURE IsExtension(t0, t1: ORB.Type): BOOLEAN;
+  PROCEDURE IsExtension(t0, t1: OXB.Type): BOOLEAN;
   BEGIN (*t1 is an extension of t0*)
     RETURN (t0 = t1) OR (t1 # NIL) & IsExtension(t0, t1.base)
   END IsExtension;
@@ -224,17 +224,17 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **TypeTest** checks for assignment type compatibility.
   end-procedure-description *)
-  PROCEDURE TypeTest(VAR x: OXG.Item; T: ORB.Type; guard: BOOLEAN);
-    VAR xt: ORB.Type;
+  PROCEDURE TypeTest(VAR x: OXG.Item; T: OXB.Type; guard: BOOLEAN);
+    VAR xt: OXB.Type;
   BEGIN xt := x.type;
-    IF (T.form = xt.form ) & ((T.form = ORB.Pointer) OR (T.form = ORB.Record) & (x.mode = ORB.Par)) THEN
+    IF (T.form = xt.form ) & ((T.form = OXB.Pointer) OR (T.form = OXB.Record) & (x.mode = OXB.Par)) THEN
       WHILE (xt # T) & (xt # NIL) DO xt := xt.base END ;
       IF xt # T THEN xt := x.type;
-        IF xt.form = ORB.Pointer THEN
+        IF xt.form = OXB.Pointer THEN
           IF IsExtension(xt.base, T.base) THEN OXG.TypeTest(x, T.base, FALSE, guard); x.type := T
           ELSE ORS.Mark("not an extension")
           END
-        ELSIF (xt.form = ORB.Record) & (x.mode = ORB.Par) THEN
+        ELSIF (xt.form = OXB.Record) & (x.mode = OXB.Par) THEN
           IF IsExtension(xt, T) THEN  OXG.TypeTest(x, T, TRUE, guard); x.type := T
           ELSE ORS.Mark("not an extension")
           END
@@ -244,7 +244,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
       END
     ELSE ORS.Mark("type mismatch")
     END ;
-    IF ~guard THEN x.type := ORB.boolType END
+    IF ~guard THEN x.type := OXB.boolType END
   END TypeTest;
 
   (* begin-procedure-description
@@ -252,13 +252,13 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 **selector** generates the array item, procedure, or method dereference on an array or record.
   end-procedure-description *)
   PROCEDURE selector(VAR x: OXG.Item);
-    VAR y: OXG.Item; obj: ORB.Object;
+    VAR y: OXG.Item; obj: OXB.Object;
   BEGIN
     WHILE (sym = ORS.lbrak) OR (sym = ORS.period) OR (sym = ORS.arrow)
-        OR (sym = ORS.lparen) & (x.type.form IN {ORB.Record, ORB.Pointer}) DO
+        OR (sym = ORS.lparen) & (x.type.form IN {OXB.Record, OXB.Pointer}) DO
       IF sym = ORS.lbrak THEN
         REPEAT ORS.Get(sym); expression(y);
-          IF x.type.form = ORB.Array THEN
+          IF x.type.form = OXB.Array THEN
             CheckInt(y); OXG.Index(x, y); x.type := x.type.base
           ELSE ORS.Mark("not an array")
           END
@@ -266,9 +266,9 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
         Check(ORS.rbrak, "no ]")
       ELSIF sym = ORS.period THEN ORS.Get(sym);
         IF sym = ORS.ident THEN
-          IF x.type.form = ORB.Pointer THEN OXG.DeRef(x); x.type := x.type.base END ;
-          IF x.type.form = ORB.Record THEN
-            obj := ORB.thisfield(x.type); ORS.Get(sym);
+          IF x.type.form = OXB.Pointer THEN OXG.DeRef(x); x.type := x.type.base END ;
+          IF x.type.form = OXB.Record THEN
+            obj := OXB.thisfield(x.type); ORS.Get(sym);
             IF obj # NIL THEN OXG.Field(x, obj); x.type := obj.type
             ELSE ORS.Mark("undef")
             END
@@ -278,14 +278,14 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
         END
       ELSIF sym = ORS.arrow THEN
         ORS.Get(sym);
-        IF x.type.form = ORB.Pointer THEN OXG.DeRef(x); x.type := x.type.base
+        IF x.type.form = OXB.Pointer THEN OXG.DeRef(x); x.type := x.type.base
         ELSE ORS.Mark("not a pointer")
         END
-      ELSIF (sym = ORS.lparen) & (x.type.form IN {ORB.Record, ORB.Pointer}) THEN (*type guard*)
+      ELSIF (sym = ORS.lparen) & (x.type.form IN {OXB.Record, OXB.Pointer}) THEN (*type guard*)
         ORS.Get(sym);
         IF sym = ORS.ident THEN
           qualident(obj);
-          IF obj.class = ORB.Typ THEN TypeTest(x, obj.type, TRUE)
+          IF obj.class = OXB.Typ THEN TypeTest(x, obj.type, TRUE)
           ELSE ORS.Mark("guard type expected")
           END
         ELSE ORS.Mark("not an identifier")
@@ -299,16 +299,16 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **EqualSignatures** verifies that a procedure may be assigned to a procedure variable.
   end-procedure-description *)
-  PROCEDURE EqualSignatures(t0, t1: ORB.Type): BOOLEAN;
-    VAR p0, p1: ORB.Object; com: BOOLEAN;
+  PROCEDURE EqualSignatures(t0, t1: OXB.Type): BOOLEAN;
+    VAR p0, p1: OXB.Object; com: BOOLEAN;
   BEGIN com := TRUE;
     IF (t0.base = t1.base) & (t0.nofpar = t1.nofpar) THEN
       p0 := t0.dsc; p1 := t1.dsc;
       WHILE p0 # NIL DO
         IF (p0.class = p1.class) &  (p0.rdo = p1.rdo) &
           ((p0.type = p1.type) OR
-          (p0.type.form = ORB.Array) & (p1.type.form = ORB.Array) & (p0.type.len = p1.type.len) & (p0.type.base = p1.type.base) OR
-          (p0.type.form = ORB.Proc) & (p1.type.form = ORB.Proc) & EqualSignatures(p0.type, p1.type))
+          (p0.type.form = OXB.Array) & (p1.type.form = OXB.Array) & (p0.type.len = p1.type.len) & (p0.type.base = p1.type.base) OR
+          (p0.type.form = OXB.Proc) & (p1.type.form = OXB.Proc) & EqualSignatures(p0.type, p1.type))
         THEN p0 := p0.next; p1 := p1.next
         ELSE p0 := NIL; com := FALSE
         END
@@ -322,42 +322,42 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **CompTypes** verifies assigment compatibility by type.
   end-procedure-description *)
-  PROCEDURE CompTypes(t0, t1: ORB.Type; varpar: BOOLEAN): BOOLEAN;
+  PROCEDURE CompTypes(t0, t1: OXB.Type; varpar: BOOLEAN): BOOLEAN;
   BEGIN (*check for assignment compatibility*)
     RETURN (t0 = t1)    (*openarray assignment disallowed in OXG*)
-      OR (t0.form = ORB.Array) & (t1.form = ORB.Array) & (t0.base =  t1.base) & (t0.len = t1.len)
-      OR (t0.form = ORB.Record) & (t1.form = ORB.Record)  & IsExtension(t0, t1)
+      OR (t0.form = OXB.Array) & (t1.form = OXB.Array) & (t0.base =  t1.base) & (t0.len = t1.len)
+      OR (t0.form = OXB.Record) & (t1.form = OXB.Record)  & IsExtension(t0, t1)
       OR ~varpar &
-        ((t0.form = ORB.Pointer) & (t1.form = ORB.Pointer)  & IsExtension(t0.base, t1.base)
-        OR (t0.form = ORB.Proc) & (t1.form = ORB.Proc) & EqualSignatures(t0, t1)
-        OR (t0.form IN {ORB.Pointer, ORB.Proc}) & (t1.form = ORB.NilTyp))
+        ((t0.form = OXB.Pointer) & (t1.form = OXB.Pointer)  & IsExtension(t0.base, t1.base)
+        OR (t0.form = OXB.Proc) & (t1.form = OXB.Proc) & EqualSignatures(t0, t1)
+        OR (t0.form IN {OXB.Pointer, OXB.Proc}) & (t1.form = OXB.NilTyp))
   END CompTypes;
 
   (* begin-procedure-description
 ---
 **Parameter** consumes a function call parameter and produces function call proloogue code for the parameter.
   end-procedure-description *)
-  PROCEDURE Parameter(par: ORB.Object);
+  PROCEDURE Parameter(par: OXB.Object);
     VAR x: OXG.Item; varpar: BOOLEAN;
   BEGIN expression(x);
     IF par # NIL THEN
-      varpar := par.class = ORB.Par;
+      varpar := par.class = OXB.Par;
       IF CompTypes(par.type, x.type, varpar) THEN
         IF ~varpar THEN OXG.ValueParam(x)
         ELSE (*par.class = Par*)
           IF ~par.rdo THEN CheckReadOnly(x) END ;
           OXG.VarParam(x, par.type)
         END
-      ELSIF (x.type.form = ORB.Array) & (par.type.form = ORB.Array) &
+      ELSIF (x.type.form = OXB.Array) & (par.type.form = OXB.Array) &
           (x.type.base = par.type.base) & (par.type.len < 0) THEN
         IF ~par.rdo THEN CheckReadOnly(x) END ;
         OXG.OpenArrayParam(x)
-      ELSIF (x.type.form = ORB.String) & varpar & par.rdo & (par.type.form = ORB.Array) & 
-          (par.type.base.form = ORB.Char) & (par.type.len < 0) THEN OXG.StringParam(x)
-      ELSIF ~varpar & (par.type.form = ORB.Int) & (x.type.form = ORB.Int) THEN OXG.ValueParam(x)  (*BYTE*)
-      ELSIF (x.type.form = ORB.String) & (x.b = 2) & (par.class = ORB.Var) & (par.type.form = ORB.Char) THEN
+      ELSIF (x.type.form = OXB.String) & varpar & par.rdo & (par.type.form = OXB.Array) & 
+          (par.type.base.form = OXB.Char) & (par.type.len < 0) THEN OXG.StringParam(x)
+      ELSIF ~varpar & (par.type.form = OXB.Int) & (x.type.form = OXB.Int) THEN OXG.ValueParam(x)  (*BYTE*)
+      ELSIF (x.type.form = OXB.String) & (x.b = 2) & (par.class = OXB.Var) & (par.type.form = OXB.Char) THEN
         OXG.StrToChar(x); OXG.ValueParam(x)
-      ELSIF (par.type.form = ORB.Array) & (par.type.base = ORB.byteType) & 
+      ELSIF (par.type.form = OXB.Array) & (par.type.base = OXB.byteType) & 
           (par.type.len >= 0) & (par.type.size = x.type.size) THEN
         OXG.VarParam(x, par.type)
       ELSE ORS.Mark("incompatible parameters")
@@ -370,7 +370,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 **ParamList** consumes the function call parameters, resulting in a function call prologue.
   end-procedure-description *)
   PROCEDURE ParamList(VAR x: OXG.Item);
-    VAR n: INTEGER; par: ORB.Object;
+    VAR n: INTEGER; par: OXB.Object;
   BEGIN par := x.type.dsc; n := 0;
     IF sym # ORS.rparen THEN
       Parameter(par); n := 1;
@@ -393,7 +393,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 
 Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `SBC` `UML` `BIT` `REG` `VAL` `ADR` `SIZE` `COND` `H`
   end-procedure-description *)
-  PROCEDURE StandFunc(VAR x: OXG.Item; fct: LONGINT; restyp: ORB.Type);
+  PROCEDURE StandFunc(VAR x: OXG.Item; fct: LONGINT; restyp: OXB.Type);
     VAR y: OXG.Item; n, npar: LONGINT;
   BEGIN Check(ORS.lparen, "no (");
     npar := fct MOD 10; fct := fct DIV 10; expression(x); n := 1;
@@ -401,32 +401,32 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     Check(ORS.rparen, "no )");
     IF n = npar THEN
       IF fct = 0 THEN (*ABS*)
-        IF x.type.form IN {ORB.Int, ORB.Real} THEN OXG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
+        IF x.type.form IN {OXB.Int, OXB.Real} THEN OXG.Abs(x); restyp := x.type ELSE ORS.Mark("bad type") END
       ELSIF fct = 1 THEN (*ODD*) CheckInt(x); OXG.Odd(x)
       ELSIF fct = 2 THEN (*FLOOR*) CheckReal(x); OXG.Floor(x)
       ELSIF fct = 3 THEN (*FLT*) CheckInt(x); OXG.Float(x)
       ELSIF fct = 4 THEN (*ORD*)
-        IF x.type.form <= ORB.Proc THEN OXG.Ord(x)
-        ELSIF (x.type.form = ORB.String) & (x.b = 2) THEN OXG.StrToChar(x)
+        IF x.type.form <= OXB.Proc THEN OXG.Ord(x)
+        ELSIF (x.type.form = OXB.String) & (x.b = 2) THEN OXG.StrToChar(x)
         ELSE ORS.Mark("bad type")
         END
       ELSIF fct = 5 THEN (*CHR*) CheckInt(x); OXG.Ord(x)
       ELSIF fct = 6 THEN (*LEN*)
-          IF x.type.form = ORB.Array THEN OXG.Len(x) ELSE ORS.Mark("not an array") END
+          IF x.type.form = OXB.Array THEN OXG.Len(x) ELSE ORS.Mark("not an array") END
       ELSIF fct IN {7, 8, 9} THEN (*LSL, ASR, ROR*) CheckInt(y);
-        IF x.type.form IN {ORB.Int, ORB.Set} THEN OXG.Shift(fct-7, x, y); restyp := x.type ELSE ORS.Mark("bad type") END
+        IF x.type.form IN {OXB.Int, OXB.Set} THEN OXG.Shift(fct-7, x, y); restyp := x.type ELSE ORS.Mark("bad type") END
       ELSIF fct = 11 THEN (*ADC*) OXG.ADC(x, y)
       ELSIF fct = 12 THEN (*SBC*) OXG.SBC(x, y)
       ELSIF fct = 13 THEN (*UML*) OXG.UML(x, y)
       ELSIF fct = 14 THEN (*BIT*) CheckInt(x); CheckInt(y); OXG.Bit(x, y)
       ELSIF fct = 15 THEN (*REG*) CheckConst(x); CheckInt(x); OXG.Register(x)
       ELSIF fct = 16 THEN (*VAL*)
-        IF (x.mode= ORB.Typ) & (x.type.size <= y.type.size) THEN restyp := x.type; x := y
+        IF (x.mode= OXB.Typ) & (x.type.size <= y.type.size) THEN restyp := x.type; x := y
         ELSE ORS.Mark("casting not allowed")
         END
       ELSIF fct = 17 THEN (*ADR*) OXG.Adr(x)
       ELSIF fct = 18 THEN (*SIZE*)
-        IF x.mode = ORB.Typ THEN OXG.MakeConstItem(x, ORB.intType, x.type.size)
+        IF x.mode = OXB.Typ THEN OXG.MakeConstItem(x, OXB.intType, x.type.size)
         ELSE ORS.Mark("must be a type")
         END
       ELSIF fct = 19 THEN (*COND*) CheckConst(x); CheckInt(x); OXG.Condition(x)
@@ -447,7 +447,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     IF sym = ORS.upto THEN ORS.Get(sym); expression(y); CheckSetVal(y); OXG.Set(x, y)
     ELSE OXG.Singleton(x)
     END ;
-    x.type := ORB.setType
+    x.type := OXB.setType
   END element;
   
   (* begin-procedure-description
@@ -459,7 +459,7 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
   BEGIN
     IF sym >= ORS.if THEN
       IF sym # ORS.rbrace THEN ORS.Mark(" } missing") END ;
-      OXG.MakeConstItem(x, ORB.setType, 0) (*empty set*)
+      OXG.MakeConstItem(x, OXB.setType, 0) (*empty set*)
     ELSE element(x);
       WHILE (sym < ORS.rparen) OR (sym > ORS.rbrace) DO
         IF sym = ORS.comma THEN ORS.Get(sym)
@@ -475,34 +475,34 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
 **factor** generates code that produces a value from identifiers, applications of functions and procedures, etc. for use in a calculation or assignment.
   end-procedure-description *)
   PROCEDURE factor(VAR x: OXG.Item);
-    VAR obj: ORB.Object; rx: LONGINT;
+    VAR obj: OXB.Object; rx: LONGINT;
   BEGIN (*sync*)
     IF (sym < ORS.char) OR (sym > ORS.ident) THEN ORS.Mark("expression expected");
       REPEAT ORS.Get(sym) UNTIL (sym >= ORS.char) & (sym <= ORS.for) OR (sym >= ORS.then)
     END ;
     IF sym = ORS.ident THEN
       qualident(obj);  
-      IF obj.class = ORB.SFunc THEN StandFunc(x, obj.val, obj.type)
+      IF obj.class = OXB.SFunc THEN StandFunc(x, obj.val, obj.type)
       ELSE OXG.MakeItem(x, obj, level); selector(x);
         IF sym = ORS.lparen THEN
           ORS.Get(sym);
-          IF (x.type.form = ORB.Proc) & (x.type.base.form # ORB.NoTyp) THEN
+          IF (x.type.form = OXB.Proc) & (x.type.base.form # OXB.NoTyp) THEN
             OXG.PrepCall(x, rx); ParamList(x); OXG.Call(x, rx); x.type := x.type.base
           ELSE ORS.Mark("not a function"); ParamList(x)
           END
         END
       END
-    ELSIF sym = ORS.int THEN OXG.MakeConstItem(x, ORB.intType, ORS.ival); ORS.Get(sym)
+    ELSIF sym = ORS.int THEN OXG.MakeConstItem(x, OXB.intType, ORS.ival); ORS.Get(sym)
     ELSIF sym = ORS.real THEN OXG.MakeRealItem(x, ORS.rval); ORS.Get(sym)
-    ELSIF sym = ORS.char THEN OXG.MakeConstItem(x, ORB.charType, ORS.ival); ORS.Get(sym)
-    ELSIF sym = ORS.nil THEN ORS.Get(sym); OXG.MakeConstItem(x, ORB.nilType, 0)
+    ELSIF sym = ORS.char THEN OXG.MakeConstItem(x, OXB.charType, ORS.ival); ORS.Get(sym)
+    ELSIF sym = ORS.nil THEN ORS.Get(sym); OXG.MakeConstItem(x, OXB.nilType, 0)
     ELSIF sym = ORS.string THEN OXG.MakeStringItem(x, ORS.slen); ORS.Get(sym)
     ELSIF sym = ORS.lparen THEN ORS.Get(sym); expression(x); Check(ORS.rparen, "no )")
     ELSIF sym = ORS.lbrace THEN ORS.Get(sym); set(x); Check(ORS.rbrace, "no }")
     ELSIF sym = ORS.not THEN ORS.Get(sym); factor(x); CheckBool(x); OXG.Not(x)
-    ELSIF sym = ORS.false THEN ORS.Get(sym); OXG.MakeConstItem(x, ORB.boolType, 0)
-    ELSIF sym = ORS.true THEN ORS.Get(sym); OXG.MakeConstItem(x, ORB.boolType, 1)
-    ELSE ORS.Mark("not a factor"); OXG.MakeConstItem(x, ORB.intType, 0)
+    ELSIF sym = ORS.false THEN ORS.Get(sym); OXG.MakeConstItem(x, OXB.boolType, 0)
+    ELSIF sym = ORS.true THEN ORS.Get(sym); OXG.MakeConstItem(x, OXB.boolType, 1)
+    ELSE ORS.Mark("not a factor"); OXG.MakeConstItem(x, OXB.intType, 0)
     END
   END factor;
 
@@ -516,16 +516,16 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     WHILE (sym >= ORS.times) & (sym <= ORS.and) DO
       op := sym; ORS.Get(sym);
       IF op = ORS.times THEN
-        IF f = ORB.Int THEN factor(y); CheckInt(y); OXG.MulOp(x, y)
-        ELSIF f = ORB.Real THEN factor(y); CheckReal(y); OXG.RealOp(op, x, y)
-        ELSIF f = ORB.Set THEN factor(y); CheckSet(y); OXG.SetOp(op, x, y)
+        IF f = OXB.Int THEN factor(y); CheckInt(y); OXG.MulOp(x, y)
+        ELSIF f = OXB.Real THEN factor(y); CheckReal(y); OXG.RealOp(op, x, y)
+        ELSIF f = OXB.Set THEN factor(y); CheckSet(y); OXG.SetOp(op, x, y)
         ELSE ORS.Mark("bad type")
         END
       ELSIF (op = ORS.div) OR (op = ORS.mod) THEN
         CheckInt(x); factor(y); CheckInt(y); OXG.DivOp(op, x, y)
       ELSIF op = ORS.rdiv THEN
-        IF f = ORB.Real THEN factor(y); CheckReal(y); OXG.RealOp(op, x, y)
-        ELSIF f = ORB.Set THEN factor(y); CheckSet(y); OXG.SetOp(op, x, y)
+        IF f = OXB.Real THEN factor(y); CheckReal(y); OXG.RealOp(op, x, y)
+        ELSIF f = OXB.Set THEN factor(y); CheckSet(y); OXG.SetOp(op, x, y)
         ELSE ORS.Mark("bad type")
         END
       ELSE (*op = and*) CheckBool(x); OXG.And1(x); factor(y); CheckBool(y); OXG.And2(x, y)
@@ -541,15 +541,15 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
     VAR y: OXG.Item; op: INTEGER;
   BEGIN
     IF sym = ORS.minus THEN ORS.Get(sym); term(x);
-      IF x.type.form IN {ORB.Int, ORB.Real, ORB.Set} THEN OXG.Neg(x) ELSE CheckInt(x) END
+      IF x.type.form IN {OXB.Int, OXB.Real, OXB.Set} THEN OXG.Neg(x) ELSE CheckInt(x) END
     ELSIF sym = ORS.plus THEN ORS.Get(sym); term(x);
     ELSE term(x)
     END ;
     WHILE (sym >= ORS.plus) & (sym <= ORS.or) DO
       op := sym; ORS.Get(sym);
       IF op = ORS.or THEN OXG.Or1(x); CheckBool(x); term(y); CheckBool(y); OXG.Or2(x, y)
-      ELSIF x.type.form = ORB.Int THEN term(y); CheckInt(y); OXG.AddOp(op, x, y)
-      ELSIF x.type.form = ORB.Real THEN term(y); CheckReal(y); OXG.RealOp(op, x, y)
+      ELSIF x.type.form = OXB.Int THEN term(y); CheckInt(y); OXG.AddOp(op, x, y)
+      ELSIF x.type.form = OXB.Real THEN term(y); CheckReal(y); OXG.RealOp(op, x, y)
       ELSE CheckSet(x); term(y); CheckSet(y); OXG.SetOp(op, x, y)
       END
     END
@@ -563,44 +563,44 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 
   end-procedure-description *)
   PROCEDURE expression0(VAR x: OXG.Item);
-    VAR y: OXG.Item; obj: ORB.Object; rel, xf, yf: INTEGER;
+    VAR y: OXG.Item; obj: OXB.Object; rel, xf, yf: INTEGER;
   BEGIN SimpleExpression(x);
     IF (sym >= ORS.eql) & (sym <= ORS.geq) THEN
       rel := sym; ORS.Get(sym); SimpleExpression(y); xf := x.type.form; yf := y.type.form;
       IF x.type = y.type THEN
-        IF (xf IN {ORB.Char, ORB.Int}) THEN OXG.IntRelation(rel, x, y)
-        ELSIF xf = ORB.Real THEN OXG.RealRelation(rel, x, y)
-        ELSIF (xf IN {ORB.Set, ORB.Pointer, ORB.Proc, ORB.NilTyp, ORB.Bool}) THEN
+        IF (xf IN {OXB.Char, OXB.Int}) THEN OXG.IntRelation(rel, x, y)
+        ELSIF xf = OXB.Real THEN OXG.RealRelation(rel, x, y)
+        ELSIF (xf IN {OXB.Set, OXB.Pointer, OXB.Proc, OXB.NilTyp, OXB.Bool}) THEN
           IF rel <= ORS.neq THEN OXG.IntRelation(rel, x, y) ELSE ORS.Mark("only = or #") END
-        ELSIF (xf = ORB.Array) & (x.type.base.form = ORB.Char) OR (xf = ORB.String) THEN
+        ELSIF (xf = OXB.Array) & (x.type.base.form = OXB.Char) OR (xf = OXB.String) THEN
           OXG.StringRelation(rel, x, y)
         ELSE ORS.Mark("illegal comparison")
         END
-      ELSIF (xf IN {ORB.Pointer, ORB.Proc}) & (yf = ORB.NilTyp)
-          OR (yf IN {ORB.Pointer, ORB.Proc}) & (xf = ORB.NilTyp) THEN
+      ELSIF (xf IN {OXB.Pointer, OXB.Proc}) & (yf = OXB.NilTyp)
+          OR (yf IN {OXB.Pointer, OXB.Proc}) & (xf = OXB.NilTyp) THEN
         IF rel <= ORS.neq THEN OXG.IntRelation(rel, x,  y) ELSE ORS.Mark("only = or #") END
-      ELSIF (xf = ORB.Pointer) & (yf = ORB.Pointer) &
+      ELSIF (xf = OXB.Pointer) & (yf = OXB.Pointer) &
           (IsExtension(x.type.base, y.type.base) OR IsExtension(y.type.base, x.type.base))
-          OR (xf = ORB.Proc) & (yf = ORB.Proc) & EqualSignatures(x.type, y.type) THEN
+          OR (xf = OXB.Proc) & (yf = OXB.Proc) & EqualSignatures(x.type, y.type) THEN
         IF rel <= ORS.neq THEN OXG.IntRelation(rel,  x, y) ELSE ORS.Mark("only = or #") END
-      ELSIF (xf = ORB.Array) & (x.type.base.form = ORB.Char) &
-            ((yf = ORB.String) OR (yf = ORB.Array) & (y.type.base.form = ORB.Char))
-          OR (yf = ORB.Array) & (y.type.base.form = ORB.Char) & (xf = ORB.String) THEN
+      ELSIF (xf = OXB.Array) & (x.type.base.form = OXB.Char) &
+            ((yf = OXB.String) OR (yf = OXB.Array) & (y.type.base.form = OXB.Char))
+          OR (yf = OXB.Array) & (y.type.base.form = OXB.Char) & (xf = OXB.String) THEN
         OXG.StringRelation(rel, x, y)
-      ELSIF (xf = ORB.Char) & (yf = ORB.String) & (y.b = 2) THEN
+      ELSIF (xf = OXB.Char) & (yf = OXB.String) & (y.b = 2) THEN
         OXG.StrToChar(y); OXG.IntRelation(rel, x, y)
-      ELSIF (yf = ORB.Char) & (xf = ORB.String) & (x.b = 2) THEN
+      ELSIF (yf = OXB.Char) & (xf = OXB.String) & (x.b = 2) THEN
         OXG.StrToChar(x); OXG.IntRelation(rel, x, y)
-      ELSIF (xf = ORB.Int) & (yf = ORB.Int) THEN OXG.IntRelation(rel,  x, y)  (*BYTE*)
+      ELSIF (xf = OXB.Int) & (yf = OXB.Int) THEN OXG.IntRelation(rel,  x, y)  (*BYTE*)
       ELSE ORS.Mark("illegal comparison")
       END ;
-      x.type := ORB.boolType
+      x.type := OXB.boolType
     ELSIF sym = ORS.in THEN
       ORS.Get(sym); CheckInt(x); SimpleExpression(y); CheckSet(y); OXG.In(x, y) ;
-      x.type := ORB.boolType
+      x.type := OXB.boolType
     ELSIF sym = ORS.is THEN
       ORS.Get(sym); qualident(obj); TypeTest(x, obj.type, FALSE) ;
-      x.type := ORB.boolType
+      x.type := OXB.boolType
     END
   END expression0;
 
@@ -620,27 +620,27 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   BEGIN Check(ORS.lparen, "no (");
     npar := pno MOD 10; pno := pno DIV 10; expression(x); nap := 1;
     IF sym = ORS.comma THEN
-      ORS.Get(sym); expression(y); nap := 2; z.type := ORB.noType;
+      ORS.Get(sym); expression(y); nap := 2; z.type := OXB.noType;
       WHILE sym = ORS.comma DO ORS.Get(sym); expression(z); INC(nap) END
-    ELSE y.type := ORB.noType
+    ELSE y.type := OXB.noType
     END ;
     Check(ORS.rparen, "no )");
     IF (npar = nap) OR (pno IN {0, 1}) THEN 
       IF pno IN {0, 1} THEN (*INC, DEC*)
         CheckInt(x); CheckReadOnly(x);
-        IF y.type # ORB.noType THEN CheckInt(y) END ;
+        IF y.type # OXB.noType THEN CheckInt(y) END ;
         OXG.Increment(pno, x, y)
       ELSIF pno IN {2, 3} THEN (*INCL, EXCL*)
         CheckSet(x); CheckReadOnly(x); CheckInt(y); OXG.Include(pno-2, x, y)
       ELSIF pno = 4 THEN CheckBool(x); OXG.Assert(x)
       ELSIF pno = 5 THEN(*NEW*) CheckReadOnly(x);
-         IF (x.type.form = ORB.Pointer) & (x.type.base.form = ORB.Record) THEN OXG.New(x)
+         IF (x.type.form = OXB.Pointer) & (x.type.base.form = OXB.Record) THEN OXG.New(x)
          ELSE ORS.Mark("not a pointer to record")
          END
       ELSIF pno = 6 THEN CheckReal(x); CheckInt(y); CheckReadOnly(x); OXG.Pack(x, y)
       ELSIF pno = 7 THEN CheckReal(x); CheckInt(y); CheckReadOnly(x); OXG.Unpk(x, y)
       ELSIF pno = 8 THEN
-        IF x.type.form <= ORB.Set THEN OXG.Led(x) ELSE ORS.Mark("bad type") END
+        IF x.type.form <= OXB.Set THEN OXG.Led(x) ELSE ORS.Mark("bad type") END
       ELSIF pno = 10 THEN CheckInt(x); OXG.Get(x, y)
       ELSIF pno = 11 THEN CheckInt(x); OXG.Put(x, y)
       ELSIF pno = 12 THEN CheckInt(x); CheckInt(y); CheckInt(z); OXG.Copy(x, y, z)
@@ -657,20 +657,20 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 **StatSequence** matches a statement sequence.
   end-procedure-description *)
   PROCEDURE StatSequence;
-    VAR obj: ORB.Object;
-      orgtype: ORB.Type; (*original type of case var*)
+    VAR obj: OXB.Object;
+      orgtype: OXB.Type; (*original type of case var*)
       x, y, z, w: OXG.Item;
       L0, L1, rx: LONGINT;
 
   (* begin-procedure-description
 **TypeCase** (interior procedure)
   end-procedure-description *)
-    PROCEDURE TypeCase(obj: ORB.Object; VAR x: OXG.Item);
-      VAR typobj: ORB.Object;
+    PROCEDURE TypeCase(obj: OXB.Object; VAR x: OXG.Item);
+      VAR typobj: OXB.Object;
     BEGIN
       IF sym = ORS.ident THEN
         qualident(typobj); OXG.MakeItem(x, obj, level);
-        IF typobj.class # ORB.Typ THEN ORS.Mark("not a type") END ;
+        IF typobj.class # OXB.Typ THEN ORS.Mark("not a type") END ;
         TypeTest(x, typobj.type, FALSE); obj.type := typobj.type;
         OXG.CFJump(x); Check(ORS.colon, ": expected"); StatSequence
       ELSE OXG.CFJump(x); ORS.Mark("type id expected")
@@ -694,34 +694,34 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       END ;
       IF sym = ORS.ident THEN
         qualident(obj); OXG.MakeItem(x, obj, level);
-        IF x.mode = ORB.SProc THEN StandProc(obj.val)
+        IF x.mode = OXB.SProc THEN StandProc(obj.val)
         ELSE selector(x);
           IF sym = ORS.becomes THEN (*assignment*)
             ORS.Get(sym); CheckReadOnly(x); expression(y);
             IF CompTypes(x.type, y.type, FALSE) THEN
-              IF (x.type.form <= ORB.Pointer) OR (x.type.form = ORB.Proc) THEN OXG.Store(x, y)
+              IF (x.type.form <= OXB.Pointer) OR (x.type.form = OXB.Proc) THEN OXG.Store(x, y)
               ELSE OXG.StoreStruct(x, y)
               END
-            ELSIF (x.type.form = ORB.Array) & (y.type.form = ORB.Array) & (x.type.base = y.type.base) & (y.type.len < 0) THEN
+            ELSIF (x.type.form = OXB.Array) & (y.type.form = OXB.Array) & (x.type.base = y.type.base) & (y.type.len < 0) THEN
               OXG.StoreStruct(x, y)
-            ELSIF (x.type.form = ORB.Array) & (x.type.base.form = ORB.Char) & (y.type.form = ORB.String) THEN
+            ELSIF (x.type.form = OXB.Array) & (x.type.base.form = OXB.Char) & (y.type.form = OXB.String) THEN
               OXG.CopyString(x, y)
-            ELSIF (x.type.form = ORB.Int) & (y.type.form = ORB.Int) THEN OXG.Store(x, y)  (*BYTE*)
-            ELSIF (x.type.form = ORB.Char) & (y.type.form = ORB.String) & (y.b = 2) THEN
+            ELSIF (x.type.form = OXB.Int) & (y.type.form = OXB.Int) THEN OXG.Store(x, y)  (*BYTE*)
+            ELSIF (x.type.form = OXB.Char) & (y.type.form = OXB.String) & (y.b = 2) THEN
               OXG.StrToChar(y); OXG.Store(x, y)
             ELSE ORS.Mark("illegal assignment")
             END
           ELSIF sym = ORS.eql THEN ORS.Mark("should be :="); ORS.Get(sym); expression(y)
           ELSIF sym = ORS.lparen THEN (*procedure call*)
             ORS.Get(sym);
-            IF (x.type.form = ORB.Proc) & (x.type.base.form = ORB.NoTyp) THEN
+            IF (x.type.form = OXB.Proc) & (x.type.base.form = OXB.NoTyp) THEN
               OXG.PrepCall(x, rx); ParamList(x); OXG.Call(x, rx)
             ELSE ORS.Mark("not a procedure"); ParamList(x)
             END
-          ELSIF x.type.form = ORB.Proc THEN (*procedure call without parameters*)
+          ELSIF x.type.form = OXB.Proc THEN (*procedure call without parameters*)
             IF x.type.nofpar > 0 THEN ORS.Mark("missing parameters") END ;
-            IF x.type.base.form = ORB.NoTyp THEN OXG.PrepCall(x, rx); OXG.Call(x, rx) ELSE ORS.Mark("not a procedure") END
-          ELSIF x.mode = ORB.Typ THEN ORS.Mark("illegal assignment")
+            IF x.type.base.form = OXB.NoTyp THEN OXG.PrepCall(x, rx); OXG.Call(x, rx) ELSE ORS.Mark("not a procedure") END
+          ELSIF x.mode = OXB.Typ THEN ORS.Mark("illegal assignment")
           ELSE ORS.Mark("not a procedure")
           END
         END
@@ -759,7 +759,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
             ORS.Get(sym); expression(y); CheckInt(y); OXG.For0(x, y); L0 := OXG.Here();
             Check(ORS.to, "no TO"); expression(z); CheckInt(z); obj.rdo := TRUE;
             IF sym = ORS.by THEN ORS.Get(sym); expression(w); CheckConst(w); CheckInt(w)
-            ELSE OXG.MakeConstItem(w, ORB.intType, 1)
+            ELSE OXG.MakeConstItem(w, OXB.intType, 1)
             END ;
             Check(ORS.do, "no DO"); OXG.For1(x, y, z, w, L1);
             StatSequence; Check(ORS.end, "no END");
@@ -772,7 +772,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         ORS.Get(sym);
         IF sym = ORS.ident THEN
           qualident(obj); orgtype := obj.type;
-          IF (orgtype.form = ORB.Pointer) OR (orgtype.form = ORB.Record) & (obj.class = ORB.Par) THEN
+          IF (orgtype.form = OXB.Pointer) OR (orgtype.form = OXB.Record) & (obj.class = OXB.Par) THEN
             Check(ORS.of, "OF expected"); TypeCase(obj, x); L0 := 0;
             WHILE sym = ORS.bar DO
               ORS.Get(sym); OXG.FJump(L0); OXG.Fixup(x); obj.type := orgtype; TypeCase(obj, x)
@@ -803,14 +803,14 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **IdentList** matches a comma separated list of identifiers.
   end-procedure-description *)
-  PROCEDURE IdentList(class: INTEGER; VAR first: ORB.Object);
-    VAR obj: ORB.Object;
+  PROCEDURE IdentList(class: INTEGER; VAR first: OXB.Object);
+    VAR obj: OXB.Object;
   BEGIN
     IF sym = ORS.ident THEN
-      ORB.NewObj(first, ORS.id, class); ORS.Get(sym); CheckExport(first.expo);
+      OXB.NewObj(first, ORS.id, class); ORS.Get(sym); CheckExport(first.expo);
       WHILE sym = ORS.comma DO
         ORS.Get(sym);
-        IF sym = ORS.ident THEN ORB.NewObj(obj, ORS.id, class); ORS.Get(sym); CheckExport(obj.expo)
+        IF sym = ORS.ident THEN OXB.NewObj(obj, ORS.id, class); ORS.Get(sym); CheckExport(obj.expo)
         ELSE ORS.Mark("ident?")
         END
       END;
@@ -823,39 +823,39 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **ArrayType** matches the definiton of an Array Type or marks an error.
   end-procedure-description *)
-  PROCEDURE ArrayType(VAR type: ORB.Type);
-    VAR x: OXG.Item; typ: ORB.Type; len: LONGINT;
-  BEGIN NEW(typ); typ.form := ORB.NoTyp;
+  PROCEDURE ArrayType(VAR type: OXB.Type);
+    VAR x: OXG.Item; typ: OXB.Type; len: LONGINT;
+  BEGIN NEW(typ); typ.form := OXB.NoTyp;
     expression(x);
-    IF (x.mode = ORB.Const) & (x.type.form = ORB.Int) & (x.a >= 0) THEN len := x.a
+    IF (x.mode = OXB.Const) & (x.type.form = OXB.Int) & (x.a >= 0) THEN len := x.a
     ELSE len := 1; ORS.Mark("not a valid length")
     END ;
     IF sym = ORS.of THEN ORS.Get(sym); Type(typ.base);
-      IF (typ.base.form = ORB.Array) & (typ.base.len < 0) THEN ORS.Mark("dyn array not allowed") END
+      IF (typ.base.form = OXB.Array) & (typ.base.len < 0) THEN ORS.Mark("dyn array not allowed") END
     ELSIF sym = ORS.comma THEN ORS.Get(sym); ArrayType(typ.base)
-    ELSE ORS.Mark("missing OF"); typ.base := ORB.intType
+    ELSE ORS.Mark("missing OF"); typ.base := OXB.intType
     END ;
     typ.size := (len * typ.base.size + 3) DIV 4 * 4;
-    typ.form := ORB.Array; typ.len := len; type := typ
+    typ.form := OXB.Array; typ.len := len; type := typ
   END ArrayType;
 
   (* begin-procedure-description
 ---
 **RecordType** matches the definition of a Record Type or marks an error.
   end-procedure-description *)
-  PROCEDURE RecordType(VAR type: ORB.Type);
-    VAR obj, obj0, new, bot, base: ORB.Object;
-      typ, tp: ORB.Type;
+  PROCEDURE RecordType(VAR type: OXB.Type);
+    VAR obj, obj0, new, bot, base: OXB.Object;
+      typ, tp: OXB.Type;
       offset, off, n: LONGINT;
-  BEGIN NEW(typ); typ.form := ORB.NoTyp; typ.base := NIL; typ.mno := -level; typ.nofpar := 0; offset := 0; bot := NIL;
+  BEGIN NEW(typ); typ.form := OXB.NoTyp; typ.base := NIL; typ.mno := -level; typ.nofpar := 0; offset := 0; bot := NIL;
     IF sym = ORS.lparen THEN
       ORS.Get(sym); (*record extension*)
       IF level # 0 THEN ORS.Mark("extension of local types not implemented") END ;
       IF sym = ORS.ident THEN
         qualident(base);
-        IF base.class = ORB.Typ THEN
-          IF base.type.form = ORB.Record THEN typ.base := base.type
-          ELSE typ.base := ORB.intType; ORS.Mark("invalid extension")
+        IF base.class = OXB.Typ THEN
+          IF base.type.form = OXB.Record THEN typ.base := base.type
+          ELSE typ.base := OXB.intType; ORS.Mark("invalid extension")
           END ;
           typ.nofpar := typ.base.nofpar + 1; (*"nofpar" here abused for extension level*)
           bot := typ.base.dsc; offset := typ.base.size
@@ -871,21 +871,21 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         obj0 := obj;
         WHILE (obj0 # NIL) & (obj0.name # ORS.id) DO obj0 := obj0.next END ;
         IF obj0 # NIL THEN ORS.Mark("mult def") END ;
-        NEW(new); ORS.CopyId(new.name); new.class := ORB.Fld; new.next := obj; obj := new; INC(n);
+        NEW(new); ORS.CopyId(new.name); new.class := OXB.Fld; new.next := obj; obj := new; INC(n);
         ORS.Get(sym); CheckExport(new.expo);
         IF (sym # ORS.comma) & (sym # ORS.colon) THEN ORS.Mark("comma expected")
         ELSIF sym = ORS.comma THEN ORS.Get(sym)
         END
       END ;
       Check(ORS.colon, "colon expected"); Type(tp);
-      IF (tp.form = ORB.Array) & (tp.len < 0) THEN ORS.Mark("dyn array not allowed") END ;
+      IF (tp.form = OXB.Array) & (tp.len < 0) THEN ORS.Mark("dyn array not allowed") END ;
       IF tp.size > 1 THEN offset := (offset+3) DIV 4 * 4 END ;
       offset := offset + n * tp.size; off := offset; obj0 := obj;
       WHILE obj0 # bot DO obj0.type := tp; obj0.lev := 0; off := off - tp.size; obj0.val := off; obj0 := obj0.next END ;
       bot := obj;
       IF sym = ORS.semicolon THEN ORS.Get(sym) ELSIF sym # ORS.end THEN ORS.Mark(" ; or END") END
     END ;
-    typ.form := ORB.Record; typ.dsc := bot; typ.size := (offset + 3) DIV 4 * 4; type := typ
+    typ.form := OXB.Record; typ.dsc := bot; typ.size := (offset + 3) DIV 4 * 4; type := typ
   END RecordType;
 
   (* begin-procedure-description
@@ -893,13 +893,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 **FPSection** matches the parameters to a function or marks an error.
   end-procedure-description *)
   PROCEDURE FPSection(VAR adr: LONGINT; VAR nofpar: INTEGER);
-    VAR obj, first: ORB.Object; tp: ORB.Type;
+    VAR obj, first: OXB.Object; tp: OXB.Type;
       parsize: LONGINT; cl: INTEGER; rdo: BOOLEAN;
   BEGIN
-    IF sym = ORS.var THEN ORS.Get(sym); cl := ORB.Par ELSE cl := ORB.Var END ;
+    IF sym = ORS.var THEN ORS.Get(sym); cl := OXB.Par ELSE cl := OXB.Var END ;
     IdentList(cl, first); FormalType(tp, 0); rdo := FALSE;
-    IF (cl = ORB.Var) & (tp.form >= ORB.Array) THEN cl := ORB.Par; rdo := TRUE END ;
-    IF (tp.form = ORB.Array) & (tp.len < 0) OR (tp.form = ORB.Record) THEN
+    IF (cl = OXB.Var) & (tp.form >= OXB.Array) THEN cl := OXB.Par; rdo := TRUE END ;
+    IF (tp.form = OXB.Array) & (tp.len < 0) OR (tp.form = OXB.Record) THEN
       parsize := 2*ccWordsize  (*open array or record, needs second word for length or type tag*)
     ELSE parsize := ccWordsize
     END ;
@@ -915,9 +915,9 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **ProcedureType** matches a Procedure Type definition or marks an error.
   end-procedure-description *)
-  PROCEDURE ProcedureType(ptype: ORB.Type; VAR parblksize: LONGINT);
-    VAR obj: ORB.Object; size: LONGINT; nofpar: INTEGER;
-  BEGIN ptype.base := ORB.noType; size := parblksize; nofpar := 0; ptype.dsc := NIL;
+  PROCEDURE ProcedureType(ptype: OXB.Type; VAR parblksize: LONGINT);
+    VAR obj: OXB.Object; size: LONGINT; nofpar: INTEGER;
+  BEGIN ptype.base := OXB.noType; size := parblksize; nofpar := 0; ptype.dsc := NIL;
     IF sym = ORS.lparen THEN
       ORS.Get(sym);
       IF sym = ORS.rparen THEN ORS.Get(sym)
@@ -929,7 +929,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         ORS.Get(sym);
         IF sym = ORS.ident THEN
           qualident(obj); ptype.base := obj.type;
-          IF ~((obj.class = ORB.Typ) & (obj.type.form IN {ORB.Byte .. ORB.Pointer, ORB.Proc})) THEN
+          IF ~((obj.class = OXB.Typ) & (obj.type.form IN {OXB.Byte .. OXB.Pointer, OXB.Proc})) THEN
             ORS.Mark("illegal function type")
           END
         ELSE ORS.Mark("type identifier expected")
@@ -943,22 +943,22 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **FormalType0** matches the definition of a type or marks an error.
   end-procedure-description *)
-  PROCEDURE FormalType0(VAR typ: ORB.Type; dim: INTEGER);
-    VAR obj: ORB.Object; dmy: LONGINT;
+  PROCEDURE FormalType0(VAR typ: OXB.Type; dim: INTEGER);
+    VAR obj: OXB.Object; dmy: LONGINT;
   BEGIN
     IF sym = ORS.ident THEN
       qualident(obj);
-      IF obj.class = ORB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := ORB.intType END
+      IF obj.class = OXB.Typ THEN typ := obj.type ELSE ORS.Mark("not a type"); typ := OXB.intType END
     ELSIF sym = ORS.array THEN
       ORS.Get(sym); Check(ORS.of, "OF ?");
       IF dim >= 1 THEN ORS.Mark("multi-dimensional open arrays not implemented") END ;
-      NEW(typ); typ.form := ORB.Array; typ.len := -1; typ.size := 2*ccWordsize; 
+      NEW(typ); typ.form := OXB.Array; typ.len := -1; typ.size := 2*ccWordsize; 
       FormalType(typ.base, dim+1)
     ELSIF sym = ORS.procedure THEN
-      ORS.Get(sym); ORB.OpenScope;
-      NEW(typ); typ.form := ORB.Proc; typ.size := ccWordsize; dmy := 0; ProcedureType(typ, dmy);
-      typ.dsc := ORB.topScope.next; ORB.CloseScope
-    ELSE ORS.Mark("identifier expected"); typ := ORB.noType
+      ORS.Get(sym); OXB.OpenScope;
+      NEW(typ); typ.form := OXB.Proc; typ.size := ccWordsize; dmy := 0; ProcedureType(typ, dmy);
+      typ.dsc := OXB.topScope.next; OXB.CloseScope
+    ELSE ORS.Mark("identifier expected"); typ := OXB.noType
     END
   END FormalType0;
 
@@ -975,16 +975,16 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **Type0** matches a type definition or marks an error.
   end-procedure-description *)
-  PROCEDURE Type0(VAR type: ORB.Type);
-    VAR dmy: LONGINT; obj: ORB.Object; ptbase: PtrBase;
-  BEGIN type := ORB.intType; (*sync*)
+  PROCEDURE Type0(VAR type: OXB.Type);
+    VAR dmy: LONGINT; obj: OXB.Object; ptbase: PtrBase;
+  BEGIN type := OXB.intType; (*sync*)
     IF (sym # ORS.ident) & (sym < ORS.array) THEN ORS.Mark("not a type");
       REPEAT ORS.Get(sym) UNTIL (sym = ORS.ident) OR (sym >= ORS.array)
     END ;
     IF sym = ORS.ident THEN
       qualident(obj);
-      IF obj.class = ORB.Typ THEN
-        IF (obj.type # NIL) & (obj.type.form # ORB.NoTyp) THEN type := obj.type END
+      IF obj.class = OXB.Typ THEN
+        IF (obj.type # NIL) & (obj.type.form # OXB.NoTyp) THEN type := obj.type END
       ELSE ORS.Mark("not a type or undefined")
       END
     ELSIF sym = ORS.array THEN ORS.Get(sym); ArrayType(type)
@@ -992,13 +992,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ORS.Get(sym); RecordType(type); Check(ORS.end, "no END")
     ELSIF sym = ORS.pointer THEN
       ORS.Get(sym); Check(ORS.to, "no TO");
-      NEW(type);  type.form := ORB.Pointer; type.size := ccWordsize; type.base := ORB.intType;
+      NEW(type);  type.form := OXB.Pointer; type.size := ccWordsize; type.base := OXB.intType;
       IF sym = ORS.ident THEN
-        obj := ORB.thisObj();
+        obj := OXB.thisObj();
         IF obj # NIL THEN
-          IF (obj.class = ORB.Typ) & (obj.type.form IN {ORB.Record, ORB.NoTyp}) THEN
+          IF (obj.class = OXB.Typ) & (obj.type.form IN {OXB.Record, OXB.NoTyp}) THEN
             CheckRecLevel(obj.lev); type.base := obj.type
-          ELSIF obj.class = ORB.Mod THEN ORS.Mark("external base type not implemented")
+          ELSIF obj.class = OXB.Mod THEN ORS.Mark("external base type not implemented")
           ELSE ORS.Mark("no valid base type")
           END
         ELSE CheckRecLevel(level); (*enter into list of forward references to be fixed in Declarations*)
@@ -1006,13 +1006,13 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         END ;
         ORS.Get(sym)
       ELSE Type(type.base);
-        IF (type.base.form # ORB.Record) OR (type.base.typobj = NIL) THEN ORS.Mark("must point to named record") END ;
+        IF (type.base.form # OXB.Record) OR (type.base.typobj = NIL) THEN ORS.Mark("must point to named record") END ;
         CheckRecLevel(level)
       END
     ELSIF sym = ORS.procedure THEN
-      ORS.Get(sym); ORB.OpenScope;
-      NEW(type); type.form := ORB.Proc; type.size := ccWordsize; dmy := 0;
-      ProcedureType(type, dmy); type.dsc := ORB.topScope.next; ORB.CloseScope
+      ORS.Get(sym); OXB.OpenScope;
+      NEW(type); type.form := OXB.Proc; type.size := ccWordsize; dmy := 0;
+      ProcedureType(type, dmy); type.dsc := OXB.topScope.next; OXB.CloseScope
     ELSE ORS.Mark("illegal type")
     END
   END Type0;
@@ -1022,8 +1022,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 **Declarations** dispatches the definition of constants, types, and variables.
   end-procedure-description *)
   PROCEDURE Declarations(VAR varsize: LONGINT);
-    VAR obj, first: ORB.Object;
-      x: OXG.Item; tp: ORB.Type; ptbase: PtrBase;
+    VAR obj, first: OXB.Object;
+      x: OXG.Item; tp: OXB.Type; ptbase: PtrBase;
       expo: BOOLEAN; id: ORS.Ident;
   BEGIN (*sync*) pbsList := NIL;
     IF (sym < ORS.const) & (sym # ORS.end) & (sym # ORS.return) THEN ORS.Mark("declaration?");
@@ -1035,10 +1035,10 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         ORS.CopyId(id); ORS.Get(sym); CheckExport(expo);
         IF sym = ORS.eql THEN ORS.Get(sym) ELSE ORS.Mark("= ?") END;
         expression(x);
-        IF (x.type.form = ORB.String) & (x.b = 2) THEN OXG.StrToChar(x) END ;
-        ORB.NewObj(obj, id, ORB.Const); obj.expo := expo;
-        IF x.mode = ORB.Const THEN obj.val := x.a; obj.lev := x.b; obj.type := x.type
-        ELSE ORS.Mark("expression not constant"); obj.type := ORB.intType
+        IF (x.type.form = OXB.String) & (x.b = 2) THEN OXG.StrToChar(x) END ;
+        OXB.NewObj(obj, id, OXB.Const); obj.expo := expo;
+        IF x.mode = OXB.Const THEN obj.val := x.a; obj.lev := x.b; obj.type := x.type
+        ELSE ORS.Mark("expression not constant"); obj.type := OXB.intType
         END;
         Check(ORS.semicolon, "; missing")
       END
@@ -1049,10 +1049,10 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         ORS.CopyId(id); ORS.Get(sym); CheckExport(expo);
         IF sym = ORS.eql THEN ORS.Get(sym) ELSE ORS.Mark("=?") END ;
         Type(tp);
-        ORB.NewObj(obj, id, ORB.Typ); obj.type := tp; obj.expo := expo; obj.lev := level;
+        OXB.NewObj(obj, id, OXB.Typ); obj.type := tp; obj.expo := expo; obj.lev := level;
         IF tp.typobj = NIL THEN tp.typobj := obj END ;
-        IF expo & (obj.type.form = ORB.Record) THEN obj.exno := exno; INC(exno) ELSE obj.exno := 0 END ;
-        IF tp.form = ORB.Record THEN
+        IF expo & (obj.type.form = OXB.Record) THEN obj.exno := exno; INC(exno) ELSE obj.exno := 0 END ;
+        IF tp.form = OXB.Record THEN
           ptbase := pbsList;  (*check whether this is base of a pointer type; search and fixup*)
           WHILE ptbase # NIL DO
             IF obj.name = ptbase.name THEN ptbase.type.base := obj.type END ;
@@ -1066,7 +1066,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF sym = ORS.var THEN
       ORS.Get(sym);
       WHILE sym = ORS.ident DO
-        IdentList(ORB.Var, first); Type(tp);
+        IdentList(OXB.Var, first); Type(tp);
         obj := first;
         WHILE obj # NIL DO
           obj.type := tp; obj.lev := level;
@@ -1082,7 +1082,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 (*    varsize := (varsize + 3) DIV 4 * 4; *)
     ptbase := pbsList;
     WHILE ptbase # NIL DO
-      IF ptbase.type.base.form = ORB.Int THEN ORS.Mark("undefined pointer base of") END ;
+      IF ptbase.type.base.form = OXB.Int THEN ORS.Mark("undefined pointer base of") END ;
       ptbase := ptbase.next
     END ;
     IF (sym >= ORS.const) & (sym <= ORS.var) THEN ORS.Mark("declaration in bad order") END
@@ -1093,8 +1093,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 **ProcedureDecl** matches the definition of a procedure or marks an error.
   end-procedure-description *)
   PROCEDURE ProcedureDecl;
-    VAR proc: ORB.Object;
-      type: ORB.Type;
+    VAR proc: OXB.Object;
+      type: OXB.Type;
       procid: ORS.Ident;
       x: OXG.Item;
       locblksize, parblksize, L: LONGINT;
@@ -1103,34 +1103,34 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF sym = ORS.times THEN ORS.Get(sym); int := TRUE END ;
     IF sym = ORS.ident THEN
       ORS.CopyId(procid); ORS.Get(sym);
-      ORB.NewObj(proc, ORS.id, ORB.Const);
+      OXB.NewObj(proc, ORS.id, OXB.Const);
       IF int THEN parblksize := 3 * ccWordsize ELSE parblksize := ccWordsize END ;
-      NEW(type); type.form := ORB.Proc; type.size := ccWordsize;
+      NEW(type); type.form := OXB.Proc; type.size := ccWordsize;
       proc.type := type; proc.val := -1; proc.lev := level; 
       CheckExport(proc.expo);
       IF proc.expo THEN proc.exno := exno; INC(exno) END ;
-      ORB.OpenScope; INC(level); type.base := ORB.noType;
+      OXB.OpenScope; INC(level); type.base := OXB.noType;
       ProcedureType(type, parblksize);  (*formal parameter list*)
       Check(ORS.semicolon, "no ;"); locblksize := parblksize; 
       Declarations(locblksize);
-      proc.val := OXG.Here() * 4; proc.type.dsc := ORB.topScope.next;
+      proc.val := OXG.Here() * 4; proc.type.dsc := OXB.topScope.next;
       IF sym = ORS.procedure THEN
         L := 0; OXG.FJump(L);
         REPEAT ProcedureDecl; Check(ORS.semicolon, "no ;") UNTIL sym # ORS.procedure;
-        OXG.FixOne(L); proc.val := OXG.Here() * 4; proc.type.dsc := ORB.topScope.next
+        OXG.FixOne(L); proc.val := OXG.Here() * 4; proc.type.dsc := OXB.topScope.next
       END ;
       OXG.Enter(parblksize, locblksize, ccWordsize, int);
       IF sym = ORS.begin THEN ORS.Get(sym); StatSequence END ;
       IF sym = ORS.return THEN
         ORS.Get(sym); expression(x);
-        IF type.base = ORB.noType THEN ORS.Mark("this is not a function")
+        IF type.base = OXB.noType THEN ORS.Mark("this is not a function")
         ELSIF ~CompTypes(type.base, x.type, FALSE) THEN ORS.Mark("wrong result type")
         END
-      ELSIF type.base.form # ORB.NoTyp THEN
-        ORS.Mark("function without result"); type.base := ORB.noType
+      ELSIF type.base.form # OXB.NoTyp THEN
+        ORS.Mark("function without result"); type.base := OXB.noType
       END ;
       OXG.Return(type.base.form, x, locblksize, int);
-      ORB.CloseScope; DEC(level); Check(ORS.end, "no END");
+      OXB.CloseScope; DEC(level); Check(ORS.end, "no END");
       IF sym = ORS.ident THEN
         IF ORS.id # procid THEN ORS.Mark("no match") END ;
         ORS.Get(sym)
@@ -1156,7 +1156,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         END
       ELSE impid1 := impid
       END ;
-      ORB.Import(impid, impid1)
+      OXB.Import(impid, impid1)
     ELSE ORS.Mark("id expected")
     END
   END Import;
@@ -1177,7 +1177,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
     IF sym = ORS.module THEN
       ORS.Get(sym);
       IF sym = ORS.times THEN version := 0; dc := 8; Texts.Write(W, "*"); ORS.Get(sym) ELSE dc := 0; version := 1 END ;
-      ORB.Clear; ORB.OpenScope;
+      OXB.Clear; OXB.OpenScope;
       IF sym = ORS.ident THEN
         ORS.CopyId(modid); ORS.Get(sym);
         Texts.WriteString(W, modid); Texts.Append(Oberon.Log, W.buf)
@@ -1201,7 +1201,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       END ;
       IF sym # ORS.period THEN ORS.Mark("period missing") END ;
       IF (ORS.errcnt = 0) & (version # 0) THEN
-        ORB.Export(modid, newSF, key);
+        OXB.Export(modid, newSF, key);
         IF newSF THEN Texts.WriteString(W, " new symbol file") END
       END ;
       IF ORS.errcnt = 0 THEN
@@ -1210,7 +1210,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ELSE Texts.WriteLn(W); Texts.WriteString(W, "compilation FAILED")
       END ;
       Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
-      ORB.CloseScope; pbsList := NIL
+      OXB.CloseScope; pbsList := NIL
     ELSE ORS.Mark("must start with MODULE")
     END
   END Module;
@@ -1257,8 +1257,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       IF S.codepoint = ORD("@") THEN
         Option(S); Oberon.GetSelection(T, beg, end, time);
         IF time >= 0 THEN 
-          ORB.Init(ccWordsize);
-          NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+          OXB.Init(ccWordsize);
+          NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
           expression := expression0; Type := Type0; FormalType := FormalType0;
           ORS.Init(T, beg, ccARCH, ccWordsize, ccStackalign); 
           Module 
@@ -1270,8 +1270,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           IF S.class = Texts.Name THEN
             Texts.WriteString(W, S.s); NEW(T); Texts.Open(T, S.s);
             IF T.len > 0 THEN 
-              ORB.Init(ccWordsize);
-              NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+              OXB.Init(ccWordsize);
+              NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
               expression := expression0; Type := Type0; FormalType := FormalType0;
               ORS.Init(T, 0, ccARCH, ccWordsize, ccStackalign); 
               Module
@@ -1284,8 +1284,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         NEW(T); Texts.Open(T, S.s);
         IF T.len > 0 THEN 
           Option(S); 
-          ORB.Init(ccWordsize);
-          NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+          OXB.Init(ccWordsize);
+          NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
           expression := expression0; Type := Type0; FormalType := FormalType0;
           ORS.Init(T, 0, ccARCH, ccWordsize, ccStackalign); 
           Module
@@ -1302,8 +1302,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **The initialzation code for this module** opens a writer to print marked errors and initializes the Oberon parser state.
   end-procedure-description *)
-BEGIN (* ORB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OX Compiler  2.24.2021");
+BEGIN (* OXB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OX Compiler  2.24.2021");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
-(*  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
+(*  NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
     expression := expression0; Type := Type0; FormalType := FormalType0 *)
 END OXP.

@@ -3,7 +3,7 @@ tracks objects and types while compiling the Oberon language.
 end-module-short-description *)
 
 (* begin-module-use-description
-Module ORB manages the symbol table for the Oberon compiler and reads and writes 'smb' files
+Module OXB manages the symbol table for the Oberon compiler and reads and writes 'smb' files
 
 
 end-module-use-description *)
@@ -11,10 +11,10 @@ end-module-use-description *)
 
 (NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.2020)
 
-**ORB** is called from ORP and OXG and tracks the state of identifiers and objects as code compilation progresses.
+**OXB** is called from ORP and OXG and tracks the state of identifiers and objects as code compilation progresses.
 
 end-module-develop-description *)
-MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.2020*)
+MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.2020*)
   IMPORT Files, ORS;
   (*Definition of data types Object and Type, which together form the data structure
     called "symbol table". Contains procedures for creation of Objects, and for search:
@@ -542,4 +542,4 @@ MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     enter("GET", SProc, noType, 102);
   END Init;
 BEGIN
-END ORB.
+END OXB.

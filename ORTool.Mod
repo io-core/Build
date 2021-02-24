@@ -1,12 +1,12 @@
 (* begin-module-use-description
 Module ORTool provides symbol file, module file, and loaded module reporting tools.
 
-ORTool uses SYSTEM, Files, Modules, Texts, Oberon, ORB
+ORTool uses SYSTEM, Files, Modules, Texts, Oberon, OXB
 
 
 end-module-use-description *)
 MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
-  IMPORT SYSTEM, Files, Modules, Texts, Oberon, ORB;
+  IMPORT SYSTEM, Files, Modules, Texts, Oberon, OXB;
   CONST TAB = 09X;  SPACE = 32; (*copied from Input for use as cross development tool*)
   VAR W: Texts.Writer;
     mnemo0, mnemo1: ARRAY 16, 4 OF CHAR;  (*mnemonics*)
@@ -25,12 +25,12 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
     IF ref < 0 THEN Texts.Write(W, "^"); Texts.WriteInt(W, -ref, 1)
     ELSE Texts.WriteInt(W, ref, 1);
       Read(R, form); Texts.WriteString(W, "  form = "); Texts.WriteInt(W, form, 1);
-      IF form = ORB.Pointer THEN ReadType(R)
-      ELSIF form = ORB.Array THEN
+      IF form = OXB.Pointer THEN ReadType(R)
+      ELSIF form = OXB.Array THEN
         ReadType(R); Files.ReadNum(R, len); Files.ReadNum(R, size);
         Texts.WriteString(W, "  len = "); Texts.WriteInt(W, len, 1);
         Texts.WriteString(W, "  size = "); Texts.WriteInt(W, size, 1)
-      ELSIF form = ORB.Record THEN
+      ELSIF form = OXB.Record THEN
         ReadType(R);  (*base type*)
         Files.ReadNum(R, off); Texts.WriteString(W, "  exno = "); Texts.WriteInt(W, off, 1);
         Files.ReadNum(R, off); Texts.WriteString(W, "  extlev = "); Texts.WriteInt(W, off, 1);
@@ -42,13 +42,13 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
           ELSE Texts.WriteString(W, " --")
           END ;
           Files.ReadNum(R, off); Texts.WriteInt(W, off, 4); (*offset / mthno*)
-          IF (class = ORB.Const) & (name[0] # 0X) THEN (*exported type-bound procedure*)
+          IF (class = OXB.Const) & (name[0] # 0X) THEN (*exported type-bound procedure*)
             Files.ReadNum(R, off); Texts.WriteInt(W, off, 4) (*exno*)
           END ;
           Read(R, class)
         END ;
         Texts.Write(W, "}")
-      ELSIF form IN {ORB.Proc} THEN
+      ELSIF form IN {OXB.Proc} THEN
         ReadType(R); Texts.Write(W, "("); Read(R, class);
         WHILE class # 0 DO  (*parameters*)
           Texts.WriteString(W, " class = "); Texts.WriteInt(W, class, 1); Read(R, readonly);
@@ -81,18 +81,18 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Files.Set(R, F, 0); Files.ReadInt(R, k); Files.ReadInt(R, k);
         Files.ReadString(R, name); Texts.WriteString(W, name); Texts.WriteHex(W, k);
         Read(R, class); Texts.WriteInt(W, class, 3); (*sym file version*)
-        IF class = ORB.versionkey THEN
+        IF class = OXB.versionkey THEN
           Texts.WriteLn(W); Read(R, class);
           WHILE class # 0 DO
             Texts.WriteInt(W, class, 4); Files.ReadString(R, name); Texts.Write(W, " "); Texts.WriteString(W, name);
             ReadType(R);
-            IF class = ORB.Typ THEN
+            IF class = OXB.Typ THEN
               Texts.Write(W, "("); Read(R, class);
               WHILE class # 0 DO  (*pointer base fixup*)
                 Texts.WriteString(W, " ->"); Texts.WriteInt(W, class, 4); Read(R, class)
               END ;
               Texts.Write(W, ")")
-            ELSIF (class = ORB.Const) OR (class = ORB.Var) THEN
+            ELSIF (class = OXB.Const) OR (class = OXB.Var) THEN
               Files.ReadNum(R, k); Texts.WriteInt(W, k, 5);  (*Reals, Strings!*)
             END ;
             Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);

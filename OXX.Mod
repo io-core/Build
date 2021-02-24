@@ -15,7 +15,7 @@ Module OXX implements the processor-specific backends used by OXG
 
 end-module-develop-description *)
 MODULE OXX; (* C.Perkis 2020*)
-  IMPORT SYSTEM, Files, ORS, ORB;
+  IMPORT SYSTEM, Files, ORS, OXB;
 
   
   CONST     
@@ -1079,14 +1079,14 @@ END aPut3;
 ---
 **NofPtrs** determines the number of Garbage Collection Roots.
   end-procedure-description *)
-  PROCEDURE NofPtrs(typ: ORB.Type): LONGINT;
-    VAR fld: ORB.Object; n: LONGINT;
+  PROCEDURE NofPtrs(typ: OXB.Type): LONGINT;
+    VAR fld: OXB.Object; n: LONGINT;
   BEGIN
-    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN n := 1
-    ELSIF typ.form = ORB.Record THEN
+    IF (typ.form = OXB.Pointer) OR (typ.form = OXB.NilTyp) THEN n := 1
+    ELSIF typ.form = OXB.Record THEN
       fld := typ.dsc; n := 0;
       WHILE fld # NIL DO n := NofPtrs(fld.type) + n; fld := fld.next END
-    ELSIF typ.form = ORB.Array THEN n := NofPtrs(typ.base) * typ.len
+    ELSIF typ.form = OXB.Array THEN n := NofPtrs(typ.base) * typ.len
     ELSE n := 0
     END ;
     RETURN n
@@ -1096,14 +1096,14 @@ END aPut3;
 ---
 **FindPtrs** locates Garbage Collection roots.
   end-procedure-description *)
-  PROCEDURE FindPtrs(VAR R: Files.Rider; typ: ORB.Type; adr: LONGINT);
-    VAR fld: ORB.Object; i, s: LONGINT;
+  PROCEDURE FindPtrs(VAR R: Files.Rider; typ: OXB.Type; adr: LONGINT);
+    VAR fld: OXB.Object; i, s: LONGINT;
   BEGIN
-    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN Files.WriteInt(R, adr)
-    ELSIF typ.form = ORB.Record THEN
+    IF (typ.form = OXB.Pointer) OR (typ.form = OXB.NilTyp) THEN Files.WriteInt(R, adr)
+    ELSIF typ.form = OXB.Record THEN
       fld := typ.dsc;
       WHILE fld # NIL DO FindPtrs(R, fld.type, fld.val + adr); fld := fld.next END
-    ELSIF typ.form = ORB.Array THEN
+    ELSIF typ.form = OXB.Array THEN
       s := typ.base.size;
       FOR i := 0 TO typ.len-1 DO FindPtrs(R, typ.base, i*s + adr) END
     END
@@ -1118,7 +1118,7 @@ END aPut3;
                    VAR modid: ORS.Ident; 
                    key, nofent, entry: LONGINT; 
                    version, varsize, tdx, strx: INTEGER);
-    VAR obj: ORB.Object;
+    VAR obj: OXB.Object;
       i, comsize, nofimps, nofptrs, size: LONGINT;
       name: ORS.Ident;
       F: Files.File; R: Files.Rider;
@@ -1148,25 +1148,25 @@ END aPut3;
       IF ORS.ccARCH = ORS.RISCV32 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
     END;
 *)
-    obj := ORB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
+    obj := OXB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
     WHILE obj # NIL DO
-      IF (obj.class = ORB.Mod) & (obj.dsc # ORB.system) THEN INC(nofimps) (*count imports*)
-      ELSIF (obj.exno # 0) & (obj.class = ORB.Const) & (obj.type.form = ORB.Proc)
-          & (obj.type.nofpar = 0) & (obj.type.base = ORB.noType) THEN i := 0; (*count commands*)
+      IF (obj.class = OXB.Mod) & (obj.dsc # OXB.system) THEN INC(nofimps) (*count imports*)
+      ELSIF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc)
+          & (obj.type.nofpar = 0) & (obj.type.base = OXB.noType) THEN i := 0; (*count commands*)
         WHILE obj.name[i] # 0X DO INC(i) END ;
         i := (i+4) DIV 4 * 4; INC(comsize, i+4)
-      ELSIF obj.class = ORB.Var THEN INC(nofptrs, NofPtrs(obj.type))  (*count pointers*)
+      ELSIF obj.class = OXB.Var THEN INC(nofptrs, NofPtrs(obj.type))  (*count pointers*)
       END ;
       obj := obj.next
     END ;
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
      
-    IF ORS.ccARCH = ORS.RISC5 THEN ORB.MakeFileName(name, modid, ".rsc")   END;
-    IF ORS.ccARCH = ORS.X8664 THEN ORB.MakeFileName(name, modid, ".i64")   END;
-    IF ORS.ccARCH = ORS.ARM64 THEN ORB.MakeFileName(name, modid, ".a64")   END;
-    IF ORS.ccARCH = ORS.ARM32 THEN ORB.MakeFileName(name, modid, ".a32")   END;
-    IF ORS.ccARCH = ORS.RISCV64 THEN ORB.MakeFileName(name, modid, ".v64") END;
-    IF ORS.ccARCH = ORS.RISCV32 THEN ORB.MakeFileName(name, modid, ".v32") END;
+    IF ORS.ccARCH = ORS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
+    IF ORS.ccARCH = ORS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
+    IF ORS.ccARCH = ORS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
+    IF ORS.ccARCH = ORS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;
+    IF ORS.ccARCH = ORS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
+    IF ORS.ccARCH = ORS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
 
     F := Files.New(name); Files.Set(R, F, 0); 
     IF version = 1 THEN
@@ -1174,9 +1174,9 @@ END aPut3;
       Files.WriteInt(R, key);
       Files.Write(R, CHR(version));
       Files.WriteInt(R, size);
-      obj := ORB.topScope.next;
-      WHILE (obj # NIL) & (obj.class = ORB.Mod) DO  (*imports*)
-        IF obj.dsc # ORB.system THEN Files.WriteString(R, obj(ORB.Module).orgname); Files.WriteInt(R, obj.val) END ;
+      obj := OXB.topScope.next;
+      WHILE (obj # NIL) & (obj.class = OXB.Mod) DO  (*imports*)
+        IF obj.dsc # OXB.system THEN Files.WriteString(R, obj(OXB.Module).orgname); Files.WriteInt(R, obj.val) END ;
         obj := obj.next
       END ;
       Files.Write(R, 0X);
@@ -1194,35 +1194,35 @@ END aPut3;
     END;
 
     FOR i := 0 TO pc-1 DO Files.WriteInt(R, code[i]) END ;  (*program*)
-    obj := ORB.topScope.next;
+    obj := OXB.topScope.next;
 
     IF version = 1 THEN
       WHILE obj # NIL DO  (*commands*)
-        IF (obj.exno # 0) & (obj.class = ORB.Const) & (obj.type.form = ORB.Proc) &
-            (obj.type.nofpar = 0) & (obj.type.base = ORB.noType) THEN
+        IF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc) &
+            (obj.type.nofpar = 0) & (obj.type.base = OXB.noType) THEN
           Files.WriteString(R, obj.name); Files.WriteInt(R, obj.val)
         END ;
         obj := obj.next
       END ;
       Files.Write(R, 0X);
       Files.WriteInt(R, nofent); Files.WriteInt(R, entry);
-      obj := ORB.topScope.next;
+      obj := OXB.topScope.next;
       WHILE obj # NIL DO  (*entries*)
         IF obj.exno # 0 THEN
-          IF (obj.class = ORB.Const) & (obj.type.form = ORB.Proc) OR (obj.class = ORB.Var) THEN
+          IF (obj.class = OXB.Const) & (obj.type.form = OXB.Proc) OR (obj.class = OXB.Var) THEN
             Files.WriteInt(R, obj.val);
-          ELSIF obj.class = ORB.Typ THEN
-            IF obj.type.form = ORB.Record THEN Files.WriteInt(R,  obj.type.len MOD 10000H)
-            ELSIF (obj.type.form = ORB.Pointer) & ((obj.type.base.typobj = NIL) OR (obj.type.base.typobj.exno = 0)) THEN
+          ELSIF obj.class = OXB.Typ THEN
+            IF obj.type.form = OXB.Record THEN Files.WriteInt(R,  obj.type.len MOD 10000H)
+            ELSIF (obj.type.form = OXB.Pointer) & ((obj.type.base.typobj = NIL) OR (obj.type.base.typobj.exno = 0)) THEN
               Files.WriteInt(R,  obj.type.base.len MOD 10000H)
             END
           END
         END ;
         obj := obj.next
       END ;
-      obj := ORB.topScope.next;
+      obj := OXB.topScope.next;
       WHILE obj # NIL DO  (*pointer variables*)
-        IF obj.class = ORB.Var THEN FindPtrs(R, obj.type, obj.val) END ;
+        IF obj.class = OXB.Var THEN FindPtrs(R, obj.type, obj.val) END ;
         obj := obj.next
       END ;
       Files.WriteInt(R, -1);
