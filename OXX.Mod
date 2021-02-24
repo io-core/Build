@@ -15,7 +15,7 @@ Module OXX implements the processor-specific backends used by OXG
 
 end-module-develop-description *)
 MODULE OXX; (* C.Perkis 2020*)
-  IMPORT SYSTEM, Files, ORS, OXB;
+  IMPORT SYSTEM, Files, OXS, OXB;
 
   
   CONST     
@@ -991,18 +991,18 @@ END aPut3;
     VAR i : INTEGER;
   BEGIN
     FOR i:= 0 TO 15 DO regmap[i]:=i END;  
-    IF ORS.ccARCH = ORS.X8664 THEN ISetTables;
-    ELSIF ORS.ccARCH = ORS.ARM64 THEN ASetTables;
-    ELSIF ORS.ccARCH = ORS.ARM32 THEN aSetTables;
-    ELSIF ORS.ccARCH = ORS.RISCV64 THEN VSetTables;
-    ELSIF ORS.ccARCH = ORS.RISCV32 THEN vSetTables
+    IF OXS.ccARCH = OXS.X8664 THEN ISetTables;
+    ELSIF OXS.ccARCH = OXS.ARM64 THEN ASetTables;
+    ELSIF OXS.ccARCH = OXS.ARM32 THEN aSetTables;
+    ELSIF OXS.ccARCH = OXS.RISCV64 THEN VSetTables;
+    ELSIF OXS.ccARCH = OXS.RISCV32 THEN vSetTables
     END
   END setRegMap;                     
 
 
   PROCEDURE fix*(at, with: LONGINT);
   BEGIN
-    IF ORS.ccARCH = ORS.RISC5 THEN
+    IF OXS.ccARCH = OXS.RISC5 THEN
        code[at] := code[at] DIV C24 * C24 + (with MOD C24);
     END
   END fix;
@@ -1014,7 +1014,7 @@ END aPut3;
   PROCEDURE FixLink*(pc,pcb,L: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-    IF ORS.ccARCH = ORS.RISC5 THEN
+    IF OXS.ccARCH = OXS.RISC5 THEN
       WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
     END
   END FixLink;
@@ -1022,7 +1022,7 @@ END aPut3;
   PROCEDURE FixLinkWith*(L0, dst: LONGINT);
     VAR L1: LONGINT;
   BEGIN
-    IF ORS.ccARCH = ORS.RISC5 THEN
+    IF OXS.ccARCH = OXS.RISC5 THEN
       WHILE L0 # 0 DO
         L1 := code[L0] MOD C24;
         code[L0] := code[L0] DIV C24 * C24 + ((dst - L0 - 1) MOD C24); L0 := L1;
@@ -1033,7 +1033,7 @@ END aPut3;
   PROCEDURE merged*(L0, L1: LONGINT): LONGINT;
     VAR L2, L3: LONGINT;
   BEGIN
-    IF ORS.ccARCH = ORS.RISC5 THEN
+    IF OXS.ccARCH = OXS.RISC5 THEN
       IF L0 # 0 THEN L3 := L0;
         REPEAT L2 := L3; L3 := code[L2] MOD 40000H UNTIL L3 = 0;
         code[L2] := code[L2] + L1; L1 := L0;
@@ -1047,13 +1047,13 @@ END aPut3;
 ---
 **MakeStringItem** prepares
   end-procedure-description *)
-  PROCEDURE InternString*(VAR strx: LONGINT; len: LONGINT); (*copies string from ORS-buffer to OXG-string array*)
+  PROCEDURE InternString*(VAR strx: LONGINT; len: LONGINT); (*copies string from OXS-buffer to OXG-string array*)
     VAR i: LONGINT;
   BEGIN i := 0;
     IF strx + len + 4 < maxStrx THEN
-      WHILE len > 0 DO str[strx] := ORS.str[i]; INC(strx); INC(i); DEC(len) END ;
+      WHILE len > 0 DO str[strx] := OXS.str[i]; INC(strx); INC(i); DEC(len) END ;
       WHILE strx MOD 4 # 0 DO str[strx] := 0X; INC(strx) END
-    ELSE ORS.Mark("too many strings")
+    ELSE OXS.Mark("too many strings")
     END
   END InternString;
 
@@ -1115,37 +1115,37 @@ END aPut3;
 **Close** writes the completed binary to disk.
   end-procedure-description *)
   PROCEDURE Close*(VAR pc, pcb: LONGINT; 
-                   VAR modid: ORS.Ident; 
+                   VAR modid: OXS.Ident; 
                    key, nofent, entry: LONGINT; 
                    version, varsize, tdx, strx: INTEGER);
     VAR obj: OXB.Object;
       i, comsize, nofimps, nofptrs, size: LONGINT;
-      name: ORS.Ident;
+      name: OXS.Ident;
       F: Files.File; R: Files.Rider;
   BEGIN  
     IF version = 0 THEN (* baremetal module exit code - branch to reset vector via register 0*)
-      IF ORS.ccARCH = ORS.RISC5 THEN RPut1(3,  pc, pcb, Mov, 0, 0, 0); RPut3(pc, pcb, BR, 7, 0)   END;
-      IF ORS.ccARCH = ORS.X8664 THEN IPut1(3,  pc, pcb, Mov, 0, 0, 0); IPut3(pc, pcb, BR, 7, 0)   END;
-      IF ORS.ccARCH = ORS.ARM64 THEN APut1(3,  pc, pcb, Mov, 0, 0, 0); APut3(pc, pcb, BR, 7, 0)   END;
-      IF ORS.ccARCH = ORS.ARM32 THEN aPut1(3,  pc, pcb, Mov, 0, 0, 0); aPut3(pc, pcb, BR, 7, 0)   END;
-      IF ORS.ccARCH = ORS.RISCV64 THEN VPut1(3,  pc, pcb, Mov, 0, 0, 0); VPut3(pc, pcb, BR, 7, 0) END;
-      IF ORS.ccARCH = ORS.RISCV32 THEN vPut1(3,  pc, pcb, Mov, 0, 0, 0); vPut3(pc, pcb, BR, 7, 0) END;
+      IF OXS.ccARCH = OXS.RISC5 THEN RPut1(3,  pc, pcb, Mov, 0, 0, 0); RPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.X8664 THEN IPut1(3,  pc, pcb, Mov, 0, 0, 0); IPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.ARM64 THEN APut1(3,  pc, pcb, Mov, 0, 0, 0); APut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.ARM32 THEN aPut1(3,  pc, pcb, Mov, 0, 0, 0); aPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.RISCV64 THEN VPut1(3,  pc, pcb, Mov, 0, 0, 0); VPut3(pc, pcb, BR, 7, 0) END;
+      IF OXS.ccARCH = OXS.RISCV32 THEN vPut1(3,  pc, pcb, Mov, 0, 0, 0); vPut3(pc, pcb, BR, 7, 0) END;
     ELSE (* regular module exit code *)
-      IF ORS.ccARCH = ORS.RISC5 THEN RPut2(pc, pcb, Ldr, LNK, SP, 0); RPut1(4,  pc, pcb, Add, SP, SP, 4); RPut3(pc, pcb, BR, 7, LNK)   END;
-      IF ORS.ccARCH = ORS.X8664 THEN IPut2(pc, pcb, Ldr, LNK, SP, 0); IPut1(4,  pc, pcb, Add, SP, SP, 4); IPut3(pc, pcb, BR, 7, LNK)   END;
-      IF ORS.ccARCH = ORS.ARM64 THEN APut2(pc, pcb, Ldr, LNK, SP, 0); APut1(4,  pc, pcb, Add, SP, SP, 4); APut3(pc, pcb, BR, 7, LNK)   END;
-      IF ORS.ccARCH = ORS.ARM32 THEN aPut2(pc, pcb, Ldr, LNK, SP, 0); aPut1(4,  pc, pcb, Add, SP, SP, 4); aPut3(pc, pcb, BR, 7, LNK)   END;
-      IF ORS.ccARCH = ORS.RISCV64 THEN VPut2(pc, pcb, Ldr, LNK, SP, 0); VPut1(4,  pc, pcb, Add, SP, SP, 4); VPut3(pc, pcb, BR, 7, LNK) END;
-      IF ORS.ccARCH = ORS.RISCV32 THEN vPut2(pc, pcb, Ldr, LNK, SP, 0); vPut1(4,  pc, pcb, Add, SP, SP, 4); vPut3(pc, pcb, BR, 7, LNK) END;
+      IF OXS.ccARCH = OXS.RISC5 THEN RPut2(pc, pcb, Ldr, LNK, SP, 0); RPut1(4,  pc, pcb, Add, SP, SP, 4); RPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.X8664 THEN IPut2(pc, pcb, Ldr, LNK, SP, 0); IPut1(4,  pc, pcb, Add, SP, SP, 4); IPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.ARM64 THEN APut2(pc, pcb, Ldr, LNK, SP, 0); APut1(4,  pc, pcb, Add, SP, SP, 4); APut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.ARM32 THEN aPut2(pc, pcb, Ldr, LNK, SP, 0); aPut1(4,  pc, pcb, Add, SP, SP, 4); aPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.RISCV64 THEN VPut2(pc, pcb, Ldr, LNK, SP, 0); VPut1(4,  pc, pcb, Add, SP, SP, 4); VPut3(pc, pcb, BR, 7, LNK) END;
+      IF OXS.ccARCH = OXS.RISCV32 THEN vPut2(pc, pcb, Ldr, LNK, SP, 0); vPut1(4,  pc, pcb, Add, SP, SP, 4); vPut3(pc, pcb, BR, 7, LNK) END;
     END ;
 (*
     IF version = 0 THEN (* Initial jump to entry point for baremetal module *)
-      IF ORS.ccARCH = ORS.RISC5 THEN   END;
-      IF ORS.ccARCH = ORS.X8664 THEN code[0] := 0E9H + ((entry -5) * 100H); code[1] := 90909000H  END; (* 32-bit pc-relative jump *)
-      IF ORS.ccARCH = ORS.ARM64 THEN code[0] := (14H * 1000000H) + (entry DIV 4) END; (* 24-bit pc-relative jump *)
-      IF ORS.ccARCH = ORS.ARM32 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
-      IF ORS.ccARCH = ORS.RISCV64 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
-      IF ORS.ccARCH = ORS.RISCV32 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
+      IF OXS.ccARCH = OXS.RISC5 THEN   END;
+      IF OXS.ccARCH = OXS.X8664 THEN code[0] := 0E9H + ((entry -5) * 100H); code[1] := 90909000H  END; (* 32-bit pc-relative jump *)
+      IF OXS.ccARCH = OXS.ARM64 THEN code[0] := (14H * 1000000H) + (entry DIV 4) END; (* 24-bit pc-relative jump *)
+      IF OXS.ccARCH = OXS.ARM32 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
+      IF OXS.ccARCH = OXS.RISCV64 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
+      IF OXS.ccARCH = OXS.RISCV32 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
     END;
 *)
     obj := OXB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
@@ -1161,12 +1161,12 @@ END aPut3;
     END ;
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
      
-    IF ORS.ccARCH = ORS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
-    IF ORS.ccARCH = ORS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
-    IF ORS.ccARCH = ORS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
-    IF ORS.ccARCH = ORS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;
-    IF ORS.ccARCH = ORS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
-    IF ORS.ccARCH = ORS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
+    IF OXS.ccARCH = OXS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
+    IF OXS.ccARCH = OXS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
+    IF OXS.ccARCH = OXS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
+    IF OXS.ccARCH = OXS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;
+    IF OXS.ccARCH = OXS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
+    IF OXS.ccARCH = OXS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
 
     F := Files.New(name); Files.Set(R, F, 0); 
     IF version = 1 THEN

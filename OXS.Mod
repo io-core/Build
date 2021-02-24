@@ -3,14 +3,14 @@ implements lexical analysis for the Oberon language.
 end-module-short-description *)
 
 (* begin-module-use-description
-Module ORS does lexical analysis of the Oberon source code and defines symbols and operations
+Module OXS does lexical analysis of the Oberon source code and defines symbols and operations
 
 end-module-use-description *)
 (* begin-module-develop-description
 
 (NW 19.9.93 / 20.3.2017  Scanner in Oberon-07)
 
-**ORS** is called from ORP, OXG, and OXB and converts the source text to symbols for their consumption.
+**OXS** is called from ORP, OXG, and OXB and converts the source text to symbols for their consumption.
 
 Oberon Scanner does lexical analysis. Input is Oberon-Text, output is
 sequence of symbols, i.e identifiers, numbers, strings, and special symbols.
@@ -24,7 +24,7 @@ If Get delivers ident, then the identifier (a string) is in variable id,
 if int or char in ival, if real in rval, and if string in str (and slen) 
 
 end-module-develop-description *)
-MODULE ORS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
+MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   IMPORT SYSTEM, Texts, Oberon;
 
 (* Oberon Scanner does lexical analysis. Input is Oberon-Text, output is
@@ -405,4 +405,4 @@ BEGIN Texts.OpenWriter(W); k := 0; KWX[0] := 0; KWX[1] := 0;
   KWX[7] := k; KWX[8] := k;
   EnterKW(procedure, "PROCEDURE");
   KWX[9] := k
-END ORS.
+END OXS.
