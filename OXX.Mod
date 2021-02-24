@@ -3,18 +3,18 @@ implements processor-specific code generation.
 end-module-short-description *)
 
 (* begin-module-use-description  vim:fdm=marker fmr=(*%,%*) fdl=0 fen 
-Module OXG generates the processor-specific instructions for executing an Oberon program.
+Module OXX generates the processor-specific instructions for executing an Oberon program.
 
 end-module-use-description *)
 (* begin-module-develop-description
-Module OXG implements the processor-specific backends used by ORG
+Module OXX implements the processor-specific backends used by ORG
 
 (C.Perkins 2020)
 
-**OXG** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
+**OXX** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
 
 end-module-develop-description *)
-MODULE OXG; (* C.Perkis 2020*)
+MODULE OXX; (* C.Perkis 2020*)
   IMPORT SYSTEM, Files, ORS, ORB;
 
   
@@ -1237,5 +1237,5 @@ END aPut3;
 
 
 BEGIN
-END OXG.
+END OXX.
 

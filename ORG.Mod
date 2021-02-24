@@ -17,7 +17,7 @@ end-module-use-description *)
 
 end-module-develop-description *)
 MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC*)
-  IMPORT SYSTEM, Files, ORS, ORB, OXG;
+  IMPORT SYSTEM, Files, ORS, ORB, OXX;
   (*Code generator for Oberon compiler for RISC processor.
      Procedural interface to Parser OSAP; result in array "code".
      Procedure Close writes code-files*)
@@ -105,12 +105,12 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   END negated;
 
   PROCEDURE FixOne*(at: LONGINT);
-  BEGIN OXG.fix(at, pc-at-1)
+  BEGIN OXX.fix(at, pc-at-1)
   END FixOne;
 
   PROCEDURE FixLink*(L: LONGINT);
   BEGIN
-    OXG.FixLink(pc,pcb,L)
+    OXX.FixLink(pc,pcb,L)
   END FixLink;
 
 
@@ -125,7 +125,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE GetSB(base: LONGINT);
   BEGIN
     IF version = 0 THEN xPut1(5, pc, pcb, Mov, RH, 0, VarOrg0)
-    ELSE xPut2(pc, pcb, Ldr, RH, -base, pc-OXG.fixorgD); OXG.setFixOrgD(pc-1)
+    ELSE xPut2(pc, pcb, Ldr, RH, -base, pc-OXX.fixorgD); OXX.setFixOrgD(pc-1)
     END
   END GetSB;
 
@@ -167,8 +167,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       ELSIF x.mode = RegI THEN xPut2(pc, pcb, op, x.r, x.r, x.a)
       ELSIF x.mode = Cond THEN
         xPut3(pc, pcb, BC, negated(x.r), 2);
-        OXG.FixLink(pc,pcb,x.b); xPut1(10, pc, pcb, Mov, RH, 0, 1); xPut3(pc, pcb, BC, 7, 1);
-        OXG.FixLink(pc,pcb,x.a); xPut1(11, pc, pcb, Mov, RH, 0, 0); x.r := RH; incR
+        OXX.FixLink(pc,pcb,x.b); xPut1(10, pc, pcb, Mov, RH, 0, 1); xPut3(pc, pcb, BC, 7, 1);
+        OXX.FixLink(pc,pcb,x.a); xPut1(11, pc, pcb, Mov, RH, 0, 0); x.r := RH; incR
       END ;
       x.mode := Reg
     END;
@@ -205,7 +205,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF x.type.form = ORB.Bool THEN
       IF x.mode = ORB.Const THEN x.r := 15 - x.a*8
       ELSE load(x);
-        IF OXG.code[pc-1] DIV 40000000H # -2 THEN xPut1(12, pc, pcb, Cmp, x.r, x.r, 0) END ;
+        IF OXX.code[pc-1] DIV 40000000H # -2 THEN xPut1(12, pc, pcb, Cmp, x.r, x.r, 0) END ;
         x.r := NE; DEC(RH)
       END ;
       x.mode := Cond; x.a := 0; x.b := 0
@@ -259,7 +259,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE MakeStringItem*(VAR x: Item; len: LONGINT); (*copies string from ORS-buffer to ORG-string array*)
     VAR i: LONGINT;
-  BEGIN x.mode := ORB.Const; x.type := ORB.strType; x.a := strx; x.b := len; OXG.InternString(strx,len)
+  BEGIN x.mode := ORB.Const; x.type := ORB.strType; x.a := strx; x.b := len; OXX.InternString(strx,len)
 (*
     i := 0;
     IF strx + len + 4 < maxStrx THEN
@@ -368,8 +368,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE Q(T: ORB.Type; VAR dcw: LONGINT);
   BEGIN (*one entry of type descriptor extension table*)
     IF T.base # NIL THEN
-      Q(T.base, dcw); OXG.SetData(dcw, (T.mno*1000H + T.len) * 1000H + dcw - OXG.fixorgT);
-      OXG.setFixOrgT(dcw); INC(dcw)
+      Q(T.base, dcw); OXX.SetData(dcw, (T.mno*1000H + T.len) * 1000H + dcw - OXX.fixorgT);
+      OXX.setFixOrgT(dcw); INC(dcw)
     END
   END Q;
 
@@ -380,7 +380,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE FindPtrFlds(typ: ORB.Type; off: LONGINT; VAR dcw: LONGINT);
     VAR fld: ORB.Object; i, s: LONGINT;
   BEGIN
-    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN OXG.SetData(dcw, off); INC(dcw)
+    IF (typ.form = ORB.Pointer) OR (typ.form = ORB.NilTyp) THEN OXX.SetData(dcw, off); INC(dcw)
     ELSIF typ.form = ORB.Record THEN
       fld := typ.dsc;
       WHILE fld # NIL DO FindPtrFlds(fld.type, fld.val + off, dcw); fld := fld.next END
@@ -400,13 +400,13 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF s <= 24 THEN s := 32 ELSIF s <= 56 THEN s := 64 ELSIF s <= 120 THEN s := 128
     ELSE s := (s+263) DIV 256 * 256
     END ;
-    T.len := dc; OXG.SetData(dcw, s); INC(dcw);  (*len used as address*)
+    T.len := dc; OXX.SetData(dcw, s); INC(dcw);  (*len used as address*)
     k := T.nofpar;   (*extension level!*)
     IF k > 3 THEN ORS.Mark("ext level too large")
     ELSE Q(T, dcw);
-      WHILE k < 3 DO OXG.SetData(dcw, -1); INC(dcw); INC(k) END
+      WHILE k < 3 DO OXX.SetData(dcw, -1); INC(dcw); INC(k) END
     END ;
-    FindPtrFlds(T, 0, dcw); OXG.SetData(dcw, -1); INC(dcw); tdx := dcw; dc := dcw*4;
+    FindPtrFlds(T, 0, dcw); OXX.SetData(dcw, -1); INC(dcw); tdx := dcw; dc := dcw*4;
     IF tdx >= maxTD THEN ORS.Mark("too many record types"); tdx := 0 END
   END BuildTD;
 
@@ -429,7 +429,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       xPut2(pc, pcb, Ldr, RH, RH, T.nofpar*4); incR;
       loadTypTagAdr(T);  (*tag of T*)
       xPut0( pc, pcb, Cmp, RH-1, RH-1, RH-2); DEC(RH, 2);
-      IF ~varpar THEN OXG.fix(pc0, pc - pc0 - 1) END ;
+      IF ~varpar THEN OXX.fix(pc0, pc - pc0 - 1) END ;
       IF isguard THEN
         IF check THEN Trap(NE, 2) END
       ELSE SetCC(x, EQ);
@@ -462,7 +462,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE And1*(VAR x: Item);   (* x := x & *)
   BEGIN
     IF x.mode # Cond THEN loadCond(x) END ;
-    xPut3(pc, pcb, BC, negated(x.r), x.a); x.a := pc-1; OXG.FixLink(pc,pcb,x.b); x.b := 0
+    xPut3(pc, pcb, BC, negated(x.r), x.a); x.a := pc-1; OXX.FixLink(pc,pcb,x.b); x.b := 0
   END And1;
 
   (* begin-procedure-description
@@ -472,7 +472,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE And2*(VAR x, y: Item);
   BEGIN
     IF y.mode # Cond THEN loadCond(y) END ;
-    x.a := OXG.merged(y.a, x.a); x.b := y.b; x.r := y.r
+    x.a := OXX.merged(y.a, x.a); x.b := y.b; x.r := y.r
   END And2;
 
   (* begin-procedure-description
@@ -482,7 +482,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE Or1*(VAR x: Item);   (* x := x OR *)
   BEGIN
     IF x.mode # Cond THEN loadCond(x) END ;
-    xPut3(pc, pcb, BC, x.r, x.b);  x.b := pc-1; OXG.FixLink(pc,pcb,x.a); x.a := 0
+    xPut3(pc, pcb, BC, x.r, x.b);  x.b := pc-1; OXX.FixLink(pc,pcb,x.a); x.a := 0
   END Or1;
 
   (* begin-procedure-description
@@ -492,7 +492,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE Or2*(VAR x, y: Item);
   BEGIN
     IF y.mode # Cond THEN loadCond(y) END ;
-    x.a := y.a; x.b := OXG.merged(y.b, x.b); x.r := y.r
+    x.a := y.a; x.b := OXX.merged(y.b, x.b); x.r := y.r
   END Or2;
 
   (* Code generation for arithmetic operators *)
@@ -714,7 +714,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN
     IF (y.mode = ORB.Const) & (y.type.form # ORB.Proc) THEN
       load(x);
-      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (OXG.code[pc-1] DIV 40000000H # -2) THEN xPut1a(100, pc, pcb, RH, Cmp, x.r, x.r, y.a) END ;
+      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (OXX.code[pc-1] DIV 40000000H # -2) THEN xPut1a(100, pc, pcb, RH, Cmp, x.r, x.r, y.a) END ;
       DEC(RH)
     ELSE
       IF (x.mode = Cond) OR (y.mode = Cond) THEN ORS.Mark("not implemented") END ;
@@ -762,7 +762,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **StrToChar** ??
   end-procedure-description *)
   PROCEDURE StrToChar*(VAR x: Item);
-  BEGIN x.type := ORB.charType; DEC(strx, 4); x.a := ORD(OXG.str[x.a])
+  BEGIN x.type := ORB.charType; DEC(strx, 4); x.a := ORD(OXX.str[x.a])
   END StrToChar;
 
   (* begin-procedure-description
@@ -806,7 +806,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
           IF check THEN
             xPut1a(103, pc, pcb, RH, Mov, RH+1, 0, (x.type.size+3) DIV 4); xPut0( pc, pcb, Cmp, RH+1, RH, RH+1); Trap(GT, 3)
           END ;
-          OXG.fix(pc0, pc + 5 - pc0)
+          OXX.fix(pc0, pc + 5 - pc0)
         END
       ELSIF x.type.form = ORB.Record THEN xPut1a(104, pc, pcb, RH, Mov, RH, 0, x.type.size DIV 4)
       ELSE ORS.Mark("inadmissible assignment")
@@ -951,7 +951,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE CFJump*(VAR x: Item);
   BEGIN
     IF x.mode # Cond THEN loadCond(x) END ;
-    xPut3(pc, pcb, BC, negated(x.r), x.a); OXG.FixLink(pc,pcb,x.b); x.a := pc-1
+    xPut3(pc, pcb, BC, negated(x.r), x.a); OXX.FixLink(pc,pcb,x.b); x.a := pc-1
   END CFJump;
 
   (* begin-procedure-description
@@ -969,7 +969,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE CBJump*(VAR x: Item; L: LONGINT);
   BEGIN
     IF x.mode # Cond THEN loadCond(x) END ;
-    xPut3(pc, pcb, BC, negated(x.r), L-pc-1); OXG.FixLink(pc,pcb,x.b); OXG.FixLinkWith(x.a, L)
+    xPut3(pc, pcb, BC, negated(x.r), L-pc-1); OXX.FixLink(pc,pcb,x.b); OXX.FixLinkWith(x.a, L)
   END CBJump;
 
   (* begin-procedure-description
@@ -977,7 +977,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **Fixup** fixes ???
   end-procedure-description *)
   PROCEDURE Fixup*(VAR x: Item);
-  BEGIN OXG.FixLink(pc,pcb,x.a)
+  BEGIN OXX.FixLink(pc,pcb,x.a)
   END Fixup;
 
   (* begin-procedure-description
@@ -1022,8 +1022,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF x.mode = ORB.Const THEN
       IF x.r >= 0 THEN xPut3(pc, pcb, BL, 7, (x.a DIV 4)-pc-1)
       ELSE (*imported*)
-        IF pc - OXG.fixorgP < 1000H THEN
-          xPut3(pc, pcb, BL, 7, ((-x.r) * 100H + x.a) * 1000H + pc-OXG.fixorgP); OXG.setFixOrgP( pc-1 )
+        IF pc - OXX.fixorgP < 1000H THEN
+          xPut3(pc, pcb, BL, 7, ((-x.r) * 100H + x.a) * 1000H + pc-OXX.fixorgP); OXX.setFixOrgP( pc-1 )
         ELSE ORS.Mark("fixup impossible")
         END
       END
@@ -1124,9 +1124,9 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN
     IF x.mode # Cond THEN loadCond(x) END ;
     IF x.a = 0 THEN cond := negated(x.r)
-    ELSE xPut3(pc, pcb, BC, x.r, x.b); OXG.FixLink(pc,pcb,x.a); x.b := pc-1; cond := 7
+    ELSE xPut3(pc, pcb, BC, x.r, x.b); OXX.FixLink(pc,pcb,x.a); x.b := pc-1; cond := 7
     END ;
-    Trap(cond, 7); OXG.FixLink(pc,pcb,x.b)
+    Trap(cond, 7); OXX.FixLink(pc,pcb,x.b)
   END Assert; 
 
   (* begin-procedure-description
@@ -1386,17 +1386,17 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **Open** initializes the ORG module code generation engine.     
   end-procedure-description *)
   PROCEDURE Open*(v: INTEGER);
-  BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; OXG.setFixOrgP(0); OXG.setFixOrgD(0); OXG.setFixOrgT(0); check := v # 0; version := v;
+  BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; OXX.setFixOrgP(0); OXX.setFixOrgD(0); OXX.setFixOrgT(0); check := v # 0; version := v;
     IF v = 0 THEN pc := 1;
-      REPEAT OXG.SetCode(pc, 0); INC(pc) UNTIL pc = 8
+      REPEAT OXX.SetCode(pc, 0); INC(pc) UNTIL pc = 8
     END;
-    IF ORS.ccARCH = ORS.RISC5 THEN xPut0 := OXG.RPut0; xPut1 := OXG.RPut1; xPut1a := OXG.RPut1a; xPut2 := OXG.RPut2; xPut3 := OXG.RPut3; xHeader := OXG.RHeader END;
-    IF ORS.ccARCH = ORS.X8664 THEN xPut0 := OXG.IPut0; xPut1 := OXG.IPut1; xPut1a := OXG.IPut1a; xPut2 := OXG.IPut2; xPut3 := OXG.IPut3; xHeader := OXG.IHeader END;
-    IF ORS.ccARCH = ORS.ARM64 THEN xPut0 := OXG.APut0; xPut1 := OXG.APut1; xPut1a := OXG.APut1a; xPut2 := OXG.APut2; xPut3 := OXG.APut3; xHeader := OXG.AHeader END;
-    IF ORS.ccARCH = ORS.ARM32 THEN xPut0 := OXG.aPut0; xPut1 := OXG.aPut1; xPut1a := OXG.aPut1a; xPut2 := OXG.aPut2; xPut3 := OXG.aPut3; xHeader := OXG.aHeader END;
-    IF ORS.ccARCH = ORS.RISCV64 THEN xPut0 := OXG.VPut0; xPut1 := OXG.VPut1; xPut1a := OXG.VPut1a; xPut2 := OXG.VPut2; xPut3 := OXG.VPut3; xHeader := OXG.VHeader END;
-    IF ORS.ccARCH = ORS.RISCV32 THEN xPut0 := OXG.vPut0; xPut1 := OXG.vPut1; xPut1a := OXG.vPut1a; xPut2 := OXG.vPut2; xPut3 := OXG.vPut3; xHeader := OXG.vHeader END;
-    OXG.setRegMap;
+    IF ORS.ccARCH = ORS.RISC5 THEN xPut0 := OXX.RPut0; xPut1 := OXX.RPut1; xPut1a := OXX.RPut1a; xPut2 := OXX.RPut2; xPut3 := OXX.RPut3; xHeader := OXX.RHeader END;
+    IF ORS.ccARCH = ORS.X8664 THEN xPut0 := OXX.IPut0; xPut1 := OXX.IPut1; xPut1a := OXX.IPut1a; xPut2 := OXX.IPut2; xPut3 := OXX.IPut3; xHeader := OXX.IHeader END;
+    IF ORS.ccARCH = ORS.ARM64 THEN xPut0 := OXX.APut0; xPut1 := OXX.APut1; xPut1a := OXX.APut1a; xPut2 := OXX.APut2; xPut3 := OXX.APut3; xHeader := OXX.AHeader END;
+    IF ORS.ccARCH = ORS.ARM32 THEN xPut0 := OXX.aPut0; xPut1 := OXX.aPut1; xPut1a := OXX.aPut1a; xPut2 := OXX.aPut2; xPut3 := OXX.aPut3; xHeader := OXX.aHeader END;
+    IF ORS.ccARCH = ORS.RISCV64 THEN xPut0 := OXX.VPut0; xPut1 := OXX.VPut1; xPut1a := OXX.VPut1a; xPut2 := OXX.VPut2; xPut3 := OXX.VPut3; xHeader := OXX.VHeader END;
+    IF ORS.ccARCH = ORS.RISCV32 THEN xPut0 := OXX.vPut0; xPut1 := OXX.vPut1; xPut1a := OXX.vPut1a; xPut2 := OXX.vPut2; xPut3 := OXX.vPut3; xHeader := OXX.vHeader END;
+    OXX.setRegMap;
   END Open;
 
   (* begin-procedure-description
@@ -1458,7 +1458,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE Close*(VAR modid: ORS.Ident; key, nofent: LONGINT);
   BEGIN
-    OXG.Close(pc, pcb, modid, key, nofent, entry, version, varsize, tdx, strx);
+    OXX.Close(pc, pcb, modid, key, nofent, entry, version, varsize, tdx, strx);
   END Close;
 
 
@@ -1470,5 +1470,5 @@ This module's global variables are initialized by ORP calling ORG.Open, once it 
 definition and determined that its module imports are available and of compatible object filetype.
   end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13;
-(*      Close := OXG.Close; *)
+(*      Close := OXX.Close; *)
 END ORG.

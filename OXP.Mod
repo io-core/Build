@@ -6,7 +6,7 @@ Integrated Oberon uses a one-pass compiler with four parts, each depending on th
 
  * A recursive-descent parser of the Oberon language, OXP
  * A generator of target-generic opcodes (RISC5), ORG
- * A generator of target-specific opcodes (RISC5, x86_64, aarch64, arm, riscv64, riscv32), OXG
+ * A generator of target-specific opcodes (RISC5, x86_64, aarch64, arm, riscv64, riscv32), OXX
  * A symbol table and frame tracker, ORB
  * A scanner and tokenizer, ORS
 
