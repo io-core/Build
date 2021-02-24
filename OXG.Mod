@@ -26,7 +26,7 @@ MODULE OXG; (* C.Perkis 2020*)
     aStkOrg0 = -64;
     VStkOrg0 = -64;
     vStkOrg0 = -64;
-    MT = 12; SP = 14; LNK = 15;   (*dedicated registers*)
+    MT = 12; TL = 13; SP = 14; LNK = 15;   (*dedicated registers*)
     maxCode = 8000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
 

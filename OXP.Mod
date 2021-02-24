@@ -2,9 +2,9 @@
 
 **Package Overview**
 
-Oberon uses a one-pass compiler with four parts, each depending on the next for functionaltiy:
+Integrated Oberon uses a one-pass compiler with four parts, each depending on the next for functionaltiy:
 
- * A recursive-descent parser of the Oberon language, ORP
+ * A recursive-descent parser of the Oberon language, OXP
  * A generator of target-generic opcodes (RISC5), ORG
  * A generator of target-specific opcodes (RISC5, x86_64, aarch64, arm, riscv64, riscv32), OXG
  * A symbol table and frame tracker, ORB
@@ -19,7 +19,7 @@ In addition, several tools link and examine the binary modules produced by the c
 
 To compile the inner core::
 
-   ORP.Compile Kernel.Mod/s, Filedir.Mod/s, Files.Mod/s, Modules.Mod/s ~
+   OXP.Compile Kernel.Mod/s, Filedir.Mod/s, Files.Mod/s, Modules.Mod/s ~
 
 To link the inner core modules into a bootable binary::
 
@@ -31,15 +31,15 @@ To Install the binary into the boot region of the current disk image::
 
 To compile an example module::
 
-   ORP.Compile Sierpinski.Mod ~
+   OXP.Compile Sierpinski.Mod ~
 
 To examine the symbol file of the compiled example::
 
-   ORTool.DecSym Sierpinski.smb
+   OXTool.DecSym Sierpinski.smb
 
 To Examine the binary of the compiled example::
 
-   ORTool.DecObj Sierpinski.rsc
+   OXTool.DecObj Sierpinski.rsc
 
 end-package-description *)
 
@@ -49,25 +49,25 @@ end-module-short-description *)
 
 (* begin-module-use-description
 
-Module ORP reads the source code of an Oberon program and produces a RISC5 executable binary module.
+Module OXP reads the source code of an Oberon program and produces an executable binary module.
 
 end-module-use-description *)
 (* begin-module-develop-description
 
-(N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07)
+(N. Wirth 1.7.97 / 8.3.2020 Oberon compiler for RISC in Oberon-07, C. Perkins 2020/21 annotated and extended)
 
-**ORP** implements a one-pass recursive descent parser for the language Oberon.
+**OXP** implements a one-pass recursive descent parser for the language Oberon.
 
 The structure of the parser is derived from the structure of the language, with constituent parts of the language 
 (e.g. Module, Procedure, Type, Expression, Term, Parameter) represented by a procedure of that name, invoked from the 
 encompassing construct. Each procedure consumes and validates a part of the program source text while populating the 
 symbol table and execution context and also generating machine code faithfully representing that language construct.
 
-This module (ORP) relies on module ORG for code generation, ORB for the symbol table, execution context tracking and reserved words, and ORS
+This module (OXP) relies on module ORG for code generation, ORB for the symbol table, execution context tracking and reserved words, and ORS
 for lexical parsing and built-in type identification.
 
 end-module-develop-description *)
-MODULE ORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*)
+MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*)
   IMPORT Texts, Oberon, ORS, ORB, ORG;
   (*Author: Niklaus Wirth, 2014.
     Parser of Oberon-RISC compiler. Uses Scanner ORS to obtain symbols (tokens),
@@ -1302,8 +1302,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
 ---
 **The initialzation code for this module** opens a writer to print marked errors and initializes the Oberon parser state.
   end-procedure-description *)
-BEGIN (* ORB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OR Compiler  8.3.2020");
+BEGIN (* ORB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OX Compiler  2.24.2021");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
 (*  NEW(dummy); dummy.class := ORB.Var; dummy.type := ORB.intType;
     expression := expression0; Type := Type0; FormalType := FormalType0 *)
-END ORP.
+END OXP.
