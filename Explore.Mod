@@ -13,8 +13,8 @@
    ../Examples/Course <Examples.rst>
    ../Oberon/Oberon   <Core.rst>
    ../System/System   <Std.rst>
-   ../Contrib/Suite   <Sup.rst>
-   ../Contrib/Vet     <Style.rst>
+   ../Mod/Suite   <Sup.rst>
+   ../Mod/Vet     <Style.rst>
 
 Development documentation starts here...
 

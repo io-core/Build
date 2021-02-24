@@ -10,7 +10,7 @@ end-module-use-description *)
 
 (NW 19.9.93 / 20.3.2017  Scanner in Oberon-07)
 
-**ORS** is called from ORP, ORG, and ORB and converts the source text to symbols for their consumption.
+**ORS** is called from ORP, OXG, and ORB and converts the source text to symbols for their consumption.
 
 Oberon Scanner does lexical analysis. Input is Oberon-Text, output is
 sequence of symbols, i.e identifiers, numbers, strings, and special symbols.

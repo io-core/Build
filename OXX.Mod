@@ -7,7 +7,7 @@ Module OXX generates the processor-specific instructions for executing an Oberon
 
 end-module-use-description *)
 (* begin-module-develop-description
-Module OXX implements the processor-specific backends used by ORG
+Module OXX implements the processor-specific backends used by OXG
 
 (C.Perkins 2020)
 
@@ -1047,7 +1047,7 @@ END aPut3;
 ---
 **MakeStringItem** prepares
   end-procedure-description *)
-  PROCEDURE InternString*(VAR strx: LONGINT; len: LONGINT); (*copies string from ORS-buffer to ORG-string array*)
+  PROCEDURE InternString*(VAR strx: LONGINT; len: LONGINT); (*copies string from ORS-buffer to OXG-string array*)
     VAR i: LONGINT;
   BEGIN i := 0;
     IF strx + len + 4 < maxStrx THEN

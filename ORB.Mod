@@ -11,7 +11,7 @@ end-module-use-description *)
 
 (NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.2020)
 
-**ORB** is called from ORP and ORG and tracks the state of identifiers and objects as code compilation progresses.
+**ORB** is called from ORP and OXG and tracks the state of identifiers and objects as code compilation progresses.
 
 end-module-develop-description *)
 MODULE ORB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.2020*)

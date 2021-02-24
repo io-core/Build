@@ -3,9 +3,9 @@ implements processor-agnostic code generation.
 end-module-short-description *)
 
 (* begin-module-use-description
-Module ORG generates the processor-specific instructions for executing an Oberon program. 
+Module OXG generates the processor-specific instructions for executing an Oberon program. 
 
-ORG uses SYSTEM, Files, ORS, ORB
+OXG uses SYSTEM, Files, ORS, ORB
 
 
 end-module-use-description *)
@@ -13,10 +13,10 @@ end-module-use-description *)
 
 (N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC)
 
-**ORG** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
+**OXG** is called from ORP and generates machine code various Oberon language constructs for the Oberon RISC5 architeture.
 
 end-module-develop-description *)
-MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC*)
+MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC*)
   IMPORT SYSTEM, Files, ORS, ORB, OXX;
   (*Code generator for Oberon compiler for RISC processor.
      Procedural interface to Parser OSAP; result in array "code".
@@ -257,7 +257,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **MakeStringItem** prepares
   end-procedure-description *)
-  PROCEDURE MakeStringItem*(VAR x: Item; len: LONGINT); (*copies string from ORS-buffer to ORG-string array*)
+  PROCEDURE MakeStringItem*(VAR x: Item; len: LONGINT); (*copies string from ORS-buffer to OXG-string array*)
     VAR i: LONGINT;
   BEGIN x.mode := ORB.Const; x.type := ORB.strType; x.a := strx; x.b := len; OXX.InternString(strx,len)
 (*
@@ -1383,7 +1383,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Open** initializes the ORG module code generation engine.     
+**Open** initializes the OXG module code generation engine.     
   end-procedure-description *)
   PROCEDURE Open*(v: INTEGER);
   BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; OXX.setFixOrgP(0); OXX.setFixOrgD(0); OXX.setFixOrgT(0); check := v # 0; version := v;
@@ -1466,9 +1466,9 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **The initialzation code for this module** merely sets the 6 values in the global relmap array.
 
-This module's global variables are initialized by ORP calling ORG.Open, once it has begun parsing the source code's Module
+This module's global variables are initialized by ORP calling OXG.Open, once it has begun parsing the source code's Module
 definition and determined that its module imports are available and of compatible object filetype.
   end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13;
 (*      Close := OXX.Close; *)
-END ORG.
+END OXG.

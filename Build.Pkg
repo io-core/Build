@@ -7,9 +7,9 @@ r,[core]/Oberon,v5.0.0
 r,[core]/Edit,v5.0.0
 r,[core]/Files,v5.0.0
 r,[core]/Modules,v5.0.0
-p,ORP.Mod,
-p,ORG.Mod,
+p,OXP.Mod,
 p,OXG.Mod,
+p,OXX.Mod,
 p,ORB.Mod,
 p,ORS.Mod,
 p,OXTool.Mod,
