@@ -54,12 +54,14 @@ MODULE OXX; (* C.Perkis 2020*)
     str*: ARRAY maxStrx OF CHAR;
     fixorgP*, fixorgD*, fixorgT*: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     err: ARRAY 32 OF CHAR;
+(*
     regmap: ARRAY 16 OF INTEGER; (*shuffle of registers for allocation/use*)
     it0: ARRAY 16 OF INTEGER;
     it1: ARRAY 16 OF INTEGER;
     it2: ARRAY 4 OF INTEGER;
     it3: ARRAY 16 OF INTEGER;
-    
+*)  
+  
   (* begin-section-description
 ## ---------- Fixup Chains Updating
   end-section-description *)
@@ -184,8 +186,9 @@ MODULE OXX; (* C.Perkis 2020*)
     cp.FourByteInteger := Put4Integer;
     OXT.SetCodePlacer(cp);
     OXT.setRegMap;
-    FOR i:= 0 TO 15 DO regmap[i]:=i END;  
 (*
+    FOR i:= 0 TO 15 DO regmap[i]:=i END;  
+
     IF OXS.ccARCH = OXS.X8664 THEN ISetTables;
     ELSIF OXS.ccARCH = OXS.ARM64 THEN ASetTables;
     ELSIF OXS.ccARCH = OXS.ARM32 THEN aSetTables;
