@@ -46,7 +46,15 @@ MODULE OXT; (* C.Perkis 2021*)
 
 
   TYPE      
-    
+    CodePlacer* = POINTER TO CodePlacerProcs;
+    CodePlacerProcs* = RECORD
+      CodeWord*:   PROCEDURE (a,v: INTEGER);
+      OneByte*:    PROCEDURE (a: INTEGER; VAR pc, pcb: INTEGER);
+      TwoBytes*:   PROCEDURE (a, b: INTEGER; VAR pc, pcb: INTEGER);
+      ThreeBytes*: PROCEDURE (a, b, c: INTEGER; VAR pc, pcb: INTEGER);
+      FourBytes*:  PROCEDURE (a, b, c, d: INTEGER; VAR pc, pcb: INTEGER);
+      FourByteInteger*:  PROCEDURE (i: INTEGER; VAR pc, pcb: INTEGER);
+    END; 
 
   VAR
     (*       
@@ -61,13 +69,26 @@ MODULE OXT; (* C.Perkis 2021*)
     it1: ARRAY 16 OF INTEGER;
     it2: ARRAY 4 OF INTEGER;
     it3: ARRAY 16 OF INTEGER;
-    PutCodeWord  PROCEDURE (a,v: INTEGER);
-    Put1Byte:    PROCEDURE (a: INTEGER; VAR pc, pcb: INTEGER);
-    Put2Bytes:   PROCEDURE (a, b: INTEGER; VAR pc, pcb: INTEGER);
-    Put3Bytes:   PROCEDURE (a, b, c: INTEGER; VAR pc, pcb: INTEGER);
-    Put4Bytes:   PROCEDURE (a, b, c, d: INTEGER; VAR pc, pcb: INTEGER);
-    Put4Integer: PROCEDURE (i: INTEGER; VAR pc, pcb: INTEGER);
-    
+    Put: CodePlacer;
+(*
+    Put.CodeWord:  PROCEDURE (a,v: INTEGER);
+
+    Put.OneByte:    PROCEDURE (a: INTEGER; VAR pc, pcb: INTEGER);
+    Put.TwoBytes:   PROCEDURE (a, b: INTEGER; VAR pc, pcb: INTEGER);
+    Put.ThreeBytes:   PROCEDURE (a, b, c: INTEGER; VAR pc, pcb: INTEGER);
+    Put.FourBytes:   PROCEDURE (a, b, c, d: INTEGER; VAR pc, pcb: INTEGER);
+    Put.FourByteInteger: PROCEDURE (i: INTEGER; VAR pc, pcb: INTEGER);
+*)  
+
+
+(* begin-procedure-description
+---
+**SetCodePlacer** initializes the interface for depositing values into the code array
+  end-procedure-description *)
+  PROCEDURE SetCodePlacer*(cp: CodePlacer);
+  BEGIN 
+    Put := cp;
+  END SetCodePlacer;
 
   (* begin-section-description
 ## ---------- RISC5 instruction generation
@@ -79,7 +100,7 @@ MODULE OXT; (* C.Perkis 2021*)
   end-procedure-description *)
   PROCEDURE RPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-      code[pc] := ((a*10H + b) * 10H + op) * 10000H + c;
+    Put.CodeWord(pc, ((a*10H + b) * 10H + op) * 10000H + c);
     INC(pc);
   END RPut0;
 
@@ -91,13 +112,13 @@ MODULE OXT; (* C.Perkis 2021*)
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
     IF op = MovU THEN   (*  U = 2000H; V = 1000H; *)
       IF im < 0 THEN
-        code[pc] := (((a+70H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
+        Put.CodeWord(pc, (((a+70H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H))
       ELSE
-        code[pc] := (((a+60H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H)
+        Put.CodeWord(pc, (((a+60H) * 10H + b) * 10H ) * 10000H + (im MOD 10000H))
       END;
     ELSE
       IF im < 0 THEN INC(op, V) END ;
-      code[pc] := (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H);
+      Put.CodeWord(pc, (((a+40H) * 10H + b) * 10H + op) * 10000H + (im MOD 10000H));
     END;   
     INC(pc);
  
@@ -123,7 +144,7 @@ MODULE OXT; (* C.Perkis 2021*)
   end-procedure-description *)
   PROCEDURE RPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H); INC(pc);
+    Put.CodeWord(pc, ((op * 10H + a) * 10H + b) * 100000H + (off MOD 100000H)); INC(pc);
   END RPut2;
 
 
@@ -133,7 +154,7 @@ MODULE OXT; (* C.Perkis 2021*)
   end-procedure-description *)
   PROCEDURE RPut3*(VAR pc, pcb: LONGINT; op, cond, off: LONGINT);
   BEGIN (*emit branch instruction*)
-    code[pc] := ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H); INC(pc);
+    Put.CodeWord(pc, ((op+12) * 10H + cond) * 1000000H + (off MOD 1000000H)); INC(pc);
   END RPut3;
 
 
@@ -143,7 +164,7 @@ MODULE OXT; (* C.Perkis 2021*)
   end-procedure-description *)
   PROCEDURE RHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
-    IF version = 0 THEN code[0] := 0E7000000H-1 + pc;  RPut1a(120, pc, pcb, RH, Mov, SP, 0, RStkOrg0)  (*BAREMETAL*)
+    IF version = 0 THEN Put.CodeWord(0, 0E7000000H-1 + pc);  RPut1a(120, pc, pcb, RH, Mov, SP, 0, RStkOrg0)  (*BAREMETAL*)
     ELSE RPut1(121, pc, pcb, Sub, SP, SP, 4); RPut2(pc, pcb, Str, LNK, SP, 0)
     END
   END RHeader;
@@ -198,16 +219,16 @@ the AX register is used as an intermediate register.
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
     IF a # b THEN
       b1:=b MOD 8; IF b > 8 THEN a0 := a0 + 2 END;
-      Put3Bytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
+      Put.ThreeBytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
       a0:=48H; IF a > 8 THEN a0 := 49H END;
     END;
 
     b1:=c MOD 8; IF c > 8 THEN a0 := a0 + 2 END;
 
     IF op < 16 THEN
-      Put3Bytes( a0, it0[op] DIV 100H MOD 100H, (it0[op] MOD 100H) + (b1*8H)+a1, pc, pcb )
+      Put.ThreeBytes( a0, it0[op] DIV 100H MOD 100H, (it0[op] MOD 100H) + (b1*8H)+a1, pc, pcb )
     ELSE
-      Put1Byte( 90H, pc, pcb)
+      Put.OneByte( 90H, pc, pcb)
     END
 
   END IPut0;
@@ -232,7 +253,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
     IF a # b THEN
       b1:=b MOD 8; IF b > 8 THEN a0 := a0 + 2 END;
-      Put3Bytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
+      Put.ThreeBytes( a0, 89H, 0C0H+(b1*8H)+a1, pc, pcb);  (* MOV ai <= bi *)
       a0:=48H; IF a > 8 THEN a0 := 49H END;
     END;
 
@@ -240,15 +261,15 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
 
     IF op < 16 THEN
-      Put3Bytes( a0, it1[op] DIV 100H MOD 100H, (it1[op] MOD 100H) + a1, pc, pcb ); osz := it1[op] DIV 10000H
+      Put.ThreeBytes( a0, it1[op] DIV 100H MOD 100H, (it1[op] MOD 100H) + a1, pc, pcb ); osz := it1[op] DIV 10000H
     ELSE
-      Put1Byte( 90H, pc, pcb)
+      Put.OneByte( 90H, pc, pcb)
     END;
 
     IF osz = 4 THEN
-      Put4Integer( im, pc, pcb )
+      Put.FourByteInteger( im, pc, pcb )
     ELSE
-      Put1Byte( im, pc, pcb )
+      Put.OneByte( im, pc, pcb )
     END
 
   END IPut1;
@@ -281,11 +302,11 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     a:=regmap[ai];b:=regmap[bi];
     a1:=a MOD 8; a0:=48H; IF a > 8 THEN a0 := 49H END;
     IF op = Ldr THEN
-      Put3Bytes( a0, 8BH, 80H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
+      Put.ThreeBytes( a0, 8BH, 80H + a1, pc, pcb ); Put.FourByteInteger( off, pc, pcb )
     ELSIF op = Str THEN
-      Put3Bytes( a0, 89H, 80H + a1, pc, pcb ); Put4Integer( off, pc, pcb )
+      Put.ThreeBytes( a0, 89H, 80H + a1, pc, pcb ); Put.FourByteInteger( off, pc, pcb )
     ELSE
-     Put3Bytes( 090H, 090H, 090H, pc, pcb )
+     Put.ThreeBytes( 090H, 090H, 090H, pc, pcb )
     END
   END IPut2;
 
@@ -306,12 +327,12 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     disp:=(off * 4) - 4;
     IF    op = BR  THEN (*via register*)
       IF (off = 15) THEN
-        Put1Byte( 0C3H, pc, pcb); osz:=0
+        Put.OneByte( 0C3H, pc, pcb); osz:=0
       ELSE
         opc:=0E9H; osz:=4
       END
     ELSIF op = BLR THEN (*via register and depositing link*)
-        Put1Byte( 090H, pc, pcb); osz:=0
+        Put.OneByte( 090H, pc, pcb); osz:=0
     ELSIF op = BC  THEN (*via offset from pc*)
 
       IF    (cond = 7)  THEN
@@ -337,9 +358,9 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
 
 
     IF osz = 4 THEN
-        Put1Byte( opc, pc, pcb); Put4Integer( disp, pc, pcb)
+        Put.OneByte( opc, pc, pcb); Put.FourByteInteger( disp, pc, pcb)
     ELSIF osz = 1 THEN
-        Put1Byte( opc, pc, pcb); Put1Byte( disp, pc, pcb)
+        Put.OneByte( opc, pc, pcb); Put.OneByte( disp, pc, pcb)
     END
 *)
   END IPut3;
@@ -352,7 +373,7 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   PROCEDURE IHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN
-      code[0] := 0E9H + ((entry - 3) * 100H); code[1] := 90909000H; (* 32-bit pc-relative jump *)
+      Put.CodeWord(0, 0E9H + ((entry - 3) * 100H)); Put.CodeWord(1, 90909000H); (* 32-bit pc-relative jump *)
       IPut1(121, pc, pcb, Sub, SP, SP, 8); IPut2(pc, pcb, Str, LNK, SP, 0) 
     ELSE 
       IPut1(121, pc, pcb, Sub, SP, SP, 8); IPut2(pc, pcb, Str, LNK, SP, 0)
@@ -402,16 +423,16 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   BEGIN (*emit format-0 instruction*)
     IF   op = Mov THEN 
       IF a = SP THEN
-        code[pc] := 9100001FH + (regmap[c] * 20H)
+        Put.CodeWord(pc, 9100001FH + (regmap[c] * 20H))
       ELSIF c = SP THEN
-        code[pc] := 910003E0H + regmap[a] 
+        Put.CodeWord(pc, 910003E0H + regmap[a] )
       ELSE
-        code[pc] := it0[op] + (regmap[c] * 10000H) + (1FH * 20H) + regmap[a]
+        Put.CodeWord(pc, it0[op] + (regmap[c] * 10000H) + (1FH * 20H) + regmap[a])
       END
     ELSIF op < 16 THEN
-      code[pc] := it0[op] + (regmap[c] * 10000H) + (regmap[b] * 20H) + regmap[a]
+      Put.CodeWord(pc, it0[op] + (regmap[c] * 10000H) + (regmap[b] * 20H) + regmap[a])
     ELSE
-      code[pc] := -1
+      Put.CodeWord(pc, -1)
     END;
     INC(pc)
   END APut0;
@@ -423,11 +444,11 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   PROCEDURE APut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -10000H <= im < 10000H*)
     IF   op = Mov THEN 
-      code[pc] := (1A5H * 800000H) + (im * 20H) + regmap[a]
+      Put.CodeWord(pc, (1A5H * 800000H) + (im * 20H) + regmap[a])
     ELSIF op < 16 THEN
-      code[pc] := it1[op] + (im * 400H) + (regmap[b] * 20H) + regmap[a]
+      Put.CodeWord(pc, it1[op] + (im * 400H) + (regmap[b] * 20H) + regmap[a])
     ELSE
-      code[pc] := -1
+      Put.CodeWord(pc, -1)
     END;
     INC(pc)
   END APut1;
@@ -440,11 +461,11 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   BEGIN (*same as RPut1, but with range test  -100H <= im < 100H*)
     IF (im >= -100H) & (im <= 0FFH) THEN APut1(o, pc, pcb, op, a, b, im);
     ELSE 
-      code[pc]:= 0D2800000H + regmap[a]  +  (im MOD 10000H * 20H) ; INC(pc);     (* movw opcode *)
-      code[pc]:= 0F2A00000H + regmap[a]  +  (im DIV 10000H MOD 10000H * 20H) ; INC(pc);    (* movt opcode *)
+      Put.CodeWord(pc, 0D2800000H + regmap[a]  +  (im MOD 10000H * 20H)) ; INC(pc);     (* movw opcode *)
+      Put.CodeWord(pc, 0F2A00000H + regmap[a]  +  (im DIV 10000H MOD 10000H * 20H)) ; INC(pc);    (* movt opcode *)
 (* need to handle 64-bit and negative values.
-      code[pc]:= 0F2C00000H + regmap[a]  +  (im DIV 100000000H MOD 10000H) ; INC(pc);    (* movt opcode *)
-      code[pc]:= 0F2E00000H + regmap[a]  +  (im DIV 1000000000000H MOD 10000H) ; INC(pc);    (* movt opcode *)
+      Put.CodeWord(pc, 0F2C00000H + regmap[a]  +  (im DIV 100000000H MOD 10000H)) ; INC(pc);    (* movt opcode *)
+      Put.CodeWord(pc, 0F2E00000H + regmap[a]  +  (im DIV 1000000000000H MOD 10000H)) ; INC(pc);    (* movt opcode *)
 *)
       IF op MOD 16 # 0 THEN
         APut0(pc, pcb, op, a, b, a)
@@ -461,11 +482,11 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
   BEGIN (*emit load/store instruction*)
     a:=regmap[ai];b:=regmap[bi];
     IF op = Ldr THEN
-      code[pc]:= 0F8400000H + ((off MOD 200H) * 1000H) + (b * 20H) + a
+      Put.CodeWord(pc, 0F8400000H + ((off MOD 200H) * 1000H) + (b * 20H) + a)
     ELSIF op = Str THEN
-      code[pc]:= 0F8000000H + ((off MOD 200H) * 1000H) + (b * 20H) + a
+      Put.CodeWord(pc, 0F8000000H + ((off MOD 200H) * 1000H) + (b * 20H) + a)
     ELSE
-      code[pc]:=0
+      Put.CodeWord(pc,0)
     END;
     INC(pc)
   END APut2;
@@ -484,17 +505,17 @@ If the 'U' bit is set and the operation is a move, the value is shifted left 32-
     disp:=off;
     IF    op = BR  THEN (*via register*)
       IF off = 15 THEN
-        code[pc]:= 0D65F03C0H; INC(pc) (* substitute ret *)
+        Put.CodeWord(pc, 0D65F03C0H); INC(pc) (* substitute ret *)
       ELSE
-        code[pc]:= 0D61FH * 10000H + (regmap[off] * 20H); INC(pc)
+        Put.CodeWord(pc, 0D61FH * 10000H + (regmap[off] * 20H)); INC(pc)
       END
     ELSIF op = BLR THEN (*via register and depositing link*)
-      code[pc]:= 0D63FH * 10000H + (regmap[off] * 20H); INC(pc)
+      Put.CodeWord(pc, 0D63FH * 10000H + (regmap[off] * 20H)); INC(pc)
 
     ELSIF op = BC  THEN (*via offset from pc*)
-      code[pc]:=14000000H + ((off+1 ) MOD 4000000H); INC(pc)
+      Put.CodeWord(pc,14000000H + ((off+1 ) MOD 4000000H)); INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      code[pc]:=94000000H + ((off+1 ) MOD 4000000H); INC(pc)
+      Put.CodeWord(pc,94000000H + ((off+1 ) MOD 4000000H)); INC(pc)
     END;
 END APut3;
 
@@ -505,7 +526,7 @@ END APut3;
   PROCEDURE AHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN 
-      code[0] := (14H * 1000000H) + (entry DIV 4); (* 24-bit pc-relative jump *)
+      Put.CodeWord(0, (14H * 1000000H) + (entry DIV 4)); (* 24-bit pc-relative jump *)
 (*      APut1(121, pc, pcb, Sub, SP, SP, 16); APut2(pc, pcb, Str, LNK, SP, 0)  *)
     ELSE 
       APut1(121, pc, pcb, Sub, SP, SP, 16); APut2(pc, pcb, Str, LNK, SP, 0)
@@ -563,8 +584,8 @@ END APut3;
   end-procedure-description *)
   PROCEDURE aPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
-    IF op < 16 THEN code[pc]:= it0[op] + (regmap[a] * 10000H) + (regmap[b] * 1000H) + regmap[c] ; INC(pc) 
-    ELSE code[pc]:=-1; INC(pc)
+    IF op < 16 THEN Put.CodeWord(pc, it0[op] + (regmap[a] * 10000H) + (regmap[b] * 1000H) + regmap[c]) ; INC(pc) 
+    ELSE Put.CodeWord(pc,-1); INC(pc)
     END;
   END aPut0;
 
@@ -576,21 +597,21 @@ END APut3;
   PROCEDURE aPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -100H <= im < 100H*)
     IF op = 0 THEN
-      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im  DIV 1000H MOD 8) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
+      Put.CodeWord(pc, 0E3000000H + (regmap[a] * 1000H) + (im  DIV 1000H MOD 8) * 10000H + im MOD 1000H) ; INC(pc);     (* movw opcode *)
     ELSIF op < 16 THEN
       IF im < 0 THEN (* mvn then reg op *)
-        code[pc]:= 0E3E00000H + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + ((0-im) MOD 100H); INC(pc);
+        Put.CodeWord(pc, 0E3E00000H + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + ((0-im) MOD 100H)); INC(pc);
         IF op # Mov THEN
           aPut0(pc, pcb, op, a, b, a)
         END
       ELSE 
-        code[pc]:= it1[op] + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + (im MOD 100H); INC(pc)
+        Put.CodeWord(pc, it1[op] + (regmap[b] * 10000H) + (regmap[a] * 1000H) (* + (s * 100H) *) + (im MOD 100H)); INC(pc)
       END
     ELSE (* op modifier bit set *)
       IF op MOD 16 = 0 THEN (* move to top 16 bits *)
-        code[pc]:= 0E3400000H + (im DIV 1000H MOD 10H * 10000H) + (regmap[a] * 1000H) + (im MOD 1000H); INC(pc);    (* movt opcode *)
+        Put.CodeWord(pc, 0E3400000H + (im DIV 1000H MOD 10H * 10000H) + (regmap[a] * 1000H) + (im MOD 1000H)); INC(pc);    (* movt opcode *)
       ELSE 
-        code[pc]:=-1; INC(pc)
+        Put.CodeWord(pc,-1); INC(pc)
       END
     END;
     
@@ -604,8 +625,8 @@ END APut3;
   BEGIN (*same as RPut1, but with range test  -100H <= im < 100H*)
     IF (im >= -100H) & (im <= 0FFH) THEN aPut1(o, pc, pcb, op, a, b, im);
     ELSE 
-      code[pc]:= 0E3000000H + (regmap[a] * 1000H) + (im DIV 1000H MOD 10H) * 10000H + im MOD 1000H ; INC(pc);     (* movw opcode *)
-      code[pc]:= 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 10H) * 10000H + (im DIV 10000H MOD 1000H) ; INC(pc);    (* movt opcode *)
+      Put.CodeWord(pc, 0E3000000H + (regmap[a] * 1000H) + (im DIV 1000H MOD 10H) * 10000H + im MOD 1000H) ; INC(pc);     (* movw opcode *)
+      Put.CodeWord(pc, 0E3400000H + (regmap[a] * 1000H) + (im DIV 10000000H MOD 10H) * 10000H + (im DIV 10000H MOD 1000H)) ; INC(pc);    (* movt opcode *)
       IF op MOD 16 # 0 THEN
         aPut0(pc, pcb, op, a, b, a)
       END
@@ -622,11 +643,11 @@ END APut3;
   BEGIN (*emit load/store instruction*)
     a:=regmap[ai];b:=regmap[bi];
     IF op = Ldr THEN
-      code[pc]:= 0E5900000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H)
+      Put.CodeWord(pc, 0E5900000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H))
     ELSIF op = Str THEN
-      code[pc]:= 0E5800000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H)
+      Put.CodeWord(pc, 0E5800000H + (off MOD 1000H)  + (b * 10000H) + (a * 1000H))
     ELSE
-      code[pc]:=0
+      Put.CodeWord(pc,0)
     END;
     INC(pc)
   END aPut2;
@@ -645,13 +666,13 @@ END APut3;
     disp:=off;
     IF disp < 0 THEN INC(disp,-1) END;
     IF    op = BR  THEN (*via register*)
-      code[pc]:= 0E12FFF10H + regmap[off] ; INC(pc)
+      Put.CodeWord(pc, 0E12FFF10H + regmap[off]) ; INC(pc)
     ELSIF op = BLR THEN (*via register and depositing link*)
-      code[pc]:= 0E12FFF30H + regmap[off] ; INC(pc)
+      Put.CodeWord(pc, 0E12FFF30H + regmap[off]) ; INC(pc)
     ELSIF op = BC  THEN (*via offset from pc*)
-      code[pc]:= it3[cond] + (disp MOD 1000000H); INC(pc)
+      Put.CodeWord(pc, it3[cond] + (disp MOD 1000000H)); INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      code[pc]:= it3[cond] + 1000000H + (disp MOD 1000000H); INC(pc)
+      Put.CodeWord(pc, it3[cond] + 1000000H + (disp MOD 1000000H)); INC(pc)
     END;
 END aPut3;
 
@@ -662,7 +683,7 @@ END aPut3;
   PROCEDURE aHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN 
-      code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 ; (* 24-bit pc-relative jump *)
+      Put.CodeWord(0, 0EAH * 1000000H  + (entry - 8) DIV 4 ); (* 24-bit pc-relative jump *)
       (* aPut1(121, pc, pcb, Mov+U, SP, SP, 07FFFH) *)
     ELSE 
       aPut1(121, pc, pcb, Sub, SP, SP, 4); aPut2(pc, pcb, Str, LNK, SP, 0)
@@ -727,9 +748,9 @@ END aPut3;
   PROCEDURE VPut0*(VAR pc, pcb: LONGINT; op, a, b, c: LONGINT);
   BEGIN (*emit format-0 instruction*)
     IF op < 16 THEN
-      code[pc]:= it0[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (regmap[c] * 10000H) 
+      Put.CodeWord(pc, it0[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (regmap[c] * 10000H) )
     ELSE 
-      code[pc]:=0
+      Put.CodeWord(pc,0)
     END;
     INC(pc)
   END VPut0;
@@ -741,13 +762,13 @@ END aPut3;
   PROCEDURE VPut1*(o: INTEGER; VAR pc, pcb: LONGINT; op, a, b, im: LONGINT);
   BEGIN (*emit format-1 instruction,  -1000H <= im < 1000H*) (* smaller than RISC5! *)
     IF    op = Mov THEN
-      code[pc]:= it1[Ior] + (regmap[a] * 80H) + (im * 100000H)
+      Put.CodeWord(pc, it1[Ior] + (regmap[a] * 80H) + (im * 100000H))
     ELSIF op = Sub THEN
-      code[pc]:= it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + ((0-im) * 100000H)
+      Put.CodeWord(pc, it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + ((0-im) * 100000H))
     ELSIF op < 16  THEN
-      code[pc]:= it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (im * 100000H)
+      Put.CodeWord(pc, it1[op] + (regmap[a] * 80H) + (regmap[b] * 8000H) + (im * 100000H))
     ELSE
-      code[pc]:=0
+      Put.CodeWord(pc,0)
     END;
     INC(pc)
   END VPut1;
@@ -760,7 +781,7 @@ END aPut3;
   BEGIN (*same as RPut1, but with range test  -10000H <= im < 10000H*)
     IF (im >= -1000H) & (im <= 0FFFH) THEN VPut1(o, pc, pcb, op, a, b, im);
     ELSE 
-      code[pc]:= 00000037H + (regmap[a] * 80H) + (im DIV 1000H * 1000H) ; INC(pc);    (* lui opcode *)
+      Put.CodeWord(pc, 00000037H + (regmap[a] * 80H) + (im DIV 1000H * 1000H)) ; INC(pc);    (* lui opcode *)
       IF (im MOD 1000H) # 0 THEN VPut1(o,pc,pcb,Ior,a,a,im MOD 1000H) END;
       IF op MOD 16 # 0 THEN
         VPut0(pc, pcb, op, a, b, a)
@@ -776,9 +797,9 @@ END aPut3;
   PROCEDURE VPut2*(VAR pc, pcb: LONGINT; op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
     IF op < Str THEN
-      code[pc] := it2[op-8] + ((regmap[a] MOD 20H) * 80H) + (regmap[b] * 8000H) + (off MOD 1000H * 100000H); INC(pc);
+      Put.CodeWord(pc, it2[op-8] + ((regmap[a] MOD 20H) * 80H) + (regmap[b] * 8000H) + (off MOD 1000H * 100000H)); INC(pc);
     ELSE 
-      code[pc] := it2[op-8] + ((off MOD 20H) * 80H) + (regmap[b] * 8000H) + (regmap[a] * 100000H) + (off DIV 20H MOD 80H * 2000000H); INC(pc);
+      Put.CodeWord(pc, it2[op-8] + ((off MOD 20H) * 80H) + (regmap[b] * 8000H) + (regmap[a] * 100000H) + (off DIV 20H MOD 80H * 2000000H)); INC(pc);
     END 
   END VPut2;
 
@@ -795,13 +816,13 @@ END aPut3;
 *)
     disp:=off;
     IF    op = BR  THEN (*via register*)
-      code[pc]:= 67H + (regmap[off] * 8000H) ; INC(pc)
+      Put.CodeWord(pc, 67H + (regmap[off] * 8000H)) ; INC(pc)
     ELSIF op = BLR THEN (*via register and depositing link*)
-      code[pc]:= 67H + (regmap[off] * 8000H) + (regmap[LNK] * 80H) ; INC(pc)
+      Put.CodeWord(pc, 67H + (regmap[off] * 8000H) + (regmap[LNK] * 80H)) ; INC(pc)
     ELSIF op = BC  THEN (*via offset from pc*)
-      code[pc]:= 6FH + vUJ(off * 4 + 4)  ; INC(pc)
+      Put.CodeWord(pc, 6FH + vUJ(off * 4 + 4) ) ; INC(pc)
     ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      code[pc]:= 6FH + vUJ(off * 4 + 4) + (regmap[LNK]*80H) ; INC(pc)
+      Put.CodeWord(pc, 6FH + vUJ(off * 4 + 4) + (regmap[LNK]*80H)) ; INC(pc)
     END;
   END VPut3;
 
@@ -812,7 +833,7 @@ END aPut3;
   PROCEDURE VHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN 
-      code[0] := 6FH + vUJ(entry);
+      Put.CodeWord(0, 6FH + vUJ(entry));
       (* VPut1(121, pc, pcb, Sub, SP, SP, 8);  VPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE 
       VPut1(121, pc, pcb, Sub, SP, SP, 8); VPut2(pc, pcb, Str, LNK, SP, 0)
@@ -884,7 +905,7 @@ END aPut3;
   PROCEDURE vHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
     IF version = 0 THEN
-      code[0] := 6FH + vUJ(entry)  ;
+      Put.CodeWord(0, 6FH + vUJ(entry))  ;
       (* vPut1(121, pc, pcb, Sub, SP, SP, 4);  vPut2(pc, pcb, Str, LNK, SP, 0) *)
     ELSE
       vPut1(121, pc, pcb, Sub, SP, SP, 4); vPut2(pc, pcb, Str, LNK, SP, 0)
@@ -908,82 +929,6 @@ END aPut3;
     ELSIF OXS.ccARCH = OXS.RISCV32 THEN vSetTables
     END
   END setRegMap;                     
-
-
-  PROCEDURE fix*(at, with: LONGINT);
-  BEGIN
-    IF OXS.ccARCH = OXS.RISC5 THEN
-       code[at] := code[at] DIV C24 * C24 + (with MOD C24);
-    END
-  END fix;
-
-  PROCEDURE FixOne*(pc,pcb,at: LONGINT);
-  BEGIN fix(at, pc-at-1)
-  END FixOne;
-
-  PROCEDURE FixLink*(pc,pcb,L: LONGINT);
-    VAR L1: LONGINT;
-  BEGIN
-    IF OXS.ccARCH = OXS.RISC5 THEN
-      WHILE L # 0 DO L1 := code[L] MOD 40000H; fix(L, pc-L-1); L := L1 END
-    END
-  END FixLink;
-
-  PROCEDURE FixLinkWith*(L0, dst: LONGINT);
-    VAR L1: LONGINT;
-  BEGIN
-    IF OXS.ccARCH = OXS.RISC5 THEN
-      WHILE L0 # 0 DO
-        L1 := code[L0] MOD C24;
-        code[L0] := code[L0] DIV C24 * C24 + ((dst - L0 - 1) MOD C24); L0 := L1;
-      END
-    END
-  END FixLinkWith;
-
-  PROCEDURE merged*(L0, L1: LONGINT): LONGINT;
-    VAR L2, L3: LONGINT;
-  BEGIN
-    IF OXS.ccARCH = OXS.RISC5 THEN
-      IF L0 # 0 THEN L3 := L0;
-        REPEAT L2 := L3; L3 := code[L2] MOD 40000H UNTIL L3 = 0;
-        code[L2] := code[L2] + L1; L1 := L0;
-      END ;
-    END ;
-    RETURN L1
-  END merged;
-
-
-  (* begin-procedure-description
----
-**MakeStringItem** prepares
-  end-procedure-description *)
-  PROCEDURE InternString*(VAR strx: LONGINT; len: LONGINT); (*copies string from OXS-buffer to OXG-string array*)
-    VAR i: LONGINT;
-  BEGIN i := 0;
-    IF strx + len + 4 < maxStrx THEN
-      WHILE len > 0 DO str[strx] := OXS.str[i]; INC(strx); INC(i); DEC(len) END ;
-      WHILE strx MOD 4 # 0 DO str[strx] := 0X; INC(strx) END
-    ELSE OXS.Mark("too many strings")
-    END
-  END InternString;
-
-
-  (* begin-procedure-description
----
-**SetCode** prepares
-  end-procedure-description *)
-  PROCEDURE SetCode*(i,v: LONGINT);
-  BEGIN code[i]:=v
-  END SetCode;
-
-  (* begin-procedure-description
----
-**SetData** prepares
-  end-procedure-description *)
-  PROCEDURE SetData*(i,v: LONGINT);
-  BEGIN data[i]:=v
-  END SetData;
-
 
 
 BEGIN

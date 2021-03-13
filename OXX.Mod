@@ -15,7 +15,7 @@ Module OXX implements the processor-specific backends used by OXG
 
 end-module-develop-description *)
 MODULE OXX; (* C.Perkis 2020*)
-  IMPORT SYSTEM, Files, OXS, OXB;
+  IMPORT SYSTEM, Files, OXT, OXS, OXB;
 
   
   CONST     
@@ -166,7 +166,7 @@ MODULE OXX; (* C.Perkis 2020*)
   END Put4Integer;
 
 
-
+(*
 
   (* begin-section-description
 ## ---------- RISC5 instruction generation
@@ -990,7 +990,7 @@ END aPut3;
     END
   END vHeader;
 
-
+*)
 
   (* begin-procedure-description
 ---
@@ -998,14 +998,26 @@ END aPut3;
   end-procedure-description *)
   PROCEDURE setRegMap*;               
     VAR i : INTEGER;
+        cp : OXT.CodePlacer;
   BEGIN
+    NEW(cp);
+    cp.CodeWord := PutCodeWord;
+    cp.OneByte := Put1Byte;
+    cp.TwoBytes := Put2Bytes;
+    cp.ThreeBytes := Put3Bytes;
+    cp.FourBytes := Put4Bytes;
+    cp.FourByteInteger := Put4Integer;
+    OXT.SetCodePlacer(cp);
+    OXT.setRegMap;
     FOR i:= 0 TO 15 DO regmap[i]:=i END;  
+(*
     IF OXS.ccARCH = OXS.X8664 THEN ISetTables;
     ELSIF OXS.ccARCH = OXS.ARM64 THEN ASetTables;
     ELSIF OXS.ccARCH = OXS.ARM32 THEN aSetTables;
     ELSIF OXS.ccARCH = OXS.RISCV64 THEN VSetTables;
     ELSIF OXS.ccARCH = OXS.RISCV32 THEN vSetTables
     END
+*)
   END setRegMap;                     
 
 
@@ -1133,19 +1145,19 @@ END aPut3;
       F: Files.File; R: Files.Rider;
   BEGIN  
     IF version = 0 THEN (* baremetal module exit code - branch to reset vector via register 0*)
-      IF OXS.ccARCH = OXS.RISC5 THEN RPut1(3,  pc, pcb, Mov, 0, 0, 0); RPut3(pc, pcb, BR, 7, 0)   END;
-      IF OXS.ccARCH = OXS.X8664 THEN IPut1(3,  pc, pcb, Mov, 0, 0, 0); IPut3(pc, pcb, BR, 7, 0)   END;
-      IF OXS.ccARCH = OXS.ARM64 THEN APut1(3,  pc, pcb, Mov, 0, 0, 0); APut3(pc, pcb, BR, 7, 0)   END;
-      IF OXS.ccARCH = OXS.ARM32 THEN aPut1(3,  pc, pcb, Mov, 0, 0, 0); aPut3(pc, pcb, BR, 7, 0)   END;
-      IF OXS.ccARCH = OXS.RISCV64 THEN VPut1(3,  pc, pcb, Mov, 0, 0, 0); VPut3(pc, pcb, BR, 7, 0) END;
-      IF OXS.ccARCH = OXS.RISCV32 THEN vPut1(3,  pc, pcb, Mov, 0, 0, 0); vPut3(pc, pcb, BR, 7, 0) END;
+      IF OXS.ccARCH = OXS.RISC5 THEN OXT.RPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.RPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.IPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.APut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.aPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.VPut3(pc, pcb, BR, 7, 0) END;
+      IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.vPut3(pc, pcb, BR, 7, 0) END;
     ELSE (* regular module exit code *)
-      IF OXS.ccARCH = OXS.RISC5 THEN RPut2(pc, pcb, Ldr, LNK, SP, 0); RPut1(4,  pc, pcb, Add, SP, SP, 4); RPut3(pc, pcb, BR, 7, LNK)   END;
-      IF OXS.ccARCH = OXS.X8664 THEN IPut2(pc, pcb, Ldr, LNK, SP, 0); IPut1(4,  pc, pcb, Add, SP, SP, 4); IPut3(pc, pcb, BR, 7, LNK)   END;
-      IF OXS.ccARCH = OXS.ARM64 THEN APut2(pc, pcb, Ldr, LNK, SP, 0); APut1(4,  pc, pcb, Add, SP, SP, 4); APut3(pc, pcb, BR, 7, LNK)   END;
-      IF OXS.ccARCH = OXS.ARM32 THEN aPut2(pc, pcb, Ldr, LNK, SP, 0); aPut1(4,  pc, pcb, Add, SP, SP, 4); aPut3(pc, pcb, BR, 7, LNK)   END;
-      IF OXS.ccARCH = OXS.RISCV64 THEN VPut2(pc, pcb, Ldr, LNK, SP, 0); VPut1(4,  pc, pcb, Add, SP, SP, 4); VPut3(pc, pcb, BR, 7, LNK) END;
-      IF OXS.ccARCH = OXS.RISCV32 THEN vPut2(pc, pcb, Ldr, LNK, SP, 0); vPut1(4,  pc, pcb, Add, SP, SP, 4); vPut3(pc, pcb, BR, 7, LNK) END;
+      IF OXS.ccARCH = OXS.RISC5 THEN OXT.RPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.RPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.RPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.IPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.IPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut2(pc, pcb, Ldr, LNK, SP, 0); OXT.APut1(4,  pc, pcb, Add, SP, SP, 4); OXT.APut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.aPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.aPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.VPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.VPut3(pc, pcb, BR, 7, LNK) END;
+      IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.vPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.vPut3(pc, pcb, BR, 7, LNK) END;
     END ;
 (*
     IF version = 0 THEN (* Initial jump to entry point for baremetal module *)

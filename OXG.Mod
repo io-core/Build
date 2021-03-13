@@ -5,7 +5,7 @@ end-module-short-description *)
 (* begin-module-use-description
 Module OXG generates the processor-specific instructions for executing an Oberon program. 
 
-OXG uses SYSTEM, Files, OXS, OXB
+OXG uses SYSTEM, Files, OXS, OXB, OXT, OXX
 
 
 end-module-use-description *)
@@ -17,7 +17,7 @@ end-module-use-description *)
 
 end-module-develop-description *)
 MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code generator for RISC*)
-  IMPORT SYSTEM, Files, OXS, OXB, OXX;
+  IMPORT SYSTEM, Files, OXS, OXB, OXT, OXX;
   (*Code generator for Oberon compiler for RISC processor.
      Procedural interface to Parser OSAP; result in array "code".
      Procedure Close writes code-files*)
@@ -1390,12 +1390,12 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF v = 0 THEN pc := 1;
       REPEAT OXX.SetCode(pc, 0); INC(pc) UNTIL pc = 8
     END;
-    IF OXS.ccARCH = OXS.RISC5 THEN xPut0 := OXX.RPut0; xPut1 := OXX.RPut1; xPut1a := OXX.RPut1a; xPut2 := OXX.RPut2; xPut3 := OXX.RPut3; xHeader := OXX.RHeader END;
-    IF OXS.ccARCH = OXS.X8664 THEN xPut0 := OXX.IPut0; xPut1 := OXX.IPut1; xPut1a := OXX.IPut1a; xPut2 := OXX.IPut2; xPut3 := OXX.IPut3; xHeader := OXX.IHeader END;
-    IF OXS.ccARCH = OXS.ARM64 THEN xPut0 := OXX.APut0; xPut1 := OXX.APut1; xPut1a := OXX.APut1a; xPut2 := OXX.APut2; xPut3 := OXX.APut3; xHeader := OXX.AHeader END;
-    IF OXS.ccARCH = OXS.ARM32 THEN xPut0 := OXX.aPut0; xPut1 := OXX.aPut1; xPut1a := OXX.aPut1a; xPut2 := OXX.aPut2; xPut3 := OXX.aPut3; xHeader := OXX.aHeader END;
-    IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXX.VPut0; xPut1 := OXX.VPut1; xPut1a := OXX.VPut1a; xPut2 := OXX.VPut2; xPut3 := OXX.VPut3; xHeader := OXX.VHeader END;
-    IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXX.vPut0; xPut1 := OXX.vPut1; xPut1a := OXX.vPut1a; xPut2 := OXX.vPut2; xPut3 := OXX.vPut3; xHeader := OXX.vHeader END;
+    IF OXS.ccARCH = OXS.RISC5 THEN xPut0 := OXT.RPut0; xPut1 := OXT.RPut1; xPut1a := OXT.RPut1a; xPut2 := OXT.RPut2; xPut3 := OXT.RPut3; xHeader := OXT.RHeader END;
+    IF OXS.ccARCH = OXS.X8664 THEN xPut0 := OXT.IPut0; xPut1 := OXT.IPut1; xPut1a := OXT.IPut1a; xPut2 := OXT.IPut2; xPut3 := OXT.IPut3; xHeader := OXT.IHeader END;
+    IF OXS.ccARCH = OXS.ARM64 THEN xPut0 := OXT.APut0; xPut1 := OXT.APut1; xPut1a := OXT.APut1a; xPut2 := OXT.APut2; xPut3 := OXT.APut3; xHeader := OXT.AHeader END;
+    IF OXS.ccARCH = OXS.ARM32 THEN xPut0 := OXT.aPut0; xPut1 := OXT.aPut1; xPut1a := OXT.aPut1a; xPut2 := OXT.aPut2; xPut3 := OXT.aPut3; xHeader := OXT.aHeader END;
+    IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXT.VPut0; xPut1 := OXT.VPut1; xPut1a := OXT.VPut1a; xPut2 := OXT.VPut2; xPut3 := OXT.VPut3; xHeader := OXT.VHeader END;
+    IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXT.vPut0; xPut1 := OXT.vPut1; xPut1a := OXT.vPut1a; xPut2 := OXT.vPut2; xPut3 := OXT.vPut3; xHeader := OXT.vHeader END;
     OXX.setRegMap;
   END Open;
 
