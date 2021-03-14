@@ -171,11 +171,10 @@ MODULE OXX; (* C.Perkis 2020*)
 
   (* begin-procedure-description
 ---
-**setRegMap**
+**Init** prepares an interface for writing to the code for OXT and calls OXT to set the register map for the current architecture.
   end-procedure-description *)
-  PROCEDURE setRegMap*;               
-    VAR i : INTEGER;
-        cp : OXT.CodePlacer;
+  PROCEDURE Init*;               
+    VAR cp : OXT.CodePlacer;
   BEGIN
     NEW(cp);
     cp.CodeWord := PutCodeWord;
@@ -186,17 +185,7 @@ MODULE OXX; (* C.Perkis 2020*)
     cp.FourByteInteger := Put4Integer;
     OXT.SetCodePlacer(cp);
     OXT.setRegMap;
-(*
-    FOR i:= 0 TO 15 DO regmap[i]:=i END;  
-
-    IF OXS.ccARCH = OXS.X8664 THEN ISetTables;
-    ELSIF OXS.ccARCH = OXS.ARM64 THEN ASetTables;
-    ELSIF OXS.ccARCH = OXS.ARM32 THEN aSetTables;
-    ELSIF OXS.ccARCH = OXS.RISCV64 THEN VSetTables;
-    ELSIF OXS.ccARCH = OXS.RISCV32 THEN vSetTables
-    END
-*)
-  END setRegMap;                     
+  END Init;                     
 
 
   PROCEDURE fix*(at, with: LONGINT);
