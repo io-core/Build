@@ -1471,4 +1471,5 @@ definition and determined that its module imports are available and of compatibl
   end-procedure-description *)
 BEGIN relmap[0] := 1; relmap[1] := 9; relmap[2] := 5; relmap[3] := 6; relmap[4] := 14; relmap[5] := 13;
 (*      Close := OXX.Close; *)
+
 END OXG.

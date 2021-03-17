@@ -1304,6 +1304,42 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
   end-procedure-description *)
 BEGIN (* OXB.Init(4); *) Texts.OpenWriter(W); Texts.WriteString(W, "OX Compiler  2.24.2021");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
+
+  OXS.EnterKW(OXS.if, "IF",2);
+  OXS.EnterKW(OXS.do, "DO",2);
+  OXS.EnterKW(OXS.of, "OF",2);
+  OXS.EnterKW(OXS.or, "OR",2);
+  OXS.EnterKW(OXS.to, "TO",2);
+  OXS.EnterKW(OXS.in, "IN",2);
+  OXS.EnterKW(OXS.is, "IS",2);
+  OXS.EnterKW(OXS.by, "BY",2);
+  OXS.EnterKW(OXS.end, "END",3);
+  OXS.EnterKW(OXS.nil, "NIL",3);
+  OXS.EnterKW(OXS.var, "VAR",3);
+  OXS.EnterKW(OXS.div, "DIV",3);
+  OXS.EnterKW(OXS.mod, "MOD",3);
+  OXS.EnterKW(OXS.for, "FOR",3);
+  OXS.EnterKW(OXS.else, "ELSE",4);
+  OXS.EnterKW(OXS.then, "THEN",4);
+  OXS.EnterKW(OXS.true, "TRUE",4);
+  OXS.EnterKW(OXS.type, "TYPE",4);
+  OXS.EnterKW(OXS.case, "CASE",4);
+  OXS.EnterKW(OXS.elsif, "ELSIF",5);
+  OXS.EnterKW(OXS.false, "FALSE",5);
+  OXS.EnterKW(OXS.array, "ARRAY",5);
+  OXS.EnterKW(OXS.begin, "BEGIN",5);
+  OXS.EnterKW(OXS.const, "CONST",5);
+  OXS.EnterKW(OXS.until, "UNTIL",5);
+  OXS.EnterKW(OXS.while, "WHILE",5);
+  OXS.EnterKW(OXS.record, "RECORD",6);
+  OXS.EnterKW(OXS.repeat, "REPEAT",6);
+  OXS.EnterKW(OXS.return, "RETURN",6);
+  OXS.EnterKW(OXS.import, "IMPORT",6);
+  OXS.EnterKW(OXS.module, "MODULE",6);
+  OXS.EnterKW(OXS.pointer, "POINTER",7);
+  OXS.EnterKW(OXS.notasymbol, "",8);
+  OXS.EnterKW(OXS.procedure, "PROCEDURE",9);
+
 (*  NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
     expression := expression0; Type := Type0; FormalType := FormalType0 *)
 END OXP.

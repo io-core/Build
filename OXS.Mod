@@ -56,7 +56,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     else* = 55; elsif* = 56; until* = 57; return* = 58;
     array* = 60; record* = 61; pointer* = 62; const* = 63; type* = 64;
     var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot = 70;
-
+    notasymbol* = -1;
     BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
 
@@ -358,17 +358,19 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   end-procedure-description *)
   PROCEDURE EnterKW*(sym: INTEGER; name: ARRAY OF CHAR; kl: INTEGER);
   VAR i:INTEGER;
-  BEGIN keyTab[k].id := name; keyTab[k].sym := sym; INC(k); KWX[kl] := k;
-    i := kl - 1;
-    WHILE (KWX[i] = 0) AND (i > 0) DO KWX[i]:=kl; DEC(i) DONE 
+  BEGIN
+    IF sym > -1 THEN 
+      keyTab[k].id := name; keyTab[k].sym := sym; INC(k); 
+    END;
+    KWX[kl] := k;
   END EnterKW;
 
   (* begin-procedure-description
 ---
 **The initialzation code for this module** populats the table of reserved keywords.
   end-procedure-description *)
-BEGIN Texts.OpenWriter(W); k := 0; 
-  KWX[0]:=0; KWX[1]:=0; KWX[2]:=0; KWX[3]:=0; KWX[4]:=0; KWX[5]:=0; KWX[6]:=0; KWX[7]:=0; KWX[8]:=0; KWX[9]:=0;
+BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; 
+(*
   EnterKW(if, "IF",2);
   EnterKW(do, "DO",2);
   EnterKW(of, "OF",2);
@@ -377,20 +379,17 @@ BEGIN Texts.OpenWriter(W); k := 0;
   EnterKW(in, "IN",2);
   EnterKW(is, "IS",2);
   EnterKW(by, "BY",2);
-(*  KWX[2] := k; *)
   EnterKW(end, "END",3);
   EnterKW(nil, "NIL",3);
   EnterKW(var, "VAR",3);
   EnterKW(div, "DIV",3);
   EnterKW(mod, "MOD",3);
   EnterKW(for, "FOR",3);
-(*  KWX[3] := k; *)
   EnterKW(else, "ELSE",4);
   EnterKW(then, "THEN",4);
   EnterKW(true, "TRUE",4);
   EnterKW(type, "TYPE",4);
   EnterKW(case, "CASE",4);
-(*  KWX[4] := k; *)
   EnterKW(elsif, "ELSIF",5);
   EnterKW(false, "FALSE",5);
   EnterKW(array, "ARRAY",5);
@@ -398,15 +397,13 @@ BEGIN Texts.OpenWriter(W); k := 0;
   EnterKW(const, "CONST",5);
   EnterKW(until, "UNTIL",5);
   EnterKW(while, "WHILE",5);
-(*  KWX[5] := k; *)
   EnterKW(record, "RECORD",6);
   EnterKW(repeat, "REPEAT",6);
   EnterKW(return, "RETURN",6);
   EnterKW(import, "IMPORT",6);
   EnterKW(module, "MODULE",6);
-(*  KWX[6] := k; *)
   EnterKW(pointer, "POINTER",7);
-  KWX[7] := k; KWX[8] := k;
+  EnterKW(notasymbol, "",8); 
   EnterKW(procedure, "PROCEDURE",9);
-(*  KWX[9] := k *)
+*)
 END OXS.
