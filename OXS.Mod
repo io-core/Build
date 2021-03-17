@@ -57,8 +57,12 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     array* = 60; record* = 61; pointer* = 62; const* = 63; type* = 64;
     var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot = 70;
     notasymbol* = -1;
+    go* = 100; on* = 101; def* = 102; dim* = 103; let* = 104; rem* = 105; sub* = 106; base* = 107;
+    data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
+    input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119;
     BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
+    nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
 
   TYPE 
     Ident* = ARRAY IdLen OF CHAR;
@@ -73,6 +77,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     errpos: LONGINT;
     R: Texts.Reader;
     W: Texts.Writer;
+    commentstyle: INTEGER;
     k: INTEGER;
     KWX: ARRAY 10 OF INTEGER;
     keyTab: ARRAY NKW OF
@@ -81,6 +86,14 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   (* begin-section-description
 ## ---------- Lexer
   end-section-description *)
+
+  (* begin-procedure-description
+---
+**SetCommentStyle** sets the style of comments in the parser.
+  end-procedure-description *)
+  PROCEDURE SetCommentStyle*(style: INTEGER);
+  BEGIN commentstyle := style
+  END SetCommentStyle;
 
   (* begin-procedure-description
 ---
