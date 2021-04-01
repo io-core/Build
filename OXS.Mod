@@ -55,12 +55,12 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     to* = 50; by* = 51; semicolon* = 52; end* = 53; bar* = 54;
     else* = 55; elsif* = 56; until* = 57; return* = 58;
     array* = 60; record* = 61; pointer* = 62; const* = 63; type* = 64;
-    var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot = 70;
+    var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot* = 70;
     notasymbol* = -1;
     go* = 100; on* = 101; def* = 102; dim* = 103; let* = 104; rem* = 105; sub* = 106; base* = 107;
     data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
-    input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119;
-    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6;
+    input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
+    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
     nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
 
@@ -78,6 +78,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     R: Texts.Reader;
     W: Texts.Writer;
     commentstyle: INTEGER;
+    sigCR: BOOLEAN;
     k: INTEGER;
     KWX: ARRAY 10 OF INTEGER;
     keyTab: ARRAY NKW OF
@@ -86,6 +87,14 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   (* begin-section-description
 ## ---------- Lexer
   end-section-description *)
+
+  (* begin-procedure-description
+---
+**SetSigCR** sets whether or not a carriage return or newline is significant.
+  end-procedure-description *)
+  PROCEDURE SetSigCR*(sig: BOOLEAN);
+  BEGIN sigCR := sig
+  END SetSigCR;
 
   (* begin-procedure-description
 ---
@@ -296,11 +305,18 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE Get*(VAR sym: INTEGER);
   BEGIN
     REPEAT
-      WHILE ~R.eot & (ch <= " ") DO Texts.Read(R, ch) END;
+      IF sigCR THEN
+        WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch) END;
+      ELSE
+        WHILE ~R.eot & (ch <= " ") DO Texts.Read(R, ch) END;
+      END;
       IF R.eot THEN sym := eot
       ELSIF ch < "A" THEN
         IF ch < "0" THEN
           IF ch = 22X THEN String; sym := string
+          ELSIF ch = 0AX THEN Texts.Read(R, ch); sym := eol
+          ELSIF ch = 0BX THEN Texts.Read(R, ch); sym := eol
+          ELSIF ch = 0CX THEN Texts.Read(R, ch); sym := eol
           ELSIF ch = "#" THEN Texts.Read(R, ch); sym := neq
           ELSIF ch = "$" THEN HexString; sym := string
           ELSIF ch = "&" THEN Texts.Read(R, ch); sym := and

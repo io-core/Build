@@ -316,6 +316,8 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.IPut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.APut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.aPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.CORTEX4 THEN OXT.CPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.CPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.CORTEX0 THEN OXT.cPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.cPut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.VPut3(pc, pcb, BR, 7, 0) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.vPut3(pc, pcb, BR, 7, 0) END;
     ELSE (* regular module exit code *)
@@ -323,6 +325,8 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.IPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.IPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut2(pc, pcb, Ldr, LNK, SP, 0); OXT.APut1(4,  pc, pcb, Add, SP, SP, 4); OXT.APut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.aPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.aPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.CORTEX4 THEN OXT.CPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.CPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.CPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.CORTEX0 THEN OXT.cPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.cPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.cPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.VPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.VPut3(pc, pcb, BR, 7, LNK) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.vPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.vPut3(pc, pcb, BR, 7, LNK) END;
     END ;
@@ -332,6 +336,8 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.X8664 THEN code[0] := 0E9H + ((entry -5) * 100H); code[1] := 90909000H  END; (* 32-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.ARM64 THEN code[0] := (14H * 1000000H) + (entry DIV 4) END; (* 24-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.ARM32 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
+      IF OXS.ccARCH = OXS.CORTEX4 THEN code[0] := (14H * 1000000H) + (entry DIV 4) END; (* 24-bit pc-relative jump *)
+      IF OXS.ccARCH = OXS.CORTEX0 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.RISCV64 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
     END;
@@ -353,6 +359,8 @@ MODULE OXX; (* C.Perkis 2020*)
     IF OXS.ccARCH = OXS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
     IF OXS.ccARCH = OXS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
     IF OXS.ccARCH = OXS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;
+    IF OXS.ccARCH = OXS.CORTEX4 THEN OXB.MakeFileName(name, modid, ".cm4")   END;
+    IF OXS.ccARCH = OXS.CORTEX0 THEN OXB.MakeFileName(name, modid, ".cm0")   END;
     IF OXS.ccARCH = OXS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
     IF OXS.ccARCH = OXS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
 

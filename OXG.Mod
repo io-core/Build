@@ -1394,6 +1394,8 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF OXS.ccARCH = OXS.X8664 THEN xPut0 := OXT.IPut0; xPut1 := OXT.IPut1; xPut1a := OXT.IPut1a; xPut2 := OXT.IPut2; xPut3 := OXT.IPut3; xHeader := OXT.IHeader END;
     IF OXS.ccARCH = OXS.ARM64 THEN xPut0 := OXT.APut0; xPut1 := OXT.APut1; xPut1a := OXT.APut1a; xPut2 := OXT.APut2; xPut3 := OXT.APut3; xHeader := OXT.AHeader END;
     IF OXS.ccARCH = OXS.ARM32 THEN xPut0 := OXT.aPut0; xPut1 := OXT.aPut1; xPut1a := OXT.aPut1a; xPut2 := OXT.aPut2; xPut3 := OXT.aPut3; xHeader := OXT.aHeader END;
+    IF OXS.ccARCH = OXS.CORTEX4 THEN xPut0 := OXT.CPut0; xPut1 := OXT.CPut1; xPut1a := OXT.CPut1a; xPut2 := OXT.CPut2; xPut3 := OXT.CPut3; xHeader := OXT.CHeader END;
+    IF OXS.ccARCH = OXS.CORTEX0 THEN xPut0 := OXT.cPut0; xPut1 := OXT.cPut1; xPut1a := OXT.cPut1a; xPut2 := OXT.cPut2; xPut3 := OXT.cPut3; xHeader := OXT.cHeader END;
     IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXT.VPut0; xPut1 := OXT.VPut1; xPut1a := OXT.VPut1a; xPut2 := OXT.VPut2; xPut3 := OXT.VPut3; xHeader := OXT.VHeader END;
     IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXT.vPut0; xPut1 := OXT.vPut1; xPut1a := OXT.vPut1a; xPut2 := OXT.vPut2; xPut3 := OXT.vPut3; xHeader := OXT.vHeader END;
     OXX.Init;

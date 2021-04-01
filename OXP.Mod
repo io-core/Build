@@ -1237,6 +1237,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           IF S.s[0] = "I" THEN ccARCH := OXS.X8664; ccWordsize := 8; ccStackalign := 8; END;
           IF S.s[0] = "A" THEN ccARCH := OXS.ARM64; ccWordsize := 8; ccStackalign := 16; END;
           IF S.s[0] = "a" THEN ccARCH := OXS.ARM32 END;
+          IF S.s[0] = "C" THEN ccARCH := OXS.CORTEX4 END;
+          IF S.s[0] = "c" THEN ccARCH := OXS.CORTEX0 END;
           IF S.s[0] = "V" THEN ccARCH := OXS.RISCV64; ccWordsize := 8; ccStackalign := 8; END;
           IF S.s[0] = "v" THEN ccARCH := OXS.RISCV32 END;  
       END
@@ -1340,6 +1342,7 @@ BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OX Oberon Compiler  3.16.2021")
   OXS.EnterKW(OXS.notasymbol, "",8);
   OXS.EnterKW(OXS.procedure, "PROCEDURE",9);
   OXS.SetCommentStyle(OXS.oberonstyle);
+  OXS.SetSigCR(FALSE);
 
 (*  NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
     expression := expression0; Type := Type0; FormalType := FormalType0 *)
