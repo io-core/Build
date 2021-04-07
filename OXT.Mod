@@ -810,24 +810,27 @@ END aPut3;
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
 *)
-    Put.TwoByteInteger(1A00H,pc,pcb);
-(*
     disp:=off;
     IF    op = BR  THEN (*via register*)
       IF off = 15 THEN
-        Put.CodeWord(pc, 0D65F03C0H); INC(pc) (* substitute ret *)
+        Put.TwoByteInteger(4770H,pc,pcb); (* B LR *)
       ELSE
-        Put.CodeWord(pc, 0D61FH * 10000H + (regmap[off] * 20H)); INC(pc)
+        Put.TwoByteInteger(4700H + (regmap[off]*8),pc,pcb);
       END
     ELSIF op = BLR THEN (*via register and depositing link*)
+      Put.TwoByteInteger(0F0000000H ,pc,pcb);
+(*
       Put.CodeWord(pc, 0D63FH * 10000H + (regmap[off] * 20H)); INC(pc)
-
-    ELSIF op = BC  THEN (*via offset from pc*)
-      Put.CodeWord(pc,14000000H + ((off+1 ) MOD 4000000H)); INC(pc)
-    ELSIF op = BL  THEN (*via offset from pc and depositing link*)
-      Put.CodeWord(pc,94000000H + ((off+1 ) MOD 4000000H)); INC(pc)
-    END;
 *)
+    ELSIF op = BC  THEN (*via offset from pc*)
+    Put.TwoByteInteger(1A00H,pc,pcb);
+(*
+      Put.CodeWord(pc,14000000H + ((off+1 ) MOD 4000000H)); INC(pc)
+*)
+    ELSIF op = BL  THEN (*via offset from pc and depositing link*)
+      off := off * 2;
+      Put.FourByteInteger(0F000F000H  +  off DIV 10000H MOD 800H + off MOD 1000H * 10000H ,pc,pcb);
+    END;
 END CPut3;
 
   (* begin-procedure-description
@@ -836,15 +839,12 @@ END CPut3;
   end-procedure-description *)
   PROCEDURE CHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
-    Put.TwoByteInteger(1A00H,pc,pcb);
-(*
     IF version = 0 THEN 
-      Put.CodeWord(0, (14H * 1000000H) + (entry DIV 4)); (* 24-bit pc-relative jump *)
+      Put.CodeWord(0, 0E000H +  (((entry - 2) DIV 2) MOD 8000)  ); (* 12-bit pc-relative jump (even addresses) *)
 (*      CPut1(121, pc, pcb, Sub, SP, SP, 16); CPut2(pc, pcb, Str, LNK, SP, 0)  *)
     ELSE 
       CPut1(121, pc, pcb, Sub, SP, SP, 16); CPut2(pc, pcb, Str, LNK, SP, 0)
     END
-*)
   END CHeader;
 
 
@@ -1010,15 +1010,12 @@ END cPut3;
   end-procedure-description *)
   PROCEDURE cHeader*(VAR pc, pcb, RH, entry, version: LONGINT);
   BEGIN entry := pc*4;
-    Put.TwoByteInteger(1A00H,pc,pcb);
-(*
     IF version = 0 THEN 
-      Put.CodeWord(0, 0EAH * 1000000H  + (entry - 8) DIV 4 ); (* 24-bit pc-relative jump *)
+      Put.CodeWord(0, 0E000H +  (((entry - 2) DIV 2) MOD 8000)  ); (* 12-bit pc-relative jump (even addresses) *)
       (* cPut1(121, pc, pcb, Mov+U, SP, SP, 07FFFH) *)
     ELSE 
       cPut1(121, pc, pcb, Sub, SP, SP, 4); aPut2(pc, pcb, Str, LNK, SP, 0)
     END
-*)
   END cHeader;
 
 
