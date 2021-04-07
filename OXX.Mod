@@ -157,6 +157,16 @@ MODULE OXX; (* C.Perkis 2020*)
 
   (* begin-procedure-description
 ---
+**Put2Integer** places an integer as 2 bytes in in the instruction stream.
+  end-procedure-description *)
+  PROCEDURE Put2Integer(i: INTEGER; VAR pc, pcb: INTEGER);
+  BEGIN
+    Put1Byte(i MOD 100H,pc,pcb);
+    Put1Byte(i DIV 100H MOD 100H,pc,pcb);
+  END Put2Integer;
+
+  (* begin-procedure-description
+---
 **Put4Integer** places an integer as 4 bytes in in the instruction stream.
   end-procedure-description *)
   PROCEDURE Put4Integer(i: INTEGER; VAR pc, pcb: INTEGER);
@@ -182,6 +192,7 @@ MODULE OXX; (* C.Perkis 2020*)
     cp.TwoBytes := Put2Bytes;
     cp.ThreeBytes := Put3Bytes;
     cp.FourBytes := Put4Bytes;
+    cp.TwoByteInteger := Put2Integer;
     cp.FourByteInteger := Put4Integer;
     OXT.SetCodePlacer(cp);
     OXT.setRegMap;
