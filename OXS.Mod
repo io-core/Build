@@ -60,6 +60,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     go* = 100; on* = 101; def* = 102; dim* = 103; let* = 104; rem* = 105; sub* = 106; base* = 107;
     data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
     input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
+    func* = 150; void* = 151; package* = 152;
     BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
     nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
@@ -282,21 +283,39 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 
   (* begin-procedure-description
 ---
-**Comment** matches comments.
+**oberoncomment** matches Oberon style comments.
   end-procedure-description *)
-  PROCEDURE comment;
+  PROCEDURE oberoncomment;
   BEGIN Texts.Read(R, ch);
     REPEAT
       WHILE ~R.eot & (ch # "*") DO
         IF ch = "(" THEN Texts.Read(R, ch);
-          IF ch = "*" THEN comment END
+          IF ch = "*" THEN oberoncomment END
         ELSE Texts.Read(R, ch)
         END
       END ;
       WHILE ch = "*" DO Texts.Read(R, ch) END
     UNTIL (ch = ")") OR R.eot;
     IF ~R.eot THEN Texts.Read(R, ch) ELSE Mark("unterminated comment") END
-  END comment;
+  END oberoncomment;
+
+  (* begin-procedure-description
+---
+**clinecomment** matches C line style comments.
+  end-procedure-description *)
+  PROCEDURE clinecomment;
+  BEGIN Texts.Read(R, ch);
+    REPEAT
+      WHILE ~R.eot & (ch # "*") DO
+        IF ch = "(" THEN Texts.Read(R, ch);
+          IF ch = "*" THEN oberoncomment END
+        ELSE Texts.Read(R, ch)
+        END
+      END ;
+      WHILE ch = "*" DO Texts.Read(R, ch) END
+    UNTIL (ch = ")") OR R.eot;
+    IF ~R.eot THEN Texts.Read(R, ch) ELSE Mark("unterminated comment") END
+  END clinecomment;
 
   (* begin-procedure-description
 ---
@@ -321,7 +340,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           ELSIF ch = "$" THEN HexString; sym := string
           ELSIF ch = "&" THEN Texts.Read(R, ch); sym := and
           ELSIF ch = "(" THEN Texts.Read(R, ch); 
-            IF ch = "*" THEN sym := null; comment ELSE sym := lparen END
+            IF ch = "*" THEN sym := null; oberoncomment ELSE sym := lparen END
           ELSIF ch = ")" THEN Texts.Read(R, ch); sym := rparen
           ELSIF ch = "*" THEN Texts.Read(R, ch); sym := times
           ELSIF ch = "+" THEN Texts.Read(R, ch); sym := plus
@@ -329,7 +348,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           ELSIF ch = "-" THEN Texts.Read(R, ch); sym := minus
           ELSIF ch = "." THEN Texts.Read(R, ch);
             IF ch = "." THEN Texts.Read(R, ch); sym := upto ELSE sym := period END
-          ELSIF ch = "/" THEN Texts.Read(R, ch); sym := rdiv
+          ELSIF ch = "/" THEN Texts.Read(R, ch);
+            IF ch = "/" THEN sym := null; clinecomment ELSE sym := rdiv END
           ELSE Texts.Read(R, ch); (* ! % ' *) sym := null
           END
         ELSIF ch < ":" THEN Number(sym)
