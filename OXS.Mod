@@ -305,16 +305,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   end-procedure-description *)
   PROCEDURE clinecomment;
   BEGIN Texts.Read(R, ch);
-    REPEAT
-      WHILE ~R.eot & (ch # "*") DO
-        IF ch = "(" THEN Texts.Read(R, ch);
-          IF ch = "*" THEN oberoncomment END
-        ELSE Texts.Read(R, ch)
-        END
-      END ;
-      WHILE ch = "*" DO Texts.Read(R, ch) END
-    UNTIL (ch = ")") OR R.eot;
-    IF ~R.eot THEN Texts.Read(R, ch) ELSE Mark("unterminated comment") END
+    WHILE ~R.eot & (ch # 0AX) & (ch # 0BX) & (ch # 0CX) DO Texts.Read(R, ch) END ;
+    IF ~R.eot THEN Texts.Read(R, ch) END
   END clinecomment;
 
   (* begin-procedure-description
