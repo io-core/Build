@@ -314,7 +314,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE clinecomment;
   BEGIN Texts.Read(R, ch);
     WHILE ~R.eot & (ch # 0AX) & (ch # 0BX) & (ch # 0CX) DO Texts.Read(R, ch) END ;
-    IF ~R.eot THEN Texts.Read(R, ch) END
+    IF ~R.eot THEN Texts.Read(R, ch) END 
   END clinecomment;
 
   (* begin-procedure-description
@@ -322,28 +322,33 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 **Get** gets the next symbol from the source text.
   end-procedure-description *)
   PROCEDURE Get*(VAR sym: INTEGER);
-   VAR psym: INTEGER;
+    VAR psym: INTEGER;
   BEGIN
+    psym := sym; 
     REPEAT
-      psym := sym;
-      IF sigCR THEN
+      IF sigCR THEN sym := null;
         WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch) END;
-      ELSIF semiCR THEN
-        WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch);
-	  IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN
-            Texts.Read(R, ch);
+      ELSIF semiCR THEN 
+        WHILE ~R.eot & (ch <= " ") DO 
+          IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN       
                         (* Semicolon insertion: golang.org/ref/spec#Semicolons *)
-(*
-            IF (psym = ident) OR (psym = tIntLit || token == tStrLit ||
-                                token == tReturn || token == tRParen ||
-                                token == tRBracket || token == tRBrace {
-                                token = tSemicolon
-                                return
-                        }
-*)
+            IF (sym = ident) OR 
+               (sym = int) OR 
+               (sym = real) OR 
+               (sym = string) OR
+               (sym = return) OR 
+               (sym = rparen) OR
+               (sym = rbrak) OR 
+               (sym = rbrace) THEN
+              ch := ";"
+            ELSE
+              Texts.Read(R, ch) 
+            END
+	  ELSE
+            Texts.Read(R, ch);
           END
         END
-      ELSE
+      ELSE sym := null;
         WHILE ~R.eot & (ch <= " ") DO Texts.Read(R, ch) END;
       END;
       IF R.eot THEN sym := eot
@@ -435,7 +440,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **The initialzation code for this module** populats the table of reserved keywords.
   end-procedure-description *)
-BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; sigCR := FALSE; semiCR := FALSE;
+BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; (* sigCR := FALSE; semiCR := FALSE; *)
 (*
   EnterKW(if, "IF",2);
   EnterKW(do, "DO",2);
