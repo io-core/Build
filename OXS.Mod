@@ -79,7 +79,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     R: Texts.Reader;
     W: Texts.Writer;
     commentstyle: INTEGER;
-    sigCR: BOOLEAN;
+    sigCR, semiCR: BOOLEAN;
     k: INTEGER;
     KWX: ARRAY 10 OF INTEGER;
     keyTab: ARRAY NKW OF
@@ -96,6 +96,14 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE SetSigCR*(sig: BOOLEAN);
   BEGIN sigCR := sig
   END SetSigCR;
+
+  (* begin-procedure-description
+---
+**SetSemiCR** sets whether or not semicolons should be inferred at newlines.
+  end-procedure-description *)
+  PROCEDURE SetSemiCR*(semi: BOOLEAN);
+  BEGIN semiCR := semi
+  END SetSemiCR;
 
   (* begin-procedure-description
 ---
@@ -314,10 +322,27 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 **Get** gets the next symbol from the source text.
   end-procedure-description *)
   PROCEDURE Get*(VAR sym: INTEGER);
+   VAR psym: INTEGER;
   BEGIN
     REPEAT
+      psym := sym;
       IF sigCR THEN
         WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch) END;
+      ELSIF semiCR THEN
+        WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch);
+	  IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN
+            Texts.Read(R, ch);
+                        (* Semicolon insertion: golang.org/ref/spec#Semicolons *)
+(*
+            IF (psym = ident) OR (psym = tIntLit || token == tStrLit ||
+                                token == tReturn || token == tRParen ||
+                                token == tRBracket || token == tRBrace {
+                                token = tSemicolon
+                                return
+                        }
+*)
+          END
+        END
       ELSE
         WHILE ~R.eot & (ch <= " ") DO Texts.Read(R, ch) END;
       END;
@@ -410,7 +435,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **The initialzation code for this module** populats the table of reserved keywords.
   end-procedure-description *)
-BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; 
+BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; sigCR := FALSE; semiCR := FALSE;
 (*
   EnterKW(if, "IF",2);
   EnterKW(do, "DO",2);
