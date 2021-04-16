@@ -457,7 +457,18 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     IF cl = Typ THEN type.typobj := obj END ;
     obj.next := system; system := obj
   END Enter;
-  
+ 
+  (* begin-procedure-description
+---
+**PrepSYSTEM** prepares the SYSTEM scope for entry of types, functions, or procedures.
+  end-procedure-description *)
+  PROCEDURE PrepSYSTEM*;
+  BEGIN 
+    topScope := NIL; OpenScope; topScope.next := system; universe := topScope; 
+    system := NIL;  (* initialize "unsafe" pseudo-module SYSTEM*)
+  END PrepSYSTEM;
+
+ 
   (* begin-procedure-description
 ---
 **Init** registers base Oberon types and populates the the object table with predeclared types,functions and procedures.
@@ -525,9 +536,8 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     Enter("INTEGER", Typ, intType, 0);
     IF wordsize = 8 THEN Enter("SHORTINT", Typ, shortType, 0) END; 
 
-    topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
-    
-    system := NIL;  (* initialize "unsafe" pseudo-module SYSTEM*)
+    PrepSYSTEM;
+
     Enter("H", SFunc, intType, 201);     (*functions*)
     Enter("COND", SFunc, boolType, 191);
     Enter("SIZE", SFunc, intType, 181);
