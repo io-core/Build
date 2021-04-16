@@ -156,6 +156,17 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 
   (* begin-procedure-description
 ---
+**Value** places a note in the Oberon system log.
+  end-procedure-description *)
+  PROCEDURE Value*(msg: ARRAY OF CHAR; val: LONGINT);
+    VAR p: LONGINT;
+  BEGIN p := Pos();
+      Texts.WriteLn(W); Texts.WriteString(W, "  pos "); Texts.WriteInt(W, p, 1); Texts.Write(W, " ");
+      Texts.WriteString(W, msg); Texts.Write(W, " ");  Texts.WriteInt(W, val, 1); Texts.Append(Oberon.Log, W.buf)
+  END Value;
+
+  (* begin-procedure-description
+---
 **Identifier** matches an alphanumeric identifier.
   end-procedure-description *)
   PROCEDURE Identifier(VAR sym: INTEGER);
@@ -325,7 +336,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE clinecomment;
   BEGIN Texts.Read(R, ch);
     WHILE ~R.eot & (ch # 0AX) & (ch # 0BX) & (ch # 0CX) DO Texts.Read(R, ch) END ;
-    IF ~R.eot THEN Texts.Read(R, ch) END 
+    (* IF ~R.eot THEN Texts.Read(R, ch) END *) 
   END clinecomment;
 
   (* begin-procedure-description
@@ -343,18 +354,18 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
         WHILE ~R.eot & (ch <= " ") DO 
           IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN       
                         (* Semicolon insertion: golang.org/ref/spec#Semicolons *)
-            IF (sym = ident) OR 
-               (sym = int) OR 
-               (sym = real) OR 
-               (sym = string) OR
-               (sym = return) OR 
-               (sym = rparen) OR
-               (sym = rbrak) OR 
-               (sym = rbrace) THEN
+            IF (psym = ident) OR 
+               (psym = int) OR 
+               (psym = real) OR 
+               (psym = string) OR
+               (psym = return) OR 
+               (psym = rparen) OR
+               (psym = rbrak) OR 
+               (psym = rbrace) THEN
               ch := ";"
             ELSE
               Texts.Read(R, ch) 
-            END
+            END;
 	  ELSE
             Texts.Read(R, ch);
           END
