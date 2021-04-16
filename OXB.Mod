@@ -451,12 +451,12 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
 ---
 **Enter** introduces a pre-defined type, function, or procedure.
   end-procedure-description *)
-  PROCEDURE enter(name: ARRAY OF CHAR; cl: INTEGER; type: Type; n: LONGINT);
+  PROCEDURE Enter*(name: ARRAY OF CHAR; cl: INTEGER; type: Type; n: LONGINT);
     VAR obj: Object;
   BEGIN NEW(obj); obj.name := name; obj.class := cl; obj.type := type; obj.val := n; obj.dsc := NIL;
     IF cl = Typ THEN type.typobj := obj END ;
     obj.next := system; system := obj
-  END enter;
+  END Enter;
   
   (* begin-procedure-description
 ---
@@ -491,55 +491,56 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
       REAL and LONGREAL resgister size in 32 and 64 bit systems.
       LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
     system := NIL;  (*n = procno*10 + nofpar*)
-    enter("UML", SFunc, intType, 132);  (*functions*)
-    enter("SBC", SFunc, intType, 122);
-    enter("ADC", SFunc, intType, 112);
-    enter("ROR", SFunc, intType, 92);
-    enter("ASR", SFunc, intType, 82);
-    enter("LSL", SFunc, intType, 72);
-    enter("LEN", SFunc, intType, 61);
-    enter("CHR", SFunc, charType, 51);
-    enter("ORD", SFunc, intType, 41);
-    enter("FLT", SFunc, realType, 31);
-    enter("FLOOR", SFunc, intType, 21);
-    enter("ODD", SFunc, boolType, 11);
-    enter("ABS", SFunc, intType, 1);
-    enter("LED", SProc, noType, 81);  (*procedures*)
-    enter("UNPK", SProc, noType, 72);
-    enter("PACK", SProc, noType, 62);
-    enter("NEW", SProc, noType, 51);
-    enter("ASSERT", SProc, noType, 41);
-    enter("EXCL", SProc, noType, 32);
-    enter("INCL", SProc, noType, 22);
-    enter("DEC", SProc, noType, 11);
-    enter("INC", SProc, noType, 1);
-    enter("SET", Typ, setType, 0);   (*types*)
-    enter("BOOLEAN", Typ, boolType, 0);
-    enter("BYTE", Typ, byteType, 0);
-    enter("CHAR", Typ, charType, 0);
-    IF wordsize = 4 THEN enter("LONGREAL", Typ, realType, 0) END;
-    IF wordsize = 8 THEN enter("LONGREAL", Typ, doubleType, 0) END;
-    enter("REAL", Typ, realType, 0);
-    IF wordsize = 4 THEN enter("LONGINT", Typ, intType, 0) END;
-    IF wordsize = 8 THEN enter("LONGINT", Typ, longType, 0) END;
-    enter("INTEGER", Typ, intType, 0);
-    IF wordsize = 8 THEN enter("SHORTINT", Typ, shortType, 0) END;
+    Enter("UML", SFunc, intType, 132);  (*functions*)
+    Enter("SBC", SFunc, intType, 122);
+    Enter("ADC", SFunc, intType, 112);
+    Enter("ROR", SFunc, intType, 92);
+    Enter("ASR", SFunc, intType, 82);
+    Enter("LSL", SFunc, intType, 72);
+    Enter("LEN", SFunc, intType, 61);
+    Enter("CHR", SFunc, charType, 51);
+    Enter("ORD", SFunc, intType, 41);
+    Enter("FLT", SFunc, realType, 31);
+    Enter("FLOOR", SFunc, intType, 21);
+    Enter("ODD", SFunc, boolType, 11);
+    Enter("ABS", SFunc, intType, 1);
+    Enter("LED", SProc, noType, 81);  (*procedures*)
+    Enter("UNPK", SProc, noType, 72);
+    Enter("PACK", SProc, noType, 62);
+    Enter("NEW", SProc, noType, 51);
+    Enter("ASSERT", SProc, noType, 41);
+    Enter("EXCL", SProc, noType, 32);
+    Enter("INCL", SProc, noType, 22);
+    Enter("DEC", SProc, noType, 11);
+    Enter("INC", SProc, noType, 1);
+    Enter("SET", Typ, setType, 0);   (*types*)
+    Enter("BOOLEAN", Typ, boolType, 0);
+    Enter("BYTE", Typ, byteType, 0);
+    Enter("CHAR", Typ, charType, 0);
+    IF wordsize = 4 THEN Enter("LONGREAL", Typ, realType, 0) END;
+    IF wordsize = 8 THEN Enter("LONGREAL", Typ, doubleType, 0) END;
+    Enter("REAL", Typ, realType, 0);
+    IF wordsize = 4 THEN Enter("LONGINT", Typ, intType, 0) END;
+    IF wordsize = 8 THEN Enter("LONGINT", Typ, longType, 0) END;
+    Enter("INTEGER", Typ, intType, 0);
+    IF wordsize = 8 THEN Enter("SHORTINT", Typ, shortType, 0) END; 
+
     topScope := NIL; OpenScope; topScope.next := system; universe := topScope;
     
     system := NIL;  (* initialize "unsafe" pseudo-module SYSTEM*)
-    enter("H", SFunc, intType, 201);     (*functions*)
-    enter("COND", SFunc, boolType, 191);
-    enter("SIZE", SFunc, intType, 181);
-    enter("ADR", SFunc, intType, 171);
-    enter("VAL", SFunc, intType, 162);
-    enter("REG", SFunc, intType, 151);
-    enter("BIT", SFunc, boolType, 142);
-    enter("REGREG", SProc, noType, 212);  (*procedures*)
-    enter("LDREG", SProc, noType, 142); 
-    enter("LDPSR", SProc, noType, 131);
-    enter("COPY", SProc, noType, 123);
-    enter("PUT", SProc, noType, 112);
-    enter("GET", SProc, noType, 102);
+    Enter("H", SFunc, intType, 201);     (*functions*)
+    Enter("COND", SFunc, boolType, 191);
+    Enter("SIZE", SFunc, intType, 181);
+    Enter("ADR", SFunc, intType, 171);
+    Enter("VAL", SFunc, intType, 162);
+    Enter("REG", SFunc, intType, 151);
+    Enter("BIT", SFunc, boolType, 142);
+    Enter("REGREG", SProc, noType, 212);  (*procedures*)
+    Enter("LDREG", SProc, noType, 142); 
+    Enter("LDPSR", SProc, noType, 131);
+    Enter("COPY", SProc, noType, 123);
+    Enter("PUT", SProc, noType, 112);
+    Enter("GET", SProc, noType, 102);
   END Init;
 BEGIN
 END OXB.
