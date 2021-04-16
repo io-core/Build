@@ -145,6 +145,17 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 
   (* begin-procedure-description
 ---
+**Note** places a note in the Oberon system log.
+  end-procedure-description *)
+  PROCEDURE Note*(msg: ARRAY OF CHAR);
+    VAR p: LONGINT;
+  BEGIN p := Pos();
+      Texts.WriteLn(W); Texts.WriteString(W, "  pos "); Texts.WriteInt(W, p, 1); Texts.Write(W, " ");
+      Texts.WriteString(W, msg); Texts.Append(Oberon.Log, W.buf)
+  END Note;
+
+  (* begin-procedure-description
+---
 **Identifier** matches an alphanumeric identifier.
   end-procedure-description *)
   PROCEDURE Identifier(VAR sym: INTEGER);
