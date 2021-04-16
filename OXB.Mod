@@ -502,6 +502,7 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
       REAL and LONGREAL resgister size in 32 and 64 bit systems.
       LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
     system := NIL;  (*n = procno*10 + nofpar*)
+(*
     Enter("UML", SFunc, intType, 132);  (*functions*)
     Enter("SBC", SFunc, intType, 122);
     Enter("ADC", SFunc, intType, 112);
@@ -551,6 +552,7 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
     Enter("COPY", SProc, noType, 123);
     Enter("PUT", SProc, noType, 112);
     Enter("GET", SProc, noType, 102);
+*)
   END Init;
 BEGIN
 END OXB.
