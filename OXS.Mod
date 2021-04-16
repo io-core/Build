@@ -60,7 +60,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     go* = 100; on* = 101; def* = 102; dim* = 103; let* = 104; rem* = 105; sub* = 106; base* = 107;
     data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
     input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
-    func* = 150; void* = 151; package* = 152;
+    func* = 150; void* = 151; package* = 152; rune* = 153;
     BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
     nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
@@ -79,7 +79,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     R: Texts.Reader;
     W: Texts.Writer;
     commentstyle: INTEGER;
-    sigCR, semiCR: BOOLEAN;
+    sigCR, semiCR, haveRunes: BOOLEAN;
     k: INTEGER;
     KWX: ARRAY 10 OF INTEGER;
     keyTab: ARRAY NKW OF
@@ -104,6 +104,14 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE SetSemiCR*(semi: BOOLEAN);
   BEGIN semiCR := semi
   END SetSemiCR;
+
+  (* begin-procedure-description
+---
+**SetRunes** sets whether or not to single-quote strings identify runes.
+  end-procedure-description *)
+  PROCEDURE SetRunes*(runes: BOOLEAN);
+  BEGIN haveRunes := runes
+  END SetRunes;
 
   (* begin-procedure-description
 ---
@@ -199,6 +207,23 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     END ;
     str[i] := 0X; INC(i); Texts.Read(R, ch); slen := i
   END String;
+
+  (* begin-procedure-description
+---
+**Rune** matches a single tick delimeted char.
+  end-procedure-description *)
+  PROCEDURE Rune;
+    VAR i: INTEGER;
+  BEGIN i := 0; Texts.Read(R, ch);
+    WHILE ~R.eot & (ch # "'") DO
+      IF ch >= " " THEN
+        IF i < stringBufSize-1 THEN str[i] := ch; INC(i) ELSE Mark("rune too long") END ;
+      END ;
+      Texts.Read(R, ch)
+    END ;
+    str[i] := 0X; INC(i); Texts.Read(R, ch); slen := i
+  END Rune;
+
 
   (* begin-procedure-description
 ---
@@ -394,6 +419,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
             IF ch = "." THEN Texts.Read(R, ch); sym := upto ELSE sym := period END
           ELSIF ch = "/" THEN Texts.Read(R, ch);
             IF ch = "/" THEN sym := null; clinecomment ELSE sym := rdiv END
+          ELSIF (haveRunes) & (ch = "'") THEN Rune; sym := string
           ELSE Texts.Read(R, ch); (* ! % ' *) sym := null
           END
         ELSIF ch < ":" THEN Number(sym)

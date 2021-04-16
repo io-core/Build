@@ -1410,6 +1410,7 @@ BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OX Oberon Compiler  3.16.2021")
   OXS.SetCommentStyle(OXS.oberonstyle);
   OXS.SetSigCR(FALSE);
   OXS.SetSemiCR(FALSE);
+  OXS.SetRunes(FALSE);
 
 (*  NEW(dummy); dummy.class := OXB.Var; dummy.type := OXB.intType;
     expression := expression0; Type := Type0; FormalType := FormalType0 *)
