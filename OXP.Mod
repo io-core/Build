@@ -1241,6 +1241,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           IF S.s[0] = "c" THEN ccARCH := OXS.CORTEX0 END;
           IF S.s[0] = "V" THEN ccARCH := OXS.RISCV64; ccWordsize := 8; ccStackalign := 8; END;
           IF S.s[0] = "v" THEN ccARCH := OXS.RISCV32 END;  
+          IF S.s[0] = "W" THEN ccARCH := OXS.WASM; ccWordsize := 8; ccStackalign := 8; END;
       END
     END
   END Option;

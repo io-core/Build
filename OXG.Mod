@@ -278,7 +278,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   PROCEDURE MakeItem*(VAR x: Item; y: OXB.Object; curlev: LONGINT);
   BEGIN x.mode := y.class; x.type := y.type; x.a := y.val; x.rdo := y.rdo;
     IF y.class = OXB.Par THEN x.b := 0
-    ELSIF (y.class = OXB.Const) & (y.type.form = OXB.String) THEN x.b := y.lev  (*len*) ;
+    ELSIF (y.class = OXB.Const) & (y.type # NIL) & (y.type.form = OXB.String) THEN x.b := y.lev  (*len*) ;
     ELSE x.r := y.lev
     END ;
     IF (y.lev > 0) & (y.lev # curlev) & (y.class # OXB.Const) THEN OXS.Mark("not accessible ") END
@@ -615,6 +615,23 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     END ;
     DEC(RH); x.r := RH-1
   END RealOp;
+
+  (* Code generation for STRING operators *)
+
+  (* begin-section-description
+## ----------  Code generation for STRING operators
+  end-section-description *)
+
+  (* begin-procedure-description
+---
+**StringOp** generates operations on reals
+  end-procedure-description *)
+  PROCEDURE StringOp*(op: INTEGER; VAR x, y: Item);   (* x := x op y *)
+  BEGIN load(x); load(y);
+    IF op = OXS.plus THEN 
+    END ;
+    DEC(RH); x.r := RH-1
+  END StringOp;
 
   (* Code generation for set operators *)
 
@@ -1398,6 +1415,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF OXS.ccARCH = OXS.CORTEX0 THEN xPut0 := OXT.cPut0; xPut1 := OXT.cPut1; xPut1a := OXT.cPut1a; xPut2 := OXT.cPut2; xPut3 := OXT.cPut3; xHeader := OXT.cHeader END;
     IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXT.VPut0; xPut1 := OXT.VPut1; xPut1a := OXT.VPut1a; xPut2 := OXT.VPut2; xPut3 := OXT.VPut3; xHeader := OXT.VHeader END;
     IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXT.vPut0; xPut1 := OXT.vPut1; xPut1a := OXT.vPut1a; xPut2 := OXT.vPut2; xPut3 := OXT.vPut3; xHeader := OXT.vHeader END;
+    IF OXS.ccARCH = OXS.WASM THEN xPut0 := OXT.WPut0; xPut1 := OXT.WPut1; xPut1a := OXT.WPut1a; xPut2 := OXT.WPut2; xPut3 := OXT.WPut3; xHeader := OXT.WHeader END;
     OXX.Init;
   END Open;
 

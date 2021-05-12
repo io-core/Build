@@ -60,8 +60,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     go* = 100; on* = 101; def* = 102; dim* = 103; let* = 104; rem* = 105; sub* = 106; base* = 107;
     data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
     input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
-    func* = 150; void* = 151; package* = 152; rune* = 153;
-    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8;
+    func* = 150; void* = 151; package* = 152; rune* = 153; eqeql* = 154; pcnt* = 155; andand* = 156; oror* = 157;
+    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8; WASM* = 9;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
     nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
 
@@ -212,7 +212,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **Rune** matches a single tick delimeted char.
   end-procedure-description *)
-  PROCEDURE Rune;
+  PROCEDURE Rune(VAR sym: INTEGER);
     VAR i: INTEGER;
   BEGIN i := 0; Texts.Read(R, ch);
     WHILE ~R.eot & (ch # "'") DO
@@ -221,7 +221,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
       END ;
       Texts.Read(R, ch)
     END ;
-    str[i] := 0X; INC(i); Texts.Read(R, ch); slen := i
+    str[i] := 0X; INC(i); Texts.Read(R, ch); slen := i;
+    sym := int; ival := 0;
   END Rune;
 
 
@@ -391,6 +392,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
             ELSE
               Texts.Read(R, ch) 
             END;
+(*          Value("psym ",psym);  *)
 	  ELSE
             Texts.Read(R, ch);
           END
@@ -407,7 +409,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           ELSIF ch = 0CX THEN Texts.Read(R, ch); sym := eol
           ELSIF ch = "#" THEN Texts.Read(R, ch); sym := neq
           ELSIF ch = "$" THEN HexString; sym := string
-          ELSIF ch = "&" THEN Texts.Read(R, ch); sym := and
+          ELSIF ch = "&" THEN Texts.Read(R, ch);
+            IF ch = "&" THEN Texts.Read(R, ch); sym := andand  ELSE sym := and END
           ELSIF ch = "(" THEN Texts.Read(R, ch); 
             IF ch = "*" THEN sym := null; oberoncomment ELSE sym := lparen END
           ELSIF ch = ")" THEN Texts.Read(R, ch); sym := rparen
@@ -419,8 +422,11 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
             IF ch = "." THEN Texts.Read(R, ch); sym := upto ELSE sym := period END
           ELSIF ch = "/" THEN Texts.Read(R, ch);
             IF ch = "/" THEN sym := null; clinecomment ELSE sym := rdiv END
-          ELSIF (haveRunes) & (ch = "'") THEN Rune; sym := string
-          ELSE Texts.Read(R, ch); (* ! % ' *) sym := null
+          ELSIF (haveRunes) & (ch = "'") THEN Rune(sym)
+          ELSIF ch = "%" THEN Texts.Read(R, ch); sym := pcnt
+          ELSIF ch = "!" THEN Texts.Read(R, ch);
+            IF ch = "=" THEN Texts.Read(R, ch); sym := neq ELSE sym := null END
+          ELSE Texts.Read(R, ch); (* ! ' *) sym := null
           END
         ELSIF ch < ":" THEN Number(sym)
         ELSIF ch = ":" THEN Texts.Read(R, ch);
@@ -428,7 +434,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
         ELSIF ch = ";" THEN Texts.Read(R, ch); sym := semicolon
         ELSIF ch = "<" THEN  Texts.Read(R, ch);
           IF ch = "=" THEN Texts.Read(R, ch); sym := leq ELSE sym := lss END
-        ELSIF ch = "=" THEN Texts.Read(R, ch); sym := eql
+        ELSIF ch = "=" THEN Texts.Read(R, ch); 
+          IF ch = "=" THEN Texts.Read(R, ch); sym := eqeql ELSE sym := eql END
         ELSIF ch = ">" THEN Texts.Read(R, ch);
           IF ch = "=" THEN Texts.Read(R, ch); sym := geq ELSE sym := gtr END
         ELSE (* ? @ *) Texts.Read(R, ch); sym := null
@@ -444,7 +451,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
       ELSIF ch < "{" THEN Identifier(sym) ELSE
         IF ch = "{" THEN sym := lbrace
         ELSIF ch = "}" THEN sym := rbrace
-        ELSIF ch = "|" THEN sym := bar
+        ELSIF ch = "|" THEN Texts.Read(R, ch);
+            IF ch = "|" THEN Texts.Read(R, ch); sym := oror ELSE sym := bar END
         ELSIF ch = "~" THEN  sym := not
         ELSIF ch = 7FX THEN  sym := upto
         ELSE sym := null

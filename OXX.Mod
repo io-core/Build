@@ -331,6 +331,7 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.CORTEX0 THEN OXT.cPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.cPut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.VPut3(pc, pcb, BR, 7, 0) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.vPut3(pc, pcb, BR, 7, 0) END;
+      IF OXS.ccARCH = OXS.WASM THEN OXT.WPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.WPut3(pc, pcb, BR, 7, 0) END;
     ELSE (* regular module exit code *)
       IF OXS.ccARCH = OXS.RISC5 THEN OXT.RPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.RPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.RPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.IPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.IPut3(pc, pcb, BR, 7, LNK)   END;
@@ -340,6 +341,7 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.CORTEX0 THEN OXT.cPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.cPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.cPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.RISCV64 THEN OXT.VPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.VPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.VPut3(pc, pcb, BR, 7, LNK) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN OXT.vPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.vPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.vPut3(pc, pcb, BR, 7, LNK) END;
+      IF OXS.ccARCH = OXS.WASM THEN OXT.WPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.WPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.WPut3(pc, pcb, BR, 7, LNK) END;
     END ;
 (*
     IF version = 0 THEN (* Initial jump to entry point for baremetal module *)
@@ -351,6 +353,7 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.CORTEX0 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.RISCV64 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
       IF OXS.ccARCH = OXS.RISCV32 THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
+      IF OXS.ccARCH = OXS.WASM THEN code[0] := 6FH + (vUJ(entry) * 1000H) END;
     END;
 *)
     obj := OXB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
@@ -374,6 +377,7 @@ MODULE OXX; (* C.Perkis 2020*)
     IF OXS.ccARCH = OXS.CORTEX0 THEN OXB.MakeFileName(name, modid, ".cm0")   END;
     IF OXS.ccARCH = OXS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
     IF OXS.ccARCH = OXS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
+    IF OXS.ccARCH = OXS.WASM THEN OXB.MakeFileName(name, modid, ".w64") END;
 
     F := Files.New(name); Files.Set(R, F, 0); 
     IF version = 1 THEN
