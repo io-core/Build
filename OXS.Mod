@@ -494,43 +494,12 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 
   (* begin-procedure-description
 ---
-**The initialzation code for this module** populats the table of reserved keywords.
+**The initialzation code for this module** prepares an empty table of reserved keywords.
   end-procedure-description *)
-BEGIN Texts.OpenWriter(W); k := 0; KWX[0]:=0; KWX[1]:=0; (* sigCR := FALSE; semiCR := FALSE; *)
-(*
-  EnterKW(if, "IF",2);
-  EnterKW(do, "DO",2);
-  EnterKW(of, "OF",2);
-  EnterKW(or, "OR",2);
-  EnterKW(to, "TO",2);
-  EnterKW(in, "IN",2);
-  EnterKW(is, "IS",2);
-  EnterKW(by, "BY",2);
-  EnterKW(end, "END",3);
-  EnterKW(nil, "NIL",3);
-  EnterKW(var, "VAR",3);
-  EnterKW(div, "DIV",3);
-  EnterKW(mod, "MOD",3);
-  EnterKW(for, "FOR",3);
-  EnterKW(else, "ELSE",4);
-  EnterKW(then, "THEN",4);
-  EnterKW(true, "TRUE",4);
-  EnterKW(type, "TYPE",4);
-  EnterKW(case, "CASE",4);
-  EnterKW(elsif, "ELSIF",5);
-  EnterKW(false, "FALSE",5);
-  EnterKW(array, "ARRAY",5);
-  EnterKW(begin, "BEGIN",5);
-  EnterKW(const, "CONST",5);
-  EnterKW(until, "UNTIL",5);
-  EnterKW(while, "WHILE",5);
-  EnterKW(record, "RECORD",6);
-  EnterKW(repeat, "REPEAT",6);
-  EnterKW(return, "RETURN",6);
-  EnterKW(import, "IMPORT",6);
-  EnterKW(module, "MODULE",6);
-  EnterKW(pointer, "POINTER",7);
-  EnterKW(notasymbol, "",8); 
-  EnterKW(procedure, "PROCEDURE",9);
-*)
+BEGIN 
+  Texts.OpenWriter(W); 
+  k := 0; 
+  KWX[0]:=0; 
+  KWX[1]:=0; 
+  (* sigCR := FALSE; semiCR := FALSE; *)
 END OXS.
