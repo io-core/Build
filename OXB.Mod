@@ -31,9 +31,9 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
 
     (* form values*)  (* BYTE <= SHORTINT <= INTEGER <= LONGINT , FLOAT <= DOUBLE *)
       Byte* = 1; Bool* = 2; Char* = 3; Short* = 4; Int* = 5; Long* = 6; Real* = 7; Double* = 8; Set* = 9;
-      Pointer* = 10; Interface* = 11; NilTyp* = 12; NoTyp* = 13; Proc* = 14;
-      String* = 15; Array* = 16; Record* = 17; (*TProc*)
-      Ptrs* = {Pointer, Interface, NilTyp}; Procs* = {Proc, NoTyp};
+      Pointer* = 10; Interface* = 11; Continuation* = 12; NilTyp* = 13; NoTyp* = 14; Proc* = 15;
+      String* = 16; Array* = 17; Record* = 18; TProc* = 19;
+      Ptrs* = {Pointer, Interface, NilTyp}; Procs* = {Proc, NoTyp}; 
       
   TYPE 
     Object* = POINTER TO ObjDesc;
@@ -231,7 +231,7 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
           Files.ReadNum(R, fld.val); Read(R, class)
         END ;
         IF last = NIL THEN t.dsc := obj ELSE last.next := obj END
-      ELSIF form = Proc THEN
+      ELSIF form IN {Proc, TProc} THEN
         InType(R, thismod, t.base);
         obj := NIL; np := 0; Read(R, class);
         WHILE class # 0 DO  (*parameters*)
@@ -359,7 +359,7 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
           fld := fld.next
         END ;
         Write(R, 0)
-      ELSIF t.form = Proc THEN OutType(R, t.base); OutPar(R, t.dsc, t.nofpar); Write(R, 0)
+      ELSIF t.form IN {Proc, TProc} THEN OutType(R, t.base); OutPar(R, t.dsc, t.nofpar); Write(R, 0)
       END ;
       IF (t.mno > 0) & (obj # NIL) THEN  (*re-export, output name*)
         mod := topScope.next;
