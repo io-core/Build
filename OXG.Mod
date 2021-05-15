@@ -25,7 +25,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   CONST
     StkOrg0 = -64; VarOrg0 = 0;  (*for RISC-0 only*)
     MT = 12; TL = 13; SP = 14; LNK = 15;   (*dedicated registers*)
-    maxCode = 8000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
+    maxCode = 10000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
@@ -1379,6 +1379,26 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
+**PAU** genrates an inline funtion that records a one-shot continuation.     
+  end-procedure-description *)
+  PROCEDURE Pau*(VAR x: Item);
+  BEGIN (*x.mode = Const*)
+    (* completely wrong code, replace with recording a continuation *)
+    xPut0( pc, pcb, Mov+U + x.a MOD 2 * V, RH, 0, 0); x.mode := Reg; x.r := RH; incR
+  END Pau;
+
+  (* begin-procedure-description
+---
+**Ply** genrates an inline funtion that invokes a one-shot continuation.     
+  end-procedure-description *)
+  PROCEDURE Ply*(VAR x: Item);
+  BEGIN (*x.mode = Const*)
+    (* completely wrong code, replace with continuation invocation *)
+    xPut0( pc, pcb, Mov+U + x.a MOD 2 * V, RH, 0, 0); x.mode := Reg; x.r := RH; incR
+  END Ply;
+
+  (* begin-procedure-description
+---
 **Adr** generates an inline function presenting the memory address of its parameter.      
   end-procedure-description *)
   PROCEDURE Adr*(VAR x: Item);
@@ -1413,9 +1433,11 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF OXS.ccARCH = OXS.ARM32 THEN xPut0 := OXT.aPut0; xPut1 := OXT.aPut1; xPut1a := OXT.aPut1a; xPut2 := OXT.aPut2; xPut3 := OXT.aPut3; xHeader := OXT.aHeader END;
     IF OXS.ccARCH = OXS.CORTEX4 THEN xPut0 := OXT.CPut0; xPut1 := OXT.CPut1; xPut1a := OXT.CPut1a; xPut2 := OXT.CPut2; xPut3 := OXT.CPut3; xHeader := OXT.CHeader END;
     IF OXS.ccARCH = OXS.CORTEX0 THEN xPut0 := OXT.cPut0; xPut1 := OXT.cPut1; xPut1a := OXT.cPut1a; xPut2 := OXT.cPut2; xPut3 := OXT.cPut3; xHeader := OXT.cHeader END;
+(*
     IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXT.VPut0; xPut1 := OXT.VPut1; xPut1a := OXT.VPut1a; xPut2 := OXT.VPut2; xPut3 := OXT.VPut3; xHeader := OXT.VHeader END;
     IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXT.vPut0; xPut1 := OXT.vPut1; xPut1a := OXT.vPut1a; xPut2 := OXT.vPut2; xPut3 := OXT.vPut3; xHeader := OXT.vHeader END;
     IF OXS.ccARCH = OXS.WASM THEN xPut0 := OXT.WPut0; xPut1 := OXT.WPut1; xPut1a := OXT.WPut1a; xPut2 := OXT.WPut2; xPut3 := OXT.WPut3; xHeader := OXT.WHeader END;
+*) 
     OXX.Init;
   END Open;
 

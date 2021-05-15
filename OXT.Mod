@@ -27,7 +27,7 @@ MODULE OXT; (* C.Perkis 2021*)
     VStkOrg0 = -64;
     vStkOrg0 = -64;
     MT = 12; TL = 13; SP = 14; LNK = 15;   (*dedicated registers*)
-    maxCode = 8000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
+    maxCode = 10000; maxStrx = 6400; maxTD = 160; C24 = 1000000H;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
 
     (*frequently used opcodes*)  U = 2000H; V = 1000H;
