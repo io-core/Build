@@ -291,14 +291,15 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
       S: Texts.Scanner;
   BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
     IF S.class = Texts.Name THEN
-      Texts.WriteString(W, "obj-decode "); Texts.WriteString(W, S.s); 
+      Texts.WriteLn(W); Texts.WriteString(W, "obj-decode "); Texts.WriteString(W, S.s); 
       x:=ArchFromExt(S.s);
       IF x # 0 THEN
         F := Files.Old(S.s);
         IF F # NIL THEN
-          Files.Set(R, F, 0); Files.ReadString(R, name); Texts.WriteLn(W); Texts.WriteString(W, name);
-          Files.ReadInt(R, key); Texts.WriteHex(W, key); Read(R, class); Texts.WriteInt(W, class, 4); (*version*)
-          Files.ReadInt(R, size); Texts.WriteInt(W, size, 6); Texts.WriteLn(W);
+          Files.Set(R, F, 0); Files.ReadString(R, name); Texts.WriteLn(W); Texts.WriteString(W, name); Texts.WriteLn(W); 
+          Files.ReadInt(R, key); Texts.WriteString(W, "  key   "); Texts.WriteHex(W, key); Texts.WriteLn(W); 
+          Read(R, class);  Texts.WriteString(W, "  ver.  "); Texts.WriteInt(W, class, 4); Texts.WriteLn(W); (*version*)
+          Files.ReadInt(R, size); Texts.WriteString(W, "  size  "); Texts.WriteInt(W, size, 6); Texts.WriteLn(W);
           Texts.WriteString(W, "imports:"); Texts.WriteLn(W); Files.ReadString(R, name);
           WHILE name[0] # 0X DO
             Texts.Write(W, 20X); Texts.WriteString(W, name);
@@ -365,6 +366,112 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
       Texts.Append(T, W.buf)
     END
   END DecObj;
+
+  PROCEDURE DecMod*;   (*decode loaded module*)
+    VAR class, i, n, key, size, fix, adr, data, len, s, x, p, q, k: INTEGER;
+      ch: CHAR; cs: ARRAY 32 OF CHAR;
+      name: ARRAY 32 OF CHAR;
+      F: Files.File; R: Files.Rider;
+      S: Texts.Scanner;
+      M, imp: Modules.Module;
+  BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
+    IF S.class = Texts.Name THEN
+      Texts.WriteLn(W); Texts.WriteString(W, "obj-decode "); Texts.WriteString(W, S.s); 
+      M:=Modules.root;
+      WHILE (M # NIL) & (S.s # M.name) DO M := M.next END ;
+      IF M = NIL THEN (*module not loaded*)
+        Texts.WriteString(W, " (not a loaded module) "); 
+      ELSE
+        Texts.WriteLn(W);
+          Texts.WriteString(W, "  key   "); Texts.WriteHex(W, M.key); Texts.WriteLn(W);
+          Texts.WriteString(W, "  num   "); Texts.WriteInt(W, M.num, 4); Texts.WriteLn(W); 
+          Texts.WriteString(W, "  size  "); Texts.WriteInt(W, M.size, 6); Texts.WriteLn(W);
+          Texts.WriteString(W, "  refcnt"); Texts.WriteInt(W, M.refcnt, 4); Texts.WriteLn(W);
+          Texts.WriteString(W, "  data  "); Texts.WriteHex(W, M.data); Texts.WriteLn(W);
+          Texts.WriteString(W, "  code  "); Texts.WriteHex(W, M.code); Texts.WriteLn(W);
+          Texts.WriteString(W, "  imp   "); Texts.WriteHex(W, M.imp); Texts.WriteLn(W);
+          Texts.WriteString(W, "  cmd   "); Texts.WriteHex(W, M.cmd); Texts.WriteLn(W);
+          Texts.WriteString(W, "  ent   "); Texts.WriteHex(W, M.ent); Texts.WriteLn(W);
+          Texts.WriteString(W, "  ptr   "); Texts.WriteHex(W, M.ptr); Texts.WriteLn(W);
+
+      END;
+      Texts.WriteString(W, "imports:"); 
+      p := M.imp; q := M.cmd;
+      WHILE p < q DO SYSTEM.GET(p, imp); Texts.WriteString(W, " "); Texts.WriteString(W, imp.name ); INC(p, 4) END; Texts.WriteLn(W);
+(*
+      Texts.WriteString(W, "type descriptors: "); Texts.WriteLn(W);
+*)
+      Texts.WriteString(W, "commands: "); Texts.WriteLn(W);
+      adr := M.cmd; SYSTEM.GET(adr, ch);
+      WHILE ch # 0X DO k := 0; (*read command name*)
+        REPEAT cs[k] := ch; INC(k); INC(adr); SYSTEM.GET(adr, ch) UNTIL ch = 0X;
+        cs[k] := 0X;
+        REPEAT INC(adr) UNTIL adr MOD 4 = 0;
+        SYSTEM.GET(adr, k); INC(adr, 4);
+        Texts.WriteHex(W, k); Texts.WriteString(W, " "); Texts.WriteString(W, cs); Texts.WriteLn(W);
+        SYSTEM.GET(adr, ch)
+      END;
+(*
+          Files.ReadInt(R, n); n := n DIV 4; i := 0;
+          WHILE i < n DO Files.ReadInt(R, data); Texts.WriteHex(W, data); INC(i) END ;
+          Texts.WriteLn(W);
+          Texts.WriteString(W, "data"); Files.ReadInt(R, data); Texts.WriteInt(W, data, 6); Texts.WriteLn(W);
+          Texts.WriteString(W, "strings"); Texts.WriteLn(W);
+          Files.ReadInt(R, n); i := 0;
+          WHILE i < n DO 
+            Files.Read(R, ch); 
+            IF (ch > 10X) & (ch < 080X) THEN Texts.Write(W, ch) ELSE Texts.Write(W, 0E2X); Texts.Write(W, 080X); Texts.Write(W, 0A2X) END;
+            IF i MOD 80 = 0 THEN Texts.Write(W, 0AX) END;
+            INC(i) 
+          END ;
+          Texts.WriteLn(W);
+          Texts.WriteString(W, "code"); Texts.WriteLn(W);
+          Files.ReadInt(R, n); i := 0;
+
+          s := Files.Pos(R); 
+          decodeSection(R, F, n, s, x);
+
+          Files.Set(R,F,s+(n*4));
+          Texts.WriteString(W, "commands:"); Texts.WriteLn(W);
+          Files.ReadString(R, name);
+          WHILE name[0] # 0X DO
+            Texts.Write(W, 20X); Texts.WriteString(W, name);
+            Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 5); Texts.WriteLn(W);
+            Files.ReadString(R, name)
+          END ;
+          Texts.WriteString(W, "entries"); Texts.WriteLn(W);
+          Files.ReadInt(R, n); i := 0;
+          WHILE i < n DO
+            Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 6); INC(i)
+          END ;
+          Texts.WriteLn(W);
+          Texts.WriteString(W, "pointer refs"); Texts.WriteLn(W); Files.ReadInt(R, adr);
+          WHILE adr # -1 DO Texts.WriteInt(W, adr, 6); Files.ReadInt(R, adr) END ;
+          Texts.WriteLn(W);
+          Files.ReadInt(R, data); Texts.WriteString(W, "fixP = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
+          Files.ReadInt(R, data); Texts.WriteString(W, "fixD = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
+          Files.ReadInt(R, data); Texts.WriteString(W, "fixT = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
+          Files.ReadInt(R, data); Texts.WriteString(W, "entry = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
+          Files.Read(R, ch);
+          IF ch # "O" THEN Texts.WriteString(W, "format eror"); Texts.WriteLn(W) END
+        (* Sync(R); *)
+        ELSE Texts.WriteString(W, " not found"); Texts.WriteLn(W)
+        END ;
+      ELSE 
+        i:=LEN(S.s);
+        Texts.WriteString(W, " not understood extension");
+        name[0]:=S.s[i-3];
+        name[1]:=S.s[i-2];
+        name[2]:=S.s[i-1];
+        name[3]:=0X;
+        Texts.WriteString(W, name);
+        Texts.WriteLn(W)
+      END;
+*)
+
+      Texts.Append(T, W.buf)
+    END
+  END DecMod;
 
 BEGIN
   Texts.OpenWriter(W); T := TextFrames.Text(""); OpenViewer(T, "OXTool.Text"); Texts.SetFont(W, Fonts.This("DVSansMono16.Scn.Fnt"));
