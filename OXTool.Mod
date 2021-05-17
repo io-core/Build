@@ -411,6 +411,12 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
         Texts.WriteHex(W, k); Texts.WriteString(W, " "); Texts.WriteString(W, cs); Texts.WriteLn(W);
         SYSTEM.GET(adr, ch)
       END;
+      Texts.WriteString(W, "entries: "); Texts.WriteLn(W);
+      p := M.ent; q := M.ptr;
+      WHILE p < q DO SYSTEM.GET(p, k); Texts.WriteString(W, " "); Texts.WriteHex(W, k ); INC(p, 4); Texts.WriteLn(W) END;
+      Texts.WriteString(W, "pointers: "); Texts.WriteLn(W);
+      SYSTEM.GET(q,k);
+      WHILE k # 0 DO Texts.WriteString(W, " "); Texts.WriteHex(W, k ); INC(q, 4); Texts.WriteLn(W); SYSTEM.GET(q,k) END;
 (*
           Files.ReadInt(R, n); n := n DIV 4; i := 0;
           WHILE i < n DO Files.ReadInt(R, data); Texts.WriteHex(W, data); INC(i) END ;

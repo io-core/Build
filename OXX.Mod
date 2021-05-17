@@ -360,8 +360,8 @@ MODULE OXX; (* C.Perkis 2020*)
     WHILE obj # NIL DO
       IF (obj.class = OXB.Mod) & (obj.dsc # OXB.system) THEN INC(nofimps) (*count imports*)
       ELSIF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc)
-          & (obj.type.nofpar = 0) & (obj.type.base = OXB.noType) THEN i := 0; (*count commands*)
-        WHILE obj.name[i] # 0X DO INC(i) END ;
+         (* & (obj.type.nofpar = 0) *) &  (obj.type.base = OXB.noType) THEN (*count commands*)
+        i := 0;  WHILE obj.name[i] # 0X DO INC(i) END ;
         i := (i+4) DIV 4 * 4; INC(comsize, i+4)
       ELSIF obj.class = OXB.Var THEN INC(nofptrs, NofPtrs(obj.type))  (*count pointers*)
       END ;
@@ -410,8 +410,9 @@ MODULE OXX; (* C.Perkis 2020*)
     IF version = 1 THEN
       WHILE obj # NIL DO  (*commands*)
         IF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc) &
-            (obj.type.nofpar = 0) & (obj.type.base = OXB.noType) THEN
-          Files.WriteString(R, obj.name); Files.WriteInt(R, obj.val)
+            (* (obj.type.nofpar = 0) & *) (obj.type.base = OXB.noType) THEN
+          Files.WriteString(R, obj.name); 
+          IF obj.type.nofpar = 0 THEN Files.WriteInt(R, obj.val) ELSE Files.WriteInt(R, obj.val) END
         END ;
         obj := obj.next
       END ;
