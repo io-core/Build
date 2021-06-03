@@ -391,7 +391,7 @@ MODULE OXP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07*
 ---
 **StandFunc** consumes standard language functions and produces inline code for those functions.
 
-Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `SBC` `UML` `BIT` `REG` `VAL` `ADR` `SIZE` `COND` `H`
+Standard functions include: ABS ODD FLOOR FLT ORD CHR LEN ADC SBC UML BIT REG VAL ADR SIZE COND H PAU PLY
   end-procedure-description *)
   PROCEDURE StandFunc(VAR x: OXG.Item; fct: LONGINT; restyp: OXB.Type);
     VAR y: OXG.Item; n, npar: LONGINT;
@@ -431,6 +431,8 @@ Standard functions include: `ABS` `ODD` `FLOOR` `FLT` `ORD` `CHR` `LEN` `ADC` `S
         END
       ELSIF fct = 19 THEN (*COND*) CheckConst(x); CheckInt(x); OXG.Condition(x)
       ELSIF fct = 20 THEN (*H*) CheckConst(x); CheckInt(x); OXG.H(x)
+      ELSIF fct = 21 THEN (*PAU*) CheckConst(x); CheckInt(x); OXG.Pau(x)
+      ELSIF fct = 22 THEN (*PLY*) CheckConst(x); CheckInt(x); OXG.Ply(x)
       END ;
       x.type := restyp
     ELSE OXS.Mark("wrong nof params")
@@ -641,6 +643,8 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
       ELSIF pno = 7 THEN CheckReal(x); CheckInt(y); CheckReadOnly(x); OXG.Unpk(x, y)
       ELSIF pno = 8 THEN
         IF x.type.form <= OXB.Set THEN OXG.Led(x) ELSE OXS.Mark("bad type") END
+      ELSIF pno = 9 THEN
+        IF x.type.form <= OXB.Set THEN OXG.Ouch(x) ELSE OXS.Mark("bad type") END  
       ELSIF pno = 10 THEN CheckInt(x); OXG.Get(x, y)
       ELSIF pno = 11 THEN CheckInt(x); OXG.Put(x, y)
       ELSIF pno = 12 THEN CheckInt(x); CheckInt(y); CheckInt(z); OXG.Copy(x, y, z)
@@ -1120,6 +1124,7 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
         OXG.FixOne(L); proc.val := OXG.Here() * 4; proc.type.dsc := OXB.topScope.next
       END ;
       OXG.Enter(parblksize, locblksize, ccWordsize, int);
+(*      proc.val2:=locblksize; *)
       IF sym = OXS.begin THEN OXS.Get(sym); StatSequence END ;
       IF sym = OXS.return THEN
         OXS.Get(sym); expression(x);
@@ -1273,7 +1278,10 @@ expression0 is assigned to the procedure variable `expression` to allow the forw
           OXB.Enter("FLOOR",  OXB.SFunc, OXB.intType, 21);
           OXB.Enter("ODD",    OXB.SFunc, OXB.boolType, 11);
           OXB.Enter("ABS",    OXB.SFunc, OXB.intType, 1);
-          OXB.Enter("LED",    OXB.SProc, OXB.noType, 81);  (*procedures*)
+          OXB.Enter("PAU",    OXB.SFunc, OXB.intType, 211);
+          OXB.Enter("PLY",    OXB.SFunc, OXB.intType, 221);
+          OXB.Enter("OUCH",   OXB.SProc, OXB.noType, 91);  (*procedures*) 
+          OXB.Enter("LED",    OXB.SProc, OXB.noType, 81);  
           OXB.Enter("UNPK",   OXB.SProc, OXB.noType, 72);
           OXB.Enter("PACK",   OXB.SProc, OXB.noType, 62);
           OXB.Enter("NEW",    OXB.SProc, OXB.noType, 51);

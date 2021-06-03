@@ -1185,6 +1185,14 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
+**Ouch** generates an inline routine that sends a character to debug output.
+  end-procedure-description *)
+  PROCEDURE Ouch*(VAR x: Item);
+  BEGIN load(x); xPut1(55, pc, pcb, Mov, RH, 0, -28); xPut2(pc, pcb, Str, x.r, RH, 0); DEC(RH)
+  END Ouch;
+
+  (* begin-procedure-description
+---
 **Get** generates an inline routine that loads a value from an IO register.
   end-procedure-description *)
   PROCEDURE Get*(VAR x, y: Item);

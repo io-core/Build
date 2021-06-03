@@ -318,7 +318,7 @@ MODULE OXX; (* C.Perkis 2020*)
                    key, nofent, entry: LONGINT; 
                    version, varsize, tdx, strx: INTEGER);
     VAR obj: OXB.Object;
-      i, comsize, nofimps, nofptrs, size: LONGINT;
+      i, t, comsize, nofimps, nofptrs, size: LONGINT;
       name: OXS.Ident;
       F: Files.File; R: Files.Rider;
   BEGIN  
@@ -359,14 +359,16 @@ MODULE OXX; (* C.Perkis 2020*)
     obj := OXB.topScope.next; nofimps := 0; comsize := 4; nofptrs := 0;
     WHILE obj # NIL DO
       IF (obj.class = OXB.Mod) & (obj.dsc # OXB.system) THEN INC(nofimps) (*count imports*)
-      ELSIF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc)
+      ELSIF (* (obj.exno # 0) & *) (obj.class = OXB.Const) & (obj.type.form = OXB.Proc)
          (* & (obj.type.nofpar = 0) *) &  (obj.type.base = OXB.noType) THEN (*count commands*)
         i := 0;  WHILE obj.name[i] # 0X DO INC(i) END ;
-        i := (i+4) DIV 4 * 4; INC(comsize, i+4)
+        i := (i+4) DIV 4 * 4; INC(comsize, i+8)
       ELSIF obj.class = OXB.Var THEN INC(nofptrs, NofPtrs(obj.type))  (*count pointers*)
       END ;
       obj := obj.next
     END ;
+    INC(comsize, 12); (* BEGIN entry *)
+
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
      
     IF OXS.ccARCH = OXS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
@@ -408,14 +410,21 @@ MODULE OXX; (* C.Perkis 2020*)
     obj := OXB.topScope.next;
 
     IF version = 1 THEN
-      WHILE obj # NIL DO  (*commands*)
-        IF (obj.exno # 0) & (obj.class = OXB.Const) & (obj.type.form = OXB.Proc) &
+      WHILE obj # NIL DO  (*procedure names list. commands are procedures that are public with no parameters*)
+        IF (* (obj.exno # 0) & *) (obj.class = OXB.Const) & (obj.type.form = OXB.Proc) &
             (* (obj.type.nofpar = 0) & *) (obj.type.base = OXB.noType) THEN
           Files.WriteString(R, obj.name); 
-          IF obj.type.nofpar = 0 THEN Files.WriteInt(R, obj.val) ELSE Files.WriteInt(R, obj.val) END
+          IF obj.type.nofpar = 0 THEN  t:=0 (*command*) ELSE t:=1 (* not a command *) END;
+          IF obj.exno = 0 THEN  INC(t,2) (*private*) END; (* otherwise public *)
+	  Files.WriteInt(R, obj.val+t);
+(*          Files.WriteInt(R, obj.val2); (* frame size *) *)
         END ;
         obj := obj.next
       END ;
+      Files.WriteString(R, "BEGIN");
+      Files.WriteInt(R, entry+2);
+(*      Files.WriteInt(R, 4);    *)
+
       Files.Write(R, 0X);
       Files.WriteInt(R, nofent); Files.WriteInt(R, entry);
       obj := OXB.topScope.next;
