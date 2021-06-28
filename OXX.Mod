@@ -324,6 +324,7 @@ MODULE OXX; (* C.Perkis 2020*)
   BEGIN  
     IF version = 0 THEN (* baremetal module exit code - branch to reset vector via register 0*)
       IF OXS.ccARCH = OXS.RISC5 THEN OXT.RPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.RPut3(pc, pcb, BR, 7, 0)   END;
+      IF OXS.ccARCH = OXS.ERISC5 THEN OXT.EPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.EPut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.IPut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.APut3(pc, pcb, BR, 7, 0)   END;
       IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.aPut3(pc, pcb, BR, 7, 0)   END;
@@ -334,6 +335,7 @@ MODULE OXX; (* C.Perkis 2020*)
       IF OXS.ccARCH = OXS.WASM THEN OXT.WPut1(3,  pc, pcb, Mov, 0, 0, 0); OXT.WPut3(pc, pcb, BR, 7, 0) END;
     ELSE (* regular module exit code *)
       IF OXS.ccARCH = OXS.RISC5 THEN OXT.RPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.RPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.RPut3(pc, pcb, BR, 7, LNK)   END;
+      IF OXS.ccARCH = OXS.ERISC5 THEN OXT.EPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.EPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.EPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.X8664 THEN OXT.IPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.IPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.IPut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.ARM64 THEN OXT.APut2(pc, pcb, Ldr, LNK, SP, 0); OXT.APut1(4,  pc, pcb, Add, SP, SP, 4); OXT.APut3(pc, pcb, BR, 7, LNK)   END;
       IF OXS.ccARCH = OXS.ARM32 THEN OXT.aPut2(pc, pcb, Ldr, LNK, SP, 0); OXT.aPut1(4,  pc, pcb, Add, SP, SP, 4); OXT.aPut3(pc, pcb, BR, 7, LNK)   END;
@@ -346,6 +348,7 @@ MODULE OXX; (* C.Perkis 2020*)
 (*
     IF version = 0 THEN (* Initial jump to entry point for baremetal module *)
       IF OXS.ccARCH = OXS.RISC5 THEN   END;
+      IF OXS.ccARCH = OXS.ERISC5 THEN   END;
       IF OXS.ccARCH = OXS.X8664 THEN code[0] := 0E9H + ((entry -5) * 100H); code[1] := 90909000H  END; (* 32-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.ARM64 THEN code[0] := (14H * 1000000H) + (entry DIV 4) END; (* 24-bit pc-relative jump *)
       IF OXS.ccARCH = OXS.ARM32 THEN code[0] := 0EAH * 1000000H  + (entry - 8) DIV 4 END; (* 24-bit pc-relative jump *)
@@ -372,6 +375,7 @@ MODULE OXX; (* C.Perkis 2020*)
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
      
     IF OXS.ccARCH = OXS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
+    IF OXS.ccARCH = OXS.ERISC5 THEN OXB.MakeFileName(name, modid, ".r64")   END;
     IF OXS.ccARCH = OXS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
     IF OXS.ccARCH = OXS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
     IF OXS.ccARCH = OXS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;

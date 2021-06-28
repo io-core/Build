@@ -20,8 +20,8 @@ Recognises all Oberon keywords and skips comments. The keywords are recorded in 
 
 `Mark(msg)` records error and delivers error message with Writer W.
 
-If Get delivers ident, then the identifier (a string) is in variable id, 
-if int or char in ival, if real in rval, and if string in str (and slen) 
+If Get delivers ident, then the identifier (a string) is in variable id,
+if int or char in ival, if real in rval, and if string in str (and slen)
 
 end-module-develop-description *)
 MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
@@ -35,12 +35,12 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   Mark(msg) records error and delivers error message with Writer W.
   If Get delivers ident, then the identifier (a string) is in variable id, if int or char
   in ival, if real in rval, and if string in str (and slen) *)
-  
-  CONST 
+
+  CONST
     IdLen* = 32;
     NKW = 34;  (*nof keywords*)
     maxExp = 38; stringBufSize = 256;
-  
+
     (*lexical symbols*)
     null = 0; times* = 1; rdiv* = 2; div* = 3; mod* = 4;
     and* = 5; plus* = 6; minus* = 7; or* = 8; eql* = 9;
@@ -61,11 +61,11 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     data* = 108; goto* = 109;  next* = 110;  read* = 110;  step* = 112; stop* = 113; gosub* = 114;
     input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
     func* = 150; void* = 151; package* = 152; rune* = 153; eqeql* = 154; pcnt* = 155; andand* = 156; oror* = 157;
-    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8; WASM* = 9;
+    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8; WASM* = 9; ERISC5* = 10;
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
-    nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3; 
+    nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3;
 
-  TYPE 
+  TYPE
     Ident* = ARRAY IdLen OF CHAR;
 
   VAR ival*, slen*: LONGINT;  (*results of Get*)
@@ -84,7 +84,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     KWX: ARRAY 10 OF INTEGER;
     keyTab: ARRAY NKW OF
         RECORD sym: INTEGER; id: ARRAY 12 OF CHAR END;
-  
+
   (* begin-section-description
 ## ---------- Lexer
   end-section-description *)
@@ -184,7 +184,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
       IF i < IdLen-1 THEN id[i] := ch; INC(i) END ;
       Texts.Read(R, ch)
     UNTIL (ch < "0") OR (ch > "9") & (ch < "A") OR (ch > "Z") & (ch < "a") OR (ch > "z");
-    id[i] := 0X; 
+    id[i] := 0X;
     IF i < 10 THEN k := KWX[i-1];  (*search for keyword*)
       WHILE (id # keyTab[k].id) & (k < KWX[i]) DO INC(k) END ;
       IF k < KWX[i] THEN sym := keyTab[k].sym ELSE sym := ident END
@@ -306,7 +306,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           x := x * 10.0 + FLT(ORD(ch) - 30H); DEC(e); Texts.Read(R, ch)
         END ;
         IF (ch = "E") OR (ch = "D") THEN  (*scale factor*)
-          Texts.Read(R, ch); s := 0; 
+          Texts.Read(R, ch); s := 0;
           IF ch = "-" THEN negE := TRUE; Texts.Read(R, ch)
           ELSE negE := FALSE;
             IF ch = "+" THEN Texts.Read(R, ch) END
@@ -362,7 +362,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE clinecomment;
   BEGIN Texts.Read(R, ch);
     WHILE ~R.eot & (ch # 0AX) & (ch # 0BX) & (ch # 0CX) DO Texts.Read(R, ch) END ;
-    (* IF ~R.eot THEN Texts.Read(R, ch) END *) 
+    (* IF ~R.eot THEN Texts.Read(R, ch) END *)
   END clinecomment;
 
   (* begin-procedure-description
@@ -372,25 +372,25 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE Get*(VAR sym: INTEGER);
     VAR psym: INTEGER;
   BEGIN
-    psym := sym; 
+    psym := sym;
     REPEAT
       IF sigCR THEN sym := null;
         WHILE ~R.eot & ((ch = " ") OR (ch = 09X)) DO Texts.Read(R, ch) END;
-      ELSIF semiCR THEN 
-        WHILE ~R.eot & (ch <= " ") DO 
-          IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN       
+      ELSIF semiCR THEN
+        WHILE ~R.eot & (ch <= " ") DO
+          IF (ch = 0AX) OR (ch = 0BX) OR (ch = 0CX) THEN
                         (* Semicolon insertion: golang.org/ref/spec#Semicolons *)
-            IF (psym = ident) OR 
-               (psym = int) OR 
-               (psym = real) OR 
+            IF (psym = ident) OR
+               (psym = int) OR
+               (psym = real) OR
                (psym = string) OR
-               (psym = return) OR 
+               (psym = return) OR
                (psym = rparen) OR
-               (psym = rbrak) OR 
+               (psym = rbrak) OR
                (psym = rbrace) THEN
               ch := ";"
             ELSE
-              Texts.Read(R, ch) 
+              Texts.Read(R, ch)
             END;
 (*          Value("psym ",psym);  *)
 	  ELSE
@@ -411,7 +411,7 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           ELSIF ch = "$" THEN HexString; sym := string
           ELSIF ch = "&" THEN Texts.Read(R, ch);
             IF ch = "&" THEN Texts.Read(R, ch); sym := andand  ELSE sym := and END
-          ELSIF ch = "(" THEN Texts.Read(R, ch); 
+          ELSIF ch = "(" THEN Texts.Read(R, ch);
             IF ch = "*" THEN sym := null; oberoncomment ELSE sym := lparen END
           ELSIF ch = ")" THEN Texts.Read(R, ch); sym := rparen
           ELSIF ch = "*" THEN Texts.Read(R, ch); sym := times
@@ -430,11 +430,11 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
           END
         ELSIF ch < ":" THEN Number(sym)
         ELSIF ch = ":" THEN Texts.Read(R, ch);
-          IF ch = "=" THEN Texts.Read(R, ch); sym := becomes ELSE sym := colon END 
+          IF ch = "=" THEN Texts.Read(R, ch); sym := becomes ELSE sym := colon END
         ELSIF ch = ";" THEN Texts.Read(R, ch); sym := semicolon
         ELSIF ch = "<" THEN  Texts.Read(R, ch);
           IF ch = "=" THEN Texts.Read(R, ch); sym := leq ELSE sym := lss END
-        ELSIF ch = "=" THEN Texts.Read(R, ch); 
+        ELSIF ch = "=" THEN Texts.Read(R, ch);
           IF ch = "=" THEN Texts.Read(R, ch); sym := eqeql ELSE sym := eql END
         ELSIF ch = ">" THEN Texts.Read(R, ch);
           IF ch = "=" THEN Texts.Read(R, ch); sym := geq ELSE sym := gtr END
@@ -473,9 +473,9 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 **Init** opens the source text for reading and gets the first character.
   end-procedure-description *)
   PROCEDURE Init*(T: Texts.Text; pos: LONGINT; a,b,c: INTEGER);
-  BEGIN ccARCH := a; ccWordsize := b; ccStackalign := c; 
-        errpos := pos; errcnt := 0; 
-        Texts.OpenReader(R, T, pos); 
+  BEGIN ccARCH := a; ccWordsize := b; ccStackalign := c;
+        errpos := pos; errcnt := 0;
+        Texts.OpenReader(R, T, pos);
         Texts.Read(R, ch)
   END Init;
 
@@ -486,8 +486,8 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
   PROCEDURE EnterKW*(sym: INTEGER; name: ARRAY OF CHAR; kl: INTEGER);
   VAR i:INTEGER;
   BEGIN
-    IF sym > -1 THEN 
-      keyTab[k].id := name; keyTab[k].sym := sym; INC(k); 
+    IF sym > -1 THEN
+      keyTab[k].id := name; keyTab[k].sym := sym; INC(k);
     END;
     KWX[kl] := k;
   END EnterKW;
@@ -496,10 +496,10 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
 ---
 **The initialzation code for this module** prepares an empty table of reserved keywords.
   end-procedure-description *)
-BEGIN 
-  Texts.OpenWriter(W); 
-  k := 0; 
-  KWX[0]:=0; 
-  KWX[1]:=0; 
+BEGIN
+  Texts.OpenWriter(W);
+  k := 0;
+  KWX[0]:=0;
+  KWX[1]:=0;
   (* sigCR := FALSE; semiCR := FALSE; *)
 END OXS.

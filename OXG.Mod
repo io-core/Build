@@ -3,7 +3,7 @@ implements processor-agnostic code generation.
 end-module-short-description *)
 
 (* begin-module-use-description
-Module OXG generates the processor-specific instructions for executing an Oberon program. 
+Module OXG generates the processor-specific instructions for executing an Oberon program.
 
 OXG uses SYSTEM, Files, OXS, OXB, OXT, OXX
 
@@ -36,7 +36,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     BR = 0; BLR = 1; BC = 2; BL = 3;
     MI = 0; PL = 8; EQ = 1; NE = 9; LT = 5; GE = 13; LE = 6; GT = 14;
 
-  TYPE 
+  TYPE
     Item* = RECORD
       mode*: INTEGER;
       type*: OXB.Type;
@@ -54,7 +54,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     RegI   regno   off     -
     Cond  cond   Fchain  Tchain  *)
 
-  VAR 
+  VAR
     pc*, pcb*, varsize: LONGINT;   (*program counter, data index*)
     tdx, strx: LONGINT;
     entry: LONGINT;   (*main entry point*)
@@ -512,7 +512,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       ELSE load(x); xPut1(15, pc, pcb, Mov, RH, 0, 0); xPut0( pc, pcb, Fsb, x.r, RH, x.r)
       END
     ELSE (*form = Set*)
-      IF x.mode = OXB.Const THEN x.a := -x.a-1 
+      IF x.mode = OXB.Const THEN x.a := -x.a-1
       ELSE load(x); xPut1(16, pc, pcb, Xor, x.r, x.r, -1)
       END
     END
@@ -548,7 +548,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     WHILE ~ODD(m) DO m := m DIV 2; INC(e) END ;
     RETURN m
   END log2;
-  
+
   (* begin-procedure-description
 ---
 **MulOp** generates a multipy operation
@@ -628,7 +628,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE StringOp*(op: INTEGER; VAR x, y: Item);   (* x := x op y *)
   BEGIN load(x); load(y);
-    IF op = OXS.plus THEN 
+    IF op = OXS.plus THEN
     END ;
     DEC(RH); x.r := RH-1
   END StringOp;
@@ -645,7 +645,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   end-procedure-description *)
   PROCEDURE Singleton*(VAR x: Item);  (* x := {x} *)
   BEGIN
-    IF x.mode = OXB.Const THEN x.a := LSL(1, x.a) 
+    IF x.mode = OXB.Const THEN x.a := LSL(1, x.a)
     ELSE load(x); xPut1(23, pc, pcb, Mov, RH, 0, 1); xPut0( pc, pcb, Lsl, x.r, RH,  x.r)
     END
   END Singleton;
@@ -714,7 +714,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       ELSIF op = OXS.rdiv THEN xPut0( pc, pcb, Xor, RH-2, x.r, y.r)
       END ;
       DEC(RH); x.r := RH-1
-    END 
+    END
   END SetOp;
 
   (* Code generation for relations *)
@@ -811,7 +811,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF y.type.size # 0 THEN
       loadAdr(x); loadAdr(y);
       IF (x.type.form = OXB.Array) &  (x.type.len > 0) THEN
-        IF y.type.len >= 0 THEN 
+        IF y.type.len >= 0 THEN
           IF x.type.size = y.type.size THEN xPut1a(101, pc, pcb, RH, Mov, RH, 0, (y.type.size+3) DIV 4)
           ELSE OXS.Mark("different length/size, not implemented")
           END
@@ -839,7 +839,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **CopyString** generates copying the contents of one string variable into another string variable.
   end-procedure-description *)
-  PROCEDURE CopyString*(VAR x, y: Item);  (* x := y *) 
+  PROCEDURE CopyString*(VAR x, y: Item);  (* x := y *)
      VAR len: LONGINT;
    BEGIN loadAdr(x); len := x.type.len;
     IF len >= 0 THEN
@@ -852,9 +852,9 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     xPut2(pc, pcb, Str, RH, x.r, 0); xPut1(40, pc, pcb, Add, x.r, x.r, 4);
     xPut1(41, pc, pcb, Asr, RH, RH, 24); xPut3(pc, pcb, BC, NE,  -6);  RH := 0
    END CopyString;
-  
+
   (* Code generation for parameters *)
-  
+
   (* begin-section-description
 ## ----------  Code generation for parameters
   end-section-description *)
@@ -919,7 +919,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 **FOR1** generates the central part of a FOR statement
   end-procedure-description *)
   PROCEDURE For1*(VAR x, y, z, w: Item; VAR L: LONGINT);
-  BEGIN 
+  BEGIN
     IF z.mode = OXB.Const THEN xPut1a(107, pc, pcb, RH, Cmp, RH, y.r, z.a)
     ELSE load(z); xPut0( pc, pcb, Cmp, RH-1, y.r, z.r); DEC(RH)
     END ;
@@ -1144,7 +1144,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     ELSE xPut3(pc, pcb, BC, x.r, x.b); OXX.FixLink(pc,pcb,x.a); x.b := pc-1; cond := 7
     END ;
     Trap(cond, 7); OXX.FixLink(pc,pcb,x.b)
-  END Assert; 
+  END Assert;
 
   (* begin-procedure-description
 ---
@@ -1209,7 +1209,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Copy** generates an inline memory copy routine.     
+**Copy** generates an inline memory copy routine.
   end-procedure-description *)
   PROCEDURE Copy*(VAR x, y, z: Item);
   BEGIN load(x); load(y);
@@ -1226,7 +1226,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**LDPSR** places the processor status register in a variable     
+**LDPSR** places the processor status register in a variable
   end-procedure-description *)
   PROCEDURE LDPSR*(VAR x: Item);
   BEGIN (*x.mode = Const*)  xPut3(pc, pcb, 0, 15, x.a + 20H)
@@ -1234,7 +1234,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**REGREG** loads a register with the contents of another register     
+**REGREG** loads a register with the contents of another register
   end-procedure-description *)
   PROCEDURE REGREG*(VAR x, y: Item);
   BEGIN
@@ -1243,7 +1243,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**LDREG** places a register value in a variable     
+**LDREG** places a register value in a variable
   end-procedure-description *)
   PROCEDURE LDREG*(VAR x, y: Item);
   BEGIN
@@ -1260,7 +1260,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Abs** generates an inline functionn that takes the absolute value     
+**Abs** generates an inline functionn that takes the absolute value
   end-procedure-description *)
   PROCEDURE Abs*(VAR x: Item);
   BEGIN
@@ -1274,7 +1274,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Odd** generates an inlinen function that checks whether a value is odd.     
+**Odd** generates an inlinen function that checks whether a value is odd.
   end-procedure-description *)
   PROCEDURE Odd*(VAR x: Item);
   BEGIN load(x); xPut1(63, pc, pcb, And, x.r, x.r, 1); SetCC(x, NE); DEC(RH)
@@ -1282,7 +1282,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Floor** generates an inline function that produces the floor of a value.     
+**Floor** generates an inline function that produces the floor of a value.
   end-procedure-description *)
   PROCEDURE Floor*(VAR x: Item);
   BEGIN load(x); xPut1(64, pc, pcb, Mov+U, RH, 0, 4B00H); xPut0( pc, pcb, Fad+V, x.r, x.r, RH)
@@ -1290,7 +1290,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Float** generates an inline function that produces a float.     
+**Float** generates an inline function that produces a float.
   end-procedure-description *)
   PROCEDURE Float*(VAR x: Item);
   BEGIN load(x); xPut1(65, pc, pcb, Mov+U, RH, 0, 4B00H);  xPut0( pc, pcb, Fad+U, x.r, x.r, RH)
@@ -1298,7 +1298,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Ord** generates an inline function that presents the ordinal value of its parameter.     
+**Ord** generates an inline function that presents the ordinal value of its parameter.
   end-procedure-description *)
   PROCEDURE Ord*(VAR x: Item);
   BEGIN
@@ -1307,7 +1307,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Len** generates an inline function that presents the length of an array.     
+**Len** generates an inline function that presents the length of an array.
   end-procedure-description *)
   PROCEDURE Len*(VAR x: Item);
   BEGIN
@@ -1315,12 +1315,12 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       IF x.mode = RegI THEN DEC(RH) END ;
       x.mode := OXB.Const; x.a := x.type.len
     ELSE (*open array*) xPut2(pc, pcb, Ldr, RH, SP, x.a + 4 + frame); x.mode := Reg; x.r := RH; incR
-    END 
+    END
   END Len;
 
   (* begin-procedure-description
 ---
-**Shift** generates an inline function that performs bit shifts.      
+**Shift** generates an inline function that performs bit shifts.
   end-procedure-description *)
   PROCEDURE Shift*(fct: LONGINT; VAR x, y: Item);
     VAR op: LONGINT;
@@ -1333,7 +1333,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**ADC** generates an inline function that Adds with Carry     
+**ADC** generates an inline function that Adds with Carry
   end-procedure-description *)
   PROCEDURE ADC*(VAR x, y: Item);
   BEGIN load(x); load(y); xPut0( pc, pcb, Add+2000H, x.r, x.r, y.r); DEC(RH)
@@ -1341,7 +1341,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**SBC** generates an inline function that Subtracts with Carry 
+**SBC** generates an inline function that Subtracts with Carry
   end-procedure-description *)
   PROCEDURE SBC*(VAR x, y: Item);
   BEGIN load(x); load(y); xPut0( pc, pcb, Sub+2000H, x.r, x.r, y.r); DEC(RH)
@@ -1349,7 +1349,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**UML** generates an unsigned multiply 
+**UML** generates an unsigned multiply
   end-procedure-description *)
   PROCEDURE UML*(VAR x, y: Item);
   BEGIN load(x); load(y); xPut0( pc, pcb, Mul+2000H, x.r, x.r, y.r); DEC(RH)
@@ -1357,7 +1357,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Bit** generates an inline function presenting the yth bit of x      
+**Bit** generates an inline function presenting the yth bit of x
   end-procedure-description *)
   PROCEDURE Bit*(VAR x, y: Item);
   BEGIN load(x); xPut2(pc, pcb, Ldr, x.r, x.r, 0);
@@ -1369,7 +1369,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Register** generates an inline function presenting a general register's contents      
+**Register** generates an inline function presenting a general register's contents
   end-procedure-description *)
   PROCEDURE Register*(VAR x: Item);
   BEGIN (*x.mode = Const*)
@@ -1378,7 +1378,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**H** genrates an inline funtion presenting the contents of the H register.     
+**H** genrates an inline funtion presenting the contents of the H register.
   end-procedure-description *)
   PROCEDURE H*(VAR x: Item);
   BEGIN (*x.mode = Const*)
@@ -1387,7 +1387,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**PAU** genrates an inline funtion that records a one-shot continuation.     
+**PAU** genrates an inline funtion that records a one-shot continuation.
   end-procedure-description *)
   PROCEDURE Pau*(VAR x: Item);
   BEGIN (*x.mode = Const*)
@@ -1397,7 +1397,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Ply** genrates an inline funtion that invokes a one-shot continuation.     
+**Ply** genrates an inline funtion that invokes a one-shot continuation.
   end-procedure-description *)
   PROCEDURE Ply*(VAR x: Item);
   BEGIN (*x.mode = Const*)
@@ -1407,10 +1407,10 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Adr** generates an inline function presenting the memory address of its parameter.      
+**Adr** generates an inline function presenting the memory address of its parameter.
   end-procedure-description *)
   PROCEDURE Adr*(VAR x: Item);
-  BEGIN 
+  BEGIN
     IF x.mode IN {OXB.Var, OXB.Par, RegI} THEN loadAdr(x)
     ELSIF (x.mode = OXB.Const) & (x.type.form = OXB.Proc) THEN load(x)
     ELSIF (x.mode = OXB.Const) & (x.type.form = OXB.String) THEN loadStringAdr(x)
@@ -1420,7 +1420,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Condition** generates an inline function presenting a condition.     
+**Condition** generates an inline function presenting a condition.
   end-procedure-description *)
   PROCEDURE Condition*(VAR x: Item);
   BEGIN (*x.mode = Const*) SetCC(x, x.a)
@@ -1428,7 +1428,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Open** initializes the OXG module code generation engine.     
+**Open** initializes the OXG module code generation engine.
   end-procedure-description *)
   PROCEDURE Open*(v: INTEGER);
   BEGIN pc := 0; tdx := 0; strx := 0; RH := 0; OXX.setFixOrgP(0); OXX.setFixOrgD(0); OXX.setFixOrgT(0); check := v # 0; version := v;
@@ -1436,6 +1436,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       REPEAT OXX.SetCode(pc, 0); INC(pc) UNTIL pc = 8
     END;
     IF OXS.ccARCH = OXS.RISC5 THEN xPut0 := OXT.RPut0; xPut1 := OXT.RPut1; xPut1a := OXT.RPut1a; xPut2 := OXT.RPut2; xPut3 := OXT.RPut3; xHeader := OXT.RHeader END;
+    IF OXS.ccARCH = OXS.ERISC5 THEN xPut0 := OXT.EPut0; xPut1 := OXT.EPut1; xPut1a := OXT.EPut1a; xPut2 := OXT.EPut2; xPut3 := OXT.EPut3; xHeader := OXT.EHeader END;
     IF OXS.ccARCH = OXS.X8664 THEN xPut0 := OXT.IPut0; xPut1 := OXT.IPut1; xPut1a := OXT.IPut1a; xPut2 := OXT.IPut2; xPut3 := OXT.IPut3; xHeader := OXT.IHeader END;
     IF OXS.ccARCH = OXS.ARM64 THEN xPut0 := OXT.APut0; xPut1 := OXT.APut1; xPut1a := OXT.APut1a; xPut2 := OXT.APut2; xPut3 := OXT.APut3; xHeader := OXT.AHeader END;
     IF OXS.ccARCH = OXS.ARM32 THEN xPut0 := OXT.aPut0; xPut1 := OXT.aPut1; xPut1a := OXT.aPut1a; xPut2 := OXT.aPut2; xPut3 := OXT.aPut3; xHeader := OXT.aHeader END;
@@ -1444,13 +1445,13 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
     IF OXS.ccARCH = OXS.RISCV64 THEN xPut0 := OXT.VPut0; xPut1 := OXT.VPut1; xPut1a := OXT.VPut1a; xPut2 := OXT.VPut2; xPut3 := OXT.VPut3; xHeader := OXT.VHeader END;
     IF OXS.ccARCH = OXS.RISCV32 THEN xPut0 := OXT.vPut0; xPut1 := OXT.vPut1; xPut1a := OXT.vPut1a; xPut2 := OXT.vPut2; xPut3 := OXT.vPut3; xHeader := OXT.vHeader END;
     IF OXS.ccARCH = OXS.WASM THEN xPut0 := OXT.WPut0; xPut1 := OXT.WPut1; xPut1a := OXT.WPut1a; xPut2 := OXT.WPut2; xPut3 := OXT.WPut3; xHeader := OXT.WHeader END;
- 
+
     OXX.Init;
   END Open;
 
   (* begin-procedure-description
 ---
-**SetDataSize** sets the amount of space reserved for module global variables.     
+**SetDataSize** sets the amount of space reserved for module global variables.
   end-procedure-description *)
   PROCEDURE SetDataSize*(dc: LONGINT);
   BEGIN varsize := dc
@@ -1458,10 +1459,10 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   (* begin-procedure-description
 ---
-**Header** prepares the code introductory sequence for a compiled module     
+**Header** prepares the code introductory sequence for a compiled module
   end-procedure-description *)
   PROCEDURE Header*;
-  BEGIN 
+  BEGIN
     xHeader(pc,pcb,RH,entry,version)
   END Header;
 
