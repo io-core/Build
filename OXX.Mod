@@ -375,15 +375,15 @@ MODULE OXX; (* C.Perkis 2020*)
     size := varsize + strx + comsize + (pc + nofimps + nofent + nofptrs + 1)*4;  (*varsize includes type descriptors*)
      
     IF OXS.ccARCH = OXS.RISC5 THEN OXB.MakeFileName(name, modid, ".rsc")   END;
-    IF OXS.ccARCH = OXS.ERISC5 THEN OXB.MakeFileName(name, modid, ".r64")   END;
-    IF OXS.ccARCH = OXS.X8664 THEN OXB.MakeFileName(name, modid, ".i64")   END;
-    IF OXS.ccARCH = OXS.ARM64 THEN OXB.MakeFileName(name, modid, ".a64")   END;
-    IF OXS.ccARCH = OXS.ARM32 THEN OXB.MakeFileName(name, modid, ".a32")   END;
-    IF OXS.ccARCH = OXS.CORTEX4 THEN OXB.MakeFileName(name, modid, ".cm4")   END;
-    IF OXS.ccARCH = OXS.CORTEX0 THEN OXB.MakeFileName(name, modid, ".cm0")   END;
-    IF OXS.ccARCH = OXS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v64") END;
-    IF OXS.ccARCH = OXS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v32") END;
-    IF OXS.ccARCH = OXS.WASM THEN OXB.MakeFileName(name, modid, ".w64") END;
+    IF OXS.ccARCH = OXS.ERISC5 THEN OXB.MakeFileName(name, modid, ".r8x")  END;
+    IF OXS.ccARCH = OXS.X8664 THEN OXB.MakeFileName(name, modid, ".i8x")   END;
+    IF OXS.ccARCH = OXS.ARM64 THEN OXB.MakeFileName(name, modid, ".a8x")   END;
+    IF OXS.ccARCH = OXS.ARM32 THEN OXB.MakeFileName(name, modid, ".a4x")   END;
+    IF OXS.ccARCH = OXS.CORTEX4 THEN OXB.MakeFileName(name, modid, ".c4x") END;
+    IF OXS.ccARCH = OXS.CORTEX0 THEN OXB.MakeFileName(name, modid, ".c0x") END;
+    IF OXS.ccARCH = OXS.RISCV64 THEN OXB.MakeFileName(name, modid, ".v8x") END;
+    IF OXS.ccARCH = OXS.RISCV32 THEN OXB.MakeFileName(name, modid, ".v4x") END;
+    IF OXS.ccARCH = OXS.WASM THEN OXB.MakeFileName(name, modid, ".w4x")    END;
 
     F := Files.New(name); Files.Set(R, F, 0); 
     IF version = 1 THEN
