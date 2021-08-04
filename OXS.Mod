@@ -62,17 +62,17 @@ MODULE OXS; (* NW 19.9.93 / 15.3.2017  Scanner in Oberon-07*)
     input* = 115; print* = 116; option* = 117; restore* = 118; randomize* = 119; eol* = 120;
     func* = 150; void* = 151; package* = 152; rune* = 153; eqeql* = 154; pcnt* = 155; andand* = 156; oror* = 157;
 (*    BADARCH* = 0; RISC5* = 1; X8664* = 2; ARM64* = 3; ARM32* = 4; RISCV64* = 5; RISCV32* = 6; CORTEX4* = 7; CORTEX0* = 8; WASM* = 9; ERISC5* = 10; *)
-     BADARCH = 0;
-     RISC5   = 6517618;    (* "rsc" 0x00637372 *)
-     ERISC5  = 7878770;    (* "r8x" 0x00783872 *)
-     X8664   = 7878761;    (* "i8x" 0x00783869 *)
-     CORTEX4 = 7877731;    (* "c4x" 0x00783463 *)
-     CORTEX0 = 7876707;    (* "c0x" 0x00783063 *)
-     ARM64   = 7878753;    (* "a8x" 0x00783861 *)
-     ARM32   = 7877729;    (* "a4x" 0x00783461 *)
-     RISCV64 = 7878774;    (* "v8x" 0x00783876 *)
-     RISCV32 = 7877750;    (* "v4x" 0x00783476 *)
-     WASM    = 7877751;    (* "w4x" 0x00783477 *)
+     BADARCH* = 0;
+     RISC5*   = 6517618;    (* "rsc" 0x00637372 *)
+     ERISC5*  = 7878770;    (* "r8x" 0x00783872 *)
+     X8664*   = 7878761;    (* "i8x" 0x00783869 *)
+     CORTEX4* = 7877731;    (* "c4x" 0x00783463 *)
+     CORTEX0* = 7876707;    (* "c0x" 0x00783063 *)
+     ARM64*   = 7878753;    (* "a8x" 0x00783861 *)
+     ARM32*   = 7877729;    (* "a4x" 0x00783461 *)
+     RISCV64* = 7878774;    (* "v8x" 0x00783876 *)
+     RISCV32* = 7877750;    (* "v4x" 0x00783476 *)
+     WASM*    = 7877751;    (* "w4x" 0x00783477 *)
     BYTEORIENTED* = 0; WORDORIENTED* = 1;
     nostyle* = 0; oberonstyle* = 1; basicstyle* = 2; cstyle* = 3;
 
