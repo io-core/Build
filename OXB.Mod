@@ -260,17 +260,24 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
 ---
 **Import** reads in the symbol file for an imported module so that its exported constants, types, variables, and procedures may be referenced. 
   end-procedure-description *)
-  PROCEDURE Import*(VAR modid, modid1: OXS.Ident);
+  PROCEDURE Import*(VAR modid, modid1: OXS.Ident; ccARCH: INTEGER);
     VAR key: LONGINT; class, k: INTEGER;
       obj: Object;  t: Type;
       thismod: Object;
       modname, fname: OXS.Ident;
       F: Files.File; R: Files.Rider;
+      ext: ARRAY 5 OF CHAR;
   BEGIN
+    ext := ".smb";
+    IF ccARCH # OXS.RISC5 THEN (* symbol file extension may be derived from the middle two bytes of the architecture constant *)
+      ext[1]:=CHR(ccARCH DIV 100H MOD 100H);
+      ext[2]:=CHR(ccARCH DIV 10000H MOD 100H);
+      ext[3]:="s";
+    END;
     IF modid1 = "SYSTEM" THEN
       thismod := ThisModule(modid, modid1, TRUE,  key); DEC(nofmod);
       thismod.lev := 0; thismod.dsc := system; thismod.rdo := TRUE
-    ELSE MakeFileName(fname, modid1, ".smb"); F := Files.Old(fname);
+    ELSE MakeFileName(fname, modid1, ext); F := Files.Old(fname);
       IF F # NIL THEN
         Files.Set(R, F, 0); Files.ReadInt(R, key); Files.ReadInt(R, key); Files.ReadString(R, modname);
         thismod := ThisModule(modid, modid1, TRUE, key); thismod.rdo := TRUE;
@@ -376,12 +383,21 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
 ---
 **Export** writes out the symbol file for a module.
   end-procedure-description *)
-  PROCEDURE Export*(VAR modid: OXS.Ident; VAR newSF: BOOLEAN; VAR key: LONGINT);
+  PROCEDURE Export*(VAR modid: OXS.Ident; VAR newSF: BOOLEAN; VAR key: LONGINT; ccARCH: INTEGER);
     VAR x, sum, oldkey: LONGINT;
       obj, obj0: Object;
       filename: OXS.Ident;
       F, F1: Files.File; R, R1: Files.Rider;
-  BEGIN Ref := Record + 1; MakeFileName(filename, modid, ".smb");
+      ext: ARRAY 5 OF CHAR;
+  BEGIN 
+    ext := ".smb";
+    IF ccARCH # OXS.RISC5 THEN (* symbol file extension may be derived from the middle two bytes of the architecture constant *)
+      ext[1]:=CHR(ccARCH DIV 100H MOD 100H);
+      ext[2]:=CHR(ccARCH DIV 10000H MOD 100H);
+      ext[3]:="s";
+    END;
+    Ref := Record + 1; 
+    MakeFileName(filename, modid, ext);
     F := Files.New(filename); Files.Set(R, F, 0);
     Files.WriteInt(R, 0); (*placeholder*)
     Files.WriteInt(R, 0); (*placeholder for key to be inserted at the end*)

@@ -1506,7 +1506,7 @@ MODULE OXG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 ---
 **Close** writes the completed binary to disk.
   end-procedure-description *)
-  PROCEDURE Close*(VAR modid: OXS.Ident; key, nofent: LONGINT);
+  PROCEDURE Close*(VAR modid: OXS.Ident; key, nofent: LONGINT; ccARCH: INTEGER);
   BEGIN
     OXX.Close(pc, pcb, modid, key, nofent, entry, version, varsize, tdx, strx);
   END Close;
