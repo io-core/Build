@@ -22,6 +22,17 @@ MODULE OXLinker;  (*Link and create binary on RISC; NW 20.10.2013 CP 21.05.2014 
   IMPORT SYSTEM, Files, Modules, Kernel, Texts, Oberon;
 
   CONST versionkey = 1X; MT = 12; DescSize = 80;
+     BADARCH = 0;
+     RISC5   = 6517618;    (* "rsc" 0x00637372 *)
+     ERISC5  = 7878770;    (* "r8x" 0x00783872 *)
+     X8664   = 7878761;    (* "i8x" 0x00783869 *)
+     CORTEX4 = 7877731;    (* "c4x" 0x00783463 *)
+     CORTEX0 = 7876707;    (* "c0x" 0x00783063 *)
+     ARM64   = 7878753;    (* "a8x" 0x00783861 *)
+     ARM32   = 7877729;    (* "a4x" 0x00783461 *)
+     RISCV64 = 7878774;    (* "v8x" 0x00783876 *)
+     RISCV32 = 7877750;    (* "v4x" 0x00783476 *)
+     WASM    = 7877751;    (* "w4x" 0x00783477 *)
 
   TYPE
 
