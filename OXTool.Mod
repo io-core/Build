@@ -242,7 +242,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
     e := OXDis.originate(R,F,s,n*4,0,x);
     WHILE e # OXDis.FINISH DO
       e := OXDis.decode();
-      Texts.WriteInt(W, OXDis.at, 4); Texts.Write(W, 20X);
+      Texts.WriteHex(W, OXDis.at); Texts.Write(W, 20X);
       IF OXDis.wo = BYTEORIENTED THEN
         i:=0;WHILE i < OXDis.isz DO
           Texts.Write(W, HighNib(OXDis.ibytes[i])); Texts.Write(W, LowNib(OXDis.ibytes[i])); Texts.Write(W, " ");
@@ -284,7 +284,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
   END DecBin;
 
   PROCEDURE DecObj*;   (*decode object file*)
-    VAR class, i, n, key, size, fix, adr, data, len, s, x: INTEGER;
+    VAR class, i, n, key, size, fix, adr, fsz, data, len, s, x: INTEGER;
       ch: CHAR;
       name: ARRAY 32 OF CHAR;
       F: Files.File; R: Files.Rider;
@@ -332,7 +332,8 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
           Files.ReadString(R, name);
           WHILE name[0] # 0X DO
             Texts.Write(W, 20X); Texts.WriteString(W, name);
-            Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 5); Texts.WriteLn(W);
+            Files.ReadInt(R, adr); Texts.WriteInt(W, adr, 5); 
+            Files.ReadInt(R, fsz); Texts.WriteInt(W, fsz, 5); Texts.WriteLn(W);
             Files.ReadString(R, name)
           END ;
           Texts.WriteString(W, "entries"); Texts.WriteLn(W);
@@ -368,7 +369,7 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
   END DecObj;
 
   PROCEDURE DecMod*;   (*decode loaded module*)
-    VAR class, i, n, key, size, fix, adr, data, len, s, x, p, q, k: INTEGER;
+    VAR class, i, n, key, size, fix, adr, fsz, data, len, s, x, p, q, k: INTEGER;
       ch: CHAR; cs: ARRAY 32 OF CHAR;
       name: ARRAY 32 OF CHAR;
       F: Files.File; R: Files.Rider;
@@ -401,15 +402,25 @@ MODULE OXTool;  (*NW 18.2.2013 / CP 2020*)
 (*
       Texts.WriteString(W, "type descriptors: "); Texts.WriteLn(W);
 *)
-      Texts.WriteString(W, "commands: "); Texts.WriteLn(W);
+      Texts.WriteString(W, "procedures: "); Texts.WriteLn(W);
       adr := M.cmd; SYSTEM.GET(adr, ch);
-      WHILE ch # 0X DO k := 0; (*read command name*)
+      WHILE ch # 0X DO k := 0; (*read procedure name*)
         REPEAT cs[k] := ch; INC(k); INC(adr); SYSTEM.GET(adr, ch) UNTIL ch = 0X;
         cs[k] := 0X;
         REPEAT INC(adr) UNTIL adr MOD 4 = 0;
         SYSTEM.GET(adr, k); INC(adr, 4);
-        Texts.WriteHex(W, k); Texts.WriteString(W, " "); Texts.WriteString(W, cs); Texts.WriteLn(W);
-        SYSTEM.GET(adr, ch)
+        SYSTEM.GET(adr, fsz); INC(adr, 4);
+        Texts.WriteHex(W, k); Texts.WriteString(W, " "); 
+        Texts.WriteHex(W, k-(k MOD 4)+M.code); Texts.WriteString(W, " "); 
+        Texts.WriteHex(W, fsz); Texts.WriteString(W, " "); 
+        Texts.WriteString(W, cs); 
+        IF (k MOD 4) = 0 THEN Texts.WriteString(W, "*")
+        ELSIF (k MOD 4) = 1 THEN Texts.WriteString(W, "*()")
+        ELSIF (k MOD 4) = 2 THEN Texts.WriteString(W, " ")
+        ELSE Texts.WriteString(W, "()")
+        END;
+        SYSTEM.GET(adr, ch);
+        Texts.WriteLn(W);
       END;
       Texts.WriteString(W, "entries: "); Texts.WriteLn(W);
       p := M.ent; q := M.ptr;

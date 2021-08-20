@@ -270,8 +270,8 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
   BEGIN
     ext := ".smb";
     IF ccARCH # OXS.RISC5 THEN (* symbol file extension may be derived from the middle two bytes of the architecture constant *)
-      ext[1]:=CHR(ccARCH DIV 100H MOD 100H);
-      ext[2]:=CHR(ccARCH DIV 10000H MOD 100H);
+      ext[1]:=CHR(ccARCH MOD 100H);
+      ext[2]:=CHR(ccARCH DIV 100 MOD 100H);
       ext[3]:="s";
     END;
     IF modid1 = "SYSTEM" THEN
@@ -392,8 +392,8 @@ MODULE OXB;   (*NW 25.6.2014  / AP 4.3.2020 / 8.3.2019  in Oberon-07 / CP 11.202
   BEGIN 
     ext := ".smb";
     IF ccARCH # OXS.RISC5 THEN (* symbol file extension may be derived from the middle two bytes of the architecture constant *)
-      ext[1]:=CHR(ccARCH DIV 100H MOD 100H);
-      ext[2]:=CHR(ccARCH DIV 10000H MOD 100H);
+      ext[1]:=CHR(ccARCH MOD 100H);
+      ext[2]:=CHR(ccARCH DIV 100H MOD 100H);
       ext[3]:="s";
     END;
     Ref := Record + 1; 
